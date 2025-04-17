@@ -1,0 +1,12 @@
+lzc-sdk-version: 0.1
+name: 懒猫应用
+package: xyz.mxue.lazycatapp
+version: 0.0.1
+description: 
+license: https://choosealicense.com/licenses/mit/
+homepage: 
+author: 
+application:
+  subdomain: lazycatapp
+  routes:
+    - /=file:///lzcapp/pkg/content/web
