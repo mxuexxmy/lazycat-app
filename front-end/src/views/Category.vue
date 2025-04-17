@@ -3,13 +3,32 @@
     <n-space vertical size="large">
       <div class="category-header">
         <h1>{{ categoryName }}</h1>
+        <div class="search-section">
+          <n-input-group>
+            <n-input
+              v-model:value="searchQuery"
+              placeholder="搜索应用"
+              class="search-input"
+              clearable
+              @keyup.enter="handleSearch"
+            >
+              <template #prefix>
+                <n-icon :component="SearchOutline" />
+              </template>
+            </n-input>
+            <n-button type="primary" @click="handleSearch">
+              搜索
+            </n-button>
+          </n-input-group>
+        </div>
       </div>
 
       <div class="app-grid">
-        <n-grid :cols="4" :x-gap="16" :y-gap="16" responsive="screen">
-          <n-grid-item v-for="app in apps" :key="app.pkgId">
+        <n-empty v-if="filteredApps.length === 0" description="暂无应用" />
+        <n-grid v-else :cols="4" :x-gap="16" :y-gap="16" responsive="screen">
+          <n-grid-item v-for="app in filteredApps" :key="app.pkgId">
             <n-card class="app-card" hoverable @click="handleAppClick(app)">
-              <template #cover>
+              <div class="app-content">
                 <div class="app-icon">
                   <n-image
                     :src="getAppIcon(app)"
@@ -18,24 +37,24 @@
                     object-fit="contain"
                   />
                 </div>
-              </template>
-              <template #header>
-                <div class="app-title">{{ app.name }}</div>
-              </template>
-              <div class="app-desc">{{ app.brief || app.description }}</div>
-              <template #footer>
-                <n-space vertical size="small">
-                  <n-space wrap :size="4">
-                    <n-tag v-for="cat in app.category" :key="cat" size="small" round>
-                      {{ cat }}
-                    </n-tag>
-                  </n-space>
-                  <n-space :size="4">
-                    <n-tag size="small" :bordered="false" type="success" v-if="app.supportPC">PC端</n-tag>
-                    <n-tag size="small" :bordered="false" type="info" v-if="app.supportMobile">移动端</n-tag>
-                  </n-space>
-                </n-space>
-              </template>
+                <div class="app-info">
+                  <div class="app-title">{{ app.name }}</div>
+                  <div class="app-desc">{{ app.brief || app.description }}</div>
+                  <div class="app-tags">
+                    <n-space vertical size="small">
+                      <n-space wrap :size="4">
+                        <n-tag v-for="cat in app.category" :key="cat" size="small" round>
+                          {{ cat }}
+                        </n-tag>
+                      </n-space>
+                      <n-space :size="4">
+                        <n-tag size="small" :bordered="false" type="success" v-if="app.supportPC">PC端</n-tag>
+                        <n-tag size="small" :bordered="false" type="info" v-if="app.supportMobile">移动端</n-tag>
+                      </n-space>
+                    </n-space>
+                  </div>
+                </div>
+              </div>
             </n-card>
           </n-grid-item>
         </n-grid>
@@ -45,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   NSpace,
@@ -53,8 +72,14 @@ import {
   NGridItem,
   NCard,
   NImage,
-  NTag
+  NTag,
+  NInput,
+  NInputGroup,
+  NButton,
+  NIcon,
+  NEmpty
 } from 'naive-ui'
+import { SearchOutline } from '@vicons/ionicons5'
 
 interface AppInfo {
   name: string;
@@ -80,11 +105,30 @@ const router = useRouter()
 const apps = ref<AppInfo[]>([])
 const categoryName = ref('')
 const defaultIcon = '/path/to/default-icon.png'
+const searchQuery = ref('')
+
+// Filter apps based on search query
+const filteredApps = computed(() => {
+  if (!searchQuery.value) return apps.value
+  const query = searchQuery.value.toLowerCase()
+  return apps.value.filter(app => 
+    app.name.toLowerCase().includes(query) || 
+    app.description.toLowerCase().includes(query) ||
+    app.brief?.toLowerCase().includes(query) ||
+    app.category.some(cat => cat.toLowerCase().includes(query))
+  )
+})
+
+// Handle search
+const handleSearch = () => {
+  // 搜索逻辑已通过 computed 属性实现
+  // 这里可以添加额外的搜索相关操作
+}
 
 // Get app icon URL
 const getAppIcon = (app: AppInfo) => {
   if (!app.iconPath) return defaultIcon
-  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/${app.iconPath}`
+  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`
 }
 
 // Handle app card click
@@ -112,7 +156,7 @@ const fetchCategoryName = async () => {
 // Fetch apps in category
 const fetchApps = async () => {
   try {
-    const url = `https://appstore.api.lazycat.cloud/api/app/list?categories=${route.params.id}`
+    const url = `https://appstore.api.lazycat.cloud/api/app/list?category_id=${route.params.id}`
     const response = await fetch(url)
     const result = await response.json()
     if (result.success && Array.isArray(result.data)) {
@@ -130,45 +174,93 @@ onMounted(async () => {
 
 <style scoped>
 .category-view {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 24px;
+  min-height: 100vh;
+  background: #f5f5f5;
 }
 
 .category-header {
   text-align: center;
+  background: #fff;
+  padding: 24px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .category-header h1 {
   font-size: 28px;
   font-weight: 500;
   color: #333;
-  margin: 0;
+  margin: 0 0 24px;
+}
+
+.search-section {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.search-input {
+  font-size: 14px;
 }
 
 .app-grid {
   margin-top: 24px;
 }
 
+:deep(.n-grid) {
+  --n-cols: 4 !important;
+  gap: 24px !important;
+}
+
 .app-card {
   height: 100%;
   display: flex;
   flex-direction: column;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.app-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.app-content {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  height: 100%;
 }
 
 .app-icon {
-  padding: 20px;
-  background: #fff;
+  width: 100%;
+  height: 160px;
+  padding: 24px;
+  background: #f9f9f9;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 160px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .app-icon :deep(img) {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+}
+
+.app-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: 16px;
 }
 
 .app-title {
@@ -190,36 +282,141 @@ onMounted(async () => {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  flex: 1;
+  line-height: 1.5;
 }
 
-@media screen and (max-width: 1200px) {
-  .n-grid {
+.app-tags {
+  margin-top: 12px;
+}
+
+:deep(.n-tag) {
+  transition: all 0.3s ease;
+}
+
+@media screen and (max-width: 1440px) {
+  :deep(.n-grid) {
     --n-cols: 3 !important;
   }
 }
 
-@media screen and (max-width: 768px) {
-  .n-grid {
+@media screen and (max-width: 1200px) {
+  :deep(.n-grid) {
     --n-cols: 2 !important;
   }
 
   .category-view {
     padding: 16px;
   }
+}
+
+@media screen and (max-width: 768px) {
+  .category-view {
+    padding: 0;
+  }
+
+  .category-header {
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
+    background: #fff;
+  }
 
   .category-header h1 {
-    font-size: 24px;
+    font-size: 18px;
+    margin: 0 0 16px;
+  }
+
+  .search-section {
+    padding: 0;
+  }
+
+  .app-grid {
+    margin-top: 0;
+  }
+
+  :deep(.n-grid) {
+    --n-cols: 1 !important;
+    display: block !important;
+  }
+
+  :deep(.n-grid-item) {
+    padding-top: 0 !important;
+    padding-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  :deep(.n-card) {
+    border-radius: 0;
+    margin-bottom: 8px;
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .app-content {
+    gap: 12px;
   }
 
   .app-icon {
-    height: 120px;
-    padding: 16px;
+    width: 56px;
+    height: 56px;
+    padding: 4px;
+    background: #f9f9f9;
+    border-radius: 12px;
+  }
+
+  .app-info {
+    padding: 4px 0;
+  }
+
+  .app-title {
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+
+  .app-desc {
+    font-size: 13px;
+    margin: 4px 0;
+    color: #666;
+    -webkit-line-clamp: 2;
+  }
+
+  .app-tags {
+    margin-top: 8px;
+  }
+
+  :deep(.n-tag) {
+    font-size: 12px !important;
   }
 }
 
 @media screen and (max-width: 480px) {
-  .n-grid {
-    --n-cols: 1 !important;
+  .category-header h1 {
+    font-size: 16px;
+  }
+
+  .app-content {
+    gap: 8px;
+  }
+
+  .app-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+  }
+
+  .app-title {
+    font-size: 14px;
+  }
+
+  .app-desc {
+    font-size: 12px;
+    -webkit-line-clamp: 2;
+    margin: 2px 0;
+  }
+
+  .app-tags {
+    margin-top: 6px;
   }
 }
 </style> 

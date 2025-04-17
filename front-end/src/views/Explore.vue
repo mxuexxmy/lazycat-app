@@ -1,77 +1,166 @@
 <template>
   <div class="explore-view">
     <!-- 顶部搜索栏 -->
-    <div class="search-bar">
-      <n-input
-        v-model:value="searchQuery"
-        placeholder="搜索懒猫应用"
-        clearable
-        class="search-input"
-      >
-        <template #suffix>
-          <n-button type="primary" ghost @click="handleSearch">
-            搜索
-          </n-button>
-        </template>
-      </n-input>
+    <div class="search-section">
+      <n-input-group>
+        <n-input
+          v-model:value="searchQuery"
+          placeholder="搜索懒猫应用"
+          class="search-input"
+          size="large"
+        />
+        <n-button type="primary" size="large" @click="handleSearch">
+          搜索
+        </n-button>
+      </n-input-group>
     </div>
 
+    <!-- 主要内容区 -->
     <div class="main-content">
-      <!-- 左侧功能列表 -->
-      <div class="function-list">
-        <n-menu
-          v-model:value="selectedKey"
-          :options="menuOptions"
-          :indent="18"
-          class="custom-menu"
-        />
-      </div>
-
-      <!-- 右侧内容区 -->
-      <div class="content-area">
-        <n-card v-if="selectedCategory">
-          <template #header>
-            <div class="category-header">
-              <h2>{{ selectedCategory.title }}</h2>
-              <p v-if="selectedCategory.description">{{ selectedCategory.description }}</p>
-            </div>
-          </template>
-          
-          <!-- 应用列表 -->
-          <n-grid :cols="3" :x-gap="16" :y-gap="16" responsive="screen">
-            <n-grid-item v-for="app in categoryApps" :key="app.pkgId">
-              <n-card class="app-card" hoverable @click="handleAppClick(app)">
-                <template #cover>
-                  <div class="app-icon">
-                    <n-image
-                      :src="getAppIcon(app)"
-                      :fallback-src="defaultIcon"
-                      preview-disabled
-                      object-fit="contain"
-                    />
+      <!-- 桌面端布局 -->
+      <n-grid :cols="5" :x-gap="16" class="desktop-grid">
+        <!-- 左侧：功能列表 -->
+        <n-grid-item span="1">
+          <n-space vertical>
+            <div v-for="category in menuOptions" :key="category.key">
+              <div class="category-header">
+                <n-icon size="20" :color="category.iconColor">
+                  <component :is="category.icon" />
+                </n-icon>
+                <span class="category-name">{{ category.label }}</span>
+              </div>
+              <n-card 
+                v-for="item in category.children" 
+                :key="item.key"
+                hoverable 
+                class="function-list-card"
+                :class="{ active: selectedKey === item.key }"
+                @click="handleMenuSelect(item.key)"
+              >
+                <n-space align="center">
+                  <div class="function-icon" :class="{ active: selectedKey === item.key }">
+                    <n-icon size="20">
+                      <component :is="item.icon" />
+                    </n-icon>
                   </div>
-                </template>
-                <template #header>
-                  <div class="app-title">{{ app.name }}</div>
-                </template>
-                <div class="app-desc">{{ app.brief || app.description }}</div>
-                <template #footer>
-                  <n-space vertical size="small">
-                    <n-space wrap :size="4">
-                      <n-tag v-for="cat in app.category" :key="cat" size="small" round>
-                        {{ cat }}
-                      </n-tag>
-                    </n-space>
-                    <n-space :size="4">
-                      <n-tag size="small" :bordered="false" type="success" v-if="app.supportPC">PC端</n-tag>
-                      <n-tag size="small" :bordered="false" type="info" v-if="app.supportMobile">移动端</n-tag>
-                    </n-space>
-                  </n-space>
-                </template>
+                  <span class="function-name">{{ item.label }}</span>
+                </n-space>
               </n-card>
-            </n-grid-item>
-          </n-grid>
-        </n-card>
+            </div>
+          </n-space>
+        </n-grid-item>
+
+        <!-- 右侧：内容区 -->
+        <n-grid-item span="4">
+          <n-card class="function-content">
+            <template #header v-if="selectedCategory">
+              <n-space align="center">
+                <div class="function-icon large">
+                  <n-icon size="24">
+                    <component :is="selectedCategory.icon" />
+                  </n-icon>
+                </div>
+                <span class="content-title">{{ selectedCategory.label }}</span>
+              </n-space>
+            </template>
+            <!-- 应用列表 -->
+            <n-grid :cols="3" :x-gap="16" :y-gap="16" responsive="screen" v-if="categoryApps.length">
+              <n-grid-item v-for="app in categoryApps" :key="app.pkgId">
+                <n-card class="app-card" hoverable @click="handleAppClick(app)">
+                  <template #cover>
+                    <div class="app-icon">
+                      <n-image
+                        :src="getAppIcon(app)"
+                        :fallback-src="defaultIcon"
+                        preview-disabled
+                        object-fit="contain"
+                      />
+                    </div>
+                  </template>
+                  <template #header>
+                    <div class="app-title">{{ app.name }}</div>
+                  </template>
+                  <div class="app-desc">{{ app.brief || app.description }}</div>
+                  <template #footer>
+                    <n-space vertical size="small">
+                      <n-space wrap :size="4">
+                        <n-tag v-for="cat in app.category" :key="cat" size="small" round>
+                          {{ cat }}
+                        </n-tag>
+                      </n-space>
+                      <n-space :size="4">
+                        <n-tag size="small" :bordered="false" type="success" v-if="app.supportPC">PC端</n-tag>
+                        <n-tag size="small" :bordered="false" type="info" v-if="app.supportMobile">移动端</n-tag>
+                      </n-space>
+                    </n-space>
+                  </template>
+                </n-card>
+              </n-grid-item>
+            </n-grid>
+            <n-empty v-else description="暂无应用" />
+          </n-card>
+        </n-grid-item>
+      </n-grid>
+
+      <!-- 移动端布局 -->
+      <div class="mobile-layout">
+        <div class="mobile-menu">
+          <n-scrollbar x-scrollable>
+            <div class="mobile-tabs">
+              <div
+                v-for="item in getAllMenuItems()"
+                :key="item.key"
+                class="mobile-tab"
+                :class="{ active: selectedKey === item.key }"
+                @click="handleMenuSelect(item.key)"
+              >
+                <n-icon size="20">
+                  <component :is="item.icon" />
+                </n-icon>
+                <span>{{ item.label }}</span>
+              </div>
+            </div>
+          </n-scrollbar>
+        </div>
+
+        <div class="mobile-content">
+          <n-card v-if="selectedCategory">
+            <template #header>
+              <n-space align="center">
+                <div class="function-icon">
+                  <n-icon size="20">
+                    <component :is="selectedCategory.icon" />
+                  </n-icon>
+                </div>
+                <span class="content-title">{{ selectedCategory.label }}</span>
+              </n-space>
+            </template>
+            <n-grid :cols="1" :y-gap="16">
+              <n-grid-item v-for="app in categoryApps" :key="app.pkgId">
+                <n-card class="app-card" hoverable @click="handleAppClick(app)">
+                  <n-space align="center">
+                    <div class="app-icon small">
+                      <n-image
+                        :src="getAppIcon(app)"
+                        :fallback-src="defaultIcon"
+                        preview-disabled
+                        object-fit="contain"
+                      />
+                    </div>
+                    <div class="app-info">
+                      <div class="app-title">{{ app.name }}</div>
+                      <div class="app-desc">{{ app.brief || app.description }}</div>
+                      <n-space wrap :size="4" style="margin-top: 8px">
+                        <n-tag size="small" :bordered="false" type="success" v-if="app.supportPC">PC端</n-tag>
+                        <n-tag size="small" :bordered="false" type="info" v-if="app.supportMobile">移动端</n-tag>
+                      </n-space>
+                    </div>
+                  </n-space>
+                </n-card>
+              </n-grid-item>
+            </n-grid>
+          </n-card>
+        </div>
       </div>
     </div>
   </div>
@@ -82,16 +171,19 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   NInput,
+  NInputGroup,
   NButton,
-  NMenu,
-  NCard,
   NGrid,
   NGridItem,
+  NCard,
   NSpace,
+  NIcon,
   NTag,
-  NImage
+  NImage,
+  NEmpty,
+  NScrollbar
 } from 'naive-ui'
-import type { MenuOption } from 'naive-ui'
+import type { Component } from 'vue'
 import { 
   GameControllerOutline,
   CodeSlashOutline,
@@ -103,7 +195,6 @@ import {
   RefreshOutline
 } from '@vicons/ionicons5'
 import { h } from 'vue'
-import type { Component } from 'vue'
 
 interface AppInfo {
   name: string;
@@ -130,83 +221,114 @@ const renderIcon = (icon: Component) => {
 }
 
 // 菜单配置
-const menuOptions: MenuOption[] = [
+const menuOptions = [
   {
     label: '排行榜',
     key: 'rankings',
-    icon: renderIcon(TrophyOutline),
+    icon: TrophyOutline,
+    iconColor: '#ffb800',
     children: [
       {
         label: '最受欢迎',
         key: 'most-popular',
-        icon: renderIcon(RocketOutline)
+        icon: RocketOutline,
+        iconColor: '#ffb800'
       },
       {
         label: '月度新品推荐',
         key: 'monthly-new',
-        icon: renderIcon(TimeOutline)
+        icon: TimeOutline,
+        iconColor: '#13c2c2'
       },
       {
         label: '最新上架',
         key: 'latest',
-        icon: renderIcon(RocketOutline)
+        icon: RocketOutline,
+        iconColor: '#722ed1'
       },
       {
         label: '最近更新',
         key: 'recently-updated',
-        icon: renderIcon(RefreshOutline)
+        icon: RefreshOutline,
+        iconColor: '#2f54eb'
       }
     ]
   },
   {
     label: '开始探索',
     key: 'explore',
-    icon: renderIcon(SearchOutline)
-  },
-  {
-    label: '游戏',
-    key: 'games',
-    icon: renderIcon(GameControllerOutline)
-  },
-  {
-    label: '开发工具',
-    key: 'dev-tools',
-    icon: renderIcon(CodeSlashOutline)
-  },
-  {
-    label: '阅读学习',
-    key: 'education',
-    icon: renderIcon(BookOutline)
+    icon: SearchOutline,
+    iconColor: '#13c2c2',
+    children: [
+      {
+        label: '游戏',
+        key: 'games',
+        icon: GameControllerOutline,
+        iconColor: '#ff4d4f'
+      },
+      {
+        label: '开发工具',
+        key: 'dev-tools',
+        icon: CodeSlashOutline,
+        iconColor: '#1890ff'
+      },
+      {
+        label: '阅读学习',
+        key: 'education',
+        icon: BookOutline,
+        iconColor: '#722ed1'
+      }
+    ]
   }
 ]
 
 // 获取当前选中的分类信息
 const selectedCategory = computed(() => {
   if (!selectedKey.value) return null
-  const findCategory = (options: MenuOption[]): MenuOption | null => {
-    for (const option of options) {
-      if (option.key === selectedKey.value) return option
-      if (option.children) {
-        const found = findCategory(option.children)
-        if (found) return found
-      }
+  for (const category of menuOptions) {
+    if (category.children) {
+      const found = category.children.find(item => item.key === selectedKey.value)
+      if (found) return found
     }
-    return null
   }
-  return findCategory(menuOptions)
+  return null
 })
+
+// 获取所有菜单项（用于移动端展示）
+const getAllMenuItems = () => {
+  const items = []
+  for (const category of menuOptions) {
+    if (category.children) {
+      items.push(...category.children)
+    }
+  }
+  return items
+}
 
 // 处理搜索
 const handleSearch = () => {
   if (!searchQuery.value.trim()) return
-  // TODO: 实现搜索功能
-  console.log('Searching for:', searchQuery.value)
+  router.push({ name: 'Search', query: { q: searchQuery.value } })
 }
 
 // 处理菜单选择
 const handleMenuSelect = async (key: string) => {
   selectedKey.value = key
-  await fetchCategoryApps(key)
+  
+  // 根据不同的key跳转到对应的路由
+  const routeMap: Record<string, { name: string }> = {
+    'games': { name: 'Games' },
+    'dev-tools': { name: 'DevTools' },
+    'education': { name: 'Education' },
+    'most-popular': { name: 'MostPopular' },
+    'monthly-new': { name: 'MonthlyNew' },
+    'latest': { name: 'LatestRelease' },
+    'recently-updated': { name: 'RecentUpdates' }
+  }
+
+  if (routeMap[key]) {
+    router.push(routeMap[key])
+  }
 }
 
 // 获取应用图标URL
@@ -226,6 +348,7 @@ const fetchCategoryApps = async (categoryKey: string) => {
     }
   } catch (error) {
     console.error('Failed to fetch category apps:', error)
+    categoryApps.value = []
   }
 }
 
@@ -246,7 +369,7 @@ const handleAppClick = (app: AppInfo) => {
   padding: 24px;
 }
 
-.search-bar {
+.search-section {
   margin-bottom: 24px;
 }
 
@@ -255,39 +378,97 @@ const handleAppClick = (app: AppInfo) => {
   margin: 0 auto;
 }
 
+:deep(.n-input-group) {
+  width: 600px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
 .main-content {
-  display: flex;
-  gap: 24px;
   flex: 1;
   min-height: 0;
 }
 
-.function-list {
-  width: 200px;
+.desktop-grid {
+  height: 100%;
+}
+
+.mobile-layout {
+  display: none;
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.category-name {
+  font-size: 16px;
+}
+
+.function-list-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 12px;
+}
+
+.function-list-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.function-list-card.active {
+  border-color: #18a058;
+  background-color: #f0faf5;
+}
+
+.function-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #f5f5f5;
+  transition: all 0.3s ease;
   flex-shrink: 0;
 }
 
-.content-area {
-  flex: 1;
+.function-icon.active {
+  background: #18a058;
+  color: white;
+}
+
+.function-icon.large {
+  width: 48px;
+  height: 48px;
+}
+
+.function-icon.small {
+  width: 32px;
+  height: 32px;
+}
+
+.function-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.function-content {
+  height: 100%;
   overflow: auto;
 }
 
-.custom-menu {
-  background: transparent;
-}
-
-.custom-menu :deep(.n-menu-item) {
-  height: 50px;
-  margin: 4px 0;
-}
-
-.custom-menu :deep(.n-menu-item-content) {
-  border-radius: 8px;
-}
-
-.custom-menu :deep(.n-menu-item-content--selected) {
-  background-color: rgba(31, 143, 255, 0.1);
-  border: 1px solid #1f8fff;
+.content-title {
+  font-size: 18px;
+  font-weight: 500;
 }
 
 .app-card {
@@ -332,25 +513,9 @@ const handleAppClick = (app: AppInfo) => {
   -webkit-box-orient: vertical;
 }
 
-.menu-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.category-header {
-  margin-bottom: 24px;
-}
-
-.category-header h2 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 500;
-}
-
-.category-header p {
-  margin: 8px 0 0;
-  color: #666;
+.app-info {
+  flex: 1;
+  min-width: 0;
 }
 
 @media screen and (max-width: 1200px) {
@@ -363,13 +528,41 @@ const handleAppClick = (app: AppInfo) => {
   .explore-view {
     padding: 16px;
   }
-  
-  .main-content {
-    gap: 16px;
+
+  .desktop-grid {
+    display: none !important;
   }
 
-  .function-list {
-    width: 160px;
+  .mobile-layout {
+    display: block;
+  }
+
+  .mobile-menu {
+    margin-bottom: 16px;
+  }
+
+  .mobile-tabs {
+    display: flex;
+    padding: 8px;
+    gap: 12px;
+    min-width: min-content;
+  }
+
+  .mobile-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .mobile-tab.active {
+    background: #f0faf5;
+    color: #18a058;
   }
 
   .app-icon {
@@ -382,13 +575,13 @@ const handleAppClick = (app: AppInfo) => {
   .n-grid {
     --n-cols: 1 !important;
   }
-  
-  .main-content {
-    flex-direction: column;
+
+  .search-section {
+    margin: 8px auto 16px;
   }
 
-  .function-list {
-    width: 100%;
+  :deep(.n-input-group) {
+    max-width: calc(100% - 16px);
   }
 }
 </style> 

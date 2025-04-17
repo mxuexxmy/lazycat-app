@@ -70,7 +70,6 @@ import {
   NSpin,
   NAvatar
 } from 'naive-ui'
-import type { SelectOption } from 'naive-ui'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 
@@ -144,8 +143,7 @@ const fetchCategories = async () => {
 const fetchRecentUpdates = async () => {
   loading.value = true
   try {
-    const url = 'https://appstore.api.lazycat.cloud/api/app/list' + 
-      (selectedCategory.value ? `?categories=${selectedCategory.value}` : '')
+    const url = `https://appstore.api.lazycat.cloud/api/app/list${selectedCategory.value ? `?categories=${selectedCategory.value}` : ''}`
     const response = await fetch(url)
     const result = await response.json()
     if (result.success && Array.isArray(result.data)) {
