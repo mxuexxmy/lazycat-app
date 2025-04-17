@@ -68,7 +68,7 @@ const router = useRouter()
 const getAppIcon = (app: AppInfo) => {
   if (!app.iconPath) return defaultIcon
   const iconPath = app.iconPath.startsWith('/') ? app.iconPath.slice(1) : app.iconPath
-  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/${iconPath}`
+  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`
 }
 
 const formatUpdateTime = (time: string) => {
@@ -88,7 +88,7 @@ const getUpdateTagType = (time: string) => {
 const fetchRecentUpdates = async () => {
   loading.value = true
   try {
-    const response = await fetch('https://appstore.api.lazycat.cloud/api/app/recent-updates')
+    const response = await fetch('https://appstore.api.lazycat.cloud/api/app/list')
     const result = await response.json()
     if (result.success && Array.isArray(result.data)) {
       apps.value = result.data
