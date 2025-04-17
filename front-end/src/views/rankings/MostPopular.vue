@@ -4,7 +4,7 @@
       <n-spin :show="loading">
         <n-empty v-if="!loading && (!apps || apps.length === 0)" description="暂无数据" />
         <n-list v-else>
-          <n-list-item v-for="app in apps" :key="app.pkgId">
+          <n-list-item v-for="app in apps" :key="app.pkgId" class="app-item" @click="handleAppClick(app)">
             <n-thing>
               <template #header>
                 <n-space align="center">
@@ -14,12 +14,12 @@
                     size="small"
                     object-fit="contain"
                   />
-                  <span>{{ app.name }}</span>
+                  <span class="app-name">{{ app.name }}</span>
                   <n-tag type="success">下载量: {{ app.downloads }}</n-tag>
                 </n-space>
               </template>
               <template #description>
-                {{ app.brief || app.description }}
+                <div class="app-desc">{{ app.brief || app.description }}</div>
               </template>
               <template #footer>
                 <n-space>
@@ -40,6 +40,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { NCard, NList, NListItem, NThing, NTag, NEmpty, NSpin, NSpace, NAvatar } from 'naive-ui'
 
 interface AppInfo {
@@ -58,6 +59,7 @@ interface AppInfo {
 const loading = ref(false)
 const apps = ref<AppInfo[]>([])
 const defaultIcon = '/path/to/default-icon.png'
+const router = useRouter()
 
 const getAppIcon = (app: AppInfo) => {
   if (!app.iconPath) return defaultIcon
@@ -79,6 +81,13 @@ const fetchMostPopularApps = async () => {
   }
 }
 
+const handleAppClick = (app: AppInfo) => {
+  router.push({
+    name: 'AppDetail',
+    params: { pkgId: app.pkgId }
+  })
+}
+
 onMounted(() => {
   fetchMostPopularApps()
 })
@@ -86,6 +95,70 @@ onMounted(() => {
 
 <style scoped>
 .most-popular {
-  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.app-item {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.app-item:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.app-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.app-desc {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 8px 0;
+}
+
+:deep(.n-card) {
+  border-radius: 8px;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  .most-popular {
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  :deep(.n-card) {
+    border-radius: 0;
+  }
+
+  .app-name {
+    font-size: 15px;
+  }
+
+  .app-desc {
+    font-size: 13px;
+    margin: 4px 0;
+  }
+
+  :deep(.n-tag) {
+    font-size: 12px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .app-name {
+    font-size: 14px;
+  }
+
+  .app-desc {
+    font-size: 12px;
+  }
 }
 </style> 

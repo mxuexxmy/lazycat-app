@@ -4,7 +4,7 @@
       <n-spin :show="loading">
         <n-empty v-if="!loading && (!apps || apps.length === 0)" description="暂无数据" />
         <n-list v-else>
-          <n-list-item v-for="app in apps" :key="app.pkgId">
+          <n-list-item v-for="app in apps" :key="app.pkgId" class="app-item" @click="handleAppClick(app)">
             <n-thing>
               <template #header>
                 <n-space align="center">
@@ -40,6 +40,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { NCard, NList, NListItem, NThing, NTag, NEmpty, NSpin, NSpace, NAvatar } from 'naive-ui'
 
 interface AppInfo {
@@ -57,6 +58,7 @@ interface AppInfo {
 const loading = ref(false)
 const apps = ref<AppInfo[]>([])
 const defaultIcon = '/path/to/default-icon.png'
+const router = useRouter()
 
 const getAppIcon = (app: AppInfo) => {
   if (!app.iconPath) return defaultIcon
@@ -78,6 +80,13 @@ const fetchLatestReleaseApps = async () => {
   }
 }
 
+const handleAppClick = (app: AppInfo) => {
+  router.push({
+    name: 'AppDetail',
+    params: { pkgId: app.pkgId }
+  })
+}
+
 onMounted(() => {
   fetchLatestReleaseApps()
 })
@@ -86,5 +95,14 @@ onMounted(() => {
 <style scoped>
 .latest-release {
   padding: 16px;
+}
+
+.app-item {
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.app-item:hover {
+  background-color: rgba(0, 0, 0, 0.02);
 }
 </style> 

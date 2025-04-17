@@ -65,11 +65,21 @@ interface DeveloperData {
   updates: number
 }
 
-const loading = ref(true)
-const monthlyData = ref<{ date: string; count: number }[]>([])
-const categoryData = ref<{ name: string; value: number }[]>([])
+interface ChartData {
+  date: string
+  count: number
+}
+
+interface CategoryData {
+  name: string
+  value: number
+}
+
+const loading = ref<boolean>(true)
+const monthlyData = ref<ChartData[]>([])
+const categoryData = ref<CategoryData[]>([])
 const developerData = ref<DeveloperData[]>([])
-const updateData = ref<{ date: string; count: number }[]>([])
+const updateData = ref<ChartData[]>([])
 
 const monthlyChartRef = ref<HTMLElement | null>(null)
 const categoryChartRef = ref<HTMLElement | null>(null)
@@ -81,13 +91,20 @@ let categoryChart: echarts.ECharts | null = null
 let developerActivityChart: echarts.ECharts | null = null
 let updateFrequencyChart: echarts.ECharts | null = null
 
+interface ApiResponse<T> {
+  success: boolean
+  data: T
+  message: string
+  errorCode: number
+}
+
 // 获取应用列表数据
-const fetchAppData = async () => {
+const fetchAppData = async (): Promise<void> => {
   try {
     const response = await fetch('https://appstore.api.lazycat.cloud/api/app/list')
-    const result = await response.json()
+    const result: ApiResponse<AppInfo[]> = await response.json()
     if (result.success && Array.isArray(result.data)) {
-      processAppData(result.data)
+      await processAppData(result.data)
     }
   } catch (error) {
     console.error('Failed to fetch app data:', error)
@@ -100,7 +117,7 @@ const fetchAppData = async () => {
 const fetchDeveloperNickname = async (pkgId: string): Promise<string> => {
   try {
     const response = await fetch(`https://appstore.api.lazycat.cloud/api/app/developer/${pkgId}`)
-    const result = await response.json()
+    const result: ApiResponse<DeveloperInfo> = await response.json()
     if (result.success && result.data?.nickname) {
       return result.data.nickname
     }
@@ -110,8 +127,16 @@ const fetchDeveloperNickname = async (pkgId: string): Promise<string> => {
   return ''
 }
 
+interface DeveloperStats {
+  count: number
+  pkgId: string
+  creator: string
+  updates: number
+  lastUpdate: string
+}
+
 // 处理应用数据
-const processAppData = async (apps: AppInfo[]) => {
+const processAppData = async (apps: AppInfo[]): Promise<void> => {
   // 处理月度新增应用数据
   const monthlyApps = new Map<string, number>()
   for (const app of apps) {
@@ -134,13 +159,7 @@ const processAppData = async (apps: AppInfo[]) => {
     .sort((a, b) => b.value - a.value)
 
   // 处理开发者数据
-  const developers = new Map<number, { 
-    count: number; 
-    pkgId: string; 
-    creator: string;
-    updates: number;
-    lastUpdate: string;
-  }>()
+  const developers = new Map<number, DeveloperStats>()
   
   for (const app of apps) {
     const dev = developers.get(app.creatorId) || { 
@@ -498,6 +517,12 @@ onUnmounted(() => {
   background-color: #f5f7fa;
 }
 
+.trend-analysis :deep(.n-space) {
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+}
+
 .chart-container {
   height: 360px;
   background-color: #fff;
@@ -511,11 +536,22 @@ onUnmounted(() => {
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  width: 100%;
 }
 
 :deep(.n-card-header) {
   font-size: 16px;
   font-weight: 500;
+}
+
+@media screen and (max-width: 1200px) {
+  .trend-analysis {
+    padding: 16px;
+  }
+
+  .trend-analysis :deep(.n-space) {
+    padding: 0;
+  }
 }
 
 @media screen and (max-width: 768px) {
