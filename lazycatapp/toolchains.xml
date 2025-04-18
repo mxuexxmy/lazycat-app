@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<toolchains>
+    <toolchain>
+        <type>jdk</type>
+        <provides>
+            <version>17</version>
+            <vendor>oracle</vendor>
+        </provides>
+        <configuration>
+            <jdkHome>C:\Dev\Java\jdk-17.0.13</jdkHome>
+        </configuration>
+    </toolchain>
+</toolchains> 

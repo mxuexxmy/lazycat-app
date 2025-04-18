@@ -23,7 +23,7 @@ icon: ./icon.png
 # 如果 dependencies 和 build 同时存在，将会优先使用 dependencies
 devshell:
   routes:
-    - /=http://192.168.31.107:3000
+    - /=http://192.168.31.107:8080
   dependencies:
     - nodejs
     - npm

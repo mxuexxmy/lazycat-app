@@ -1,0 +1,15 @@
+package xyz.mxue.lazycatapp;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+@SpringBootApplication
+@EnableScheduling
+public class LazycatappApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(LazycatappApplication.class, args);
+    }
+
+}
