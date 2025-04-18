@@ -16,8 +16,12 @@ import xyz.mxue.lazycatapp.repository.AppRepository;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -33,6 +37,10 @@ public class AppService {
     
     public Page<App> findAll(Pageable pageable) {
         return appRepository.findAll(pageable);
+    }
+    
+    public List<App> findAll() {
+        return appRepository.findAll();
     }
     
     public Optional<App> findByPkgId(String pkgId) {
@@ -55,6 +63,43 @@ public class AppService {
         return appRepository.findTopNByOrderByUpdateIdDesc(limit);
     }
     
+    public List<App> searchAll(String keyword) {
+        return appRepository.findByNameContainingOrDescriptionContaining(keyword, keyword);
+    }
+    
+    public List<App> findUsedApps(int limit) {
+        return appRepository.findTopNByOrderByDownloadCountDesc(limit);
+    }
+    
+    public List<Map<String, Object>> getDeveloperRanking() {
+        List<App> allApps = appRepository.findAll();
+        Map<Long, Map<String, Object>> developerStats = new HashMap<>();
+        
+        // 统计每个开发者的应用数量和总下载量
+        for (App app : allApps) {
+            Long creatorId = app.getCreatorId();
+            if (creatorId != null) {
+                developerStats.computeIfAbsent(creatorId, k -> {
+                    Map<String, Object> stats = new HashMap<>();
+                    stats.put("creatorId", creatorId);
+                    stats.put("creator", app.getCreator());
+                    stats.put("appCount", 0);
+                    stats.put("totalDownloads", 0);
+                    return stats;
+                });
+                
+                Map<String, Object> stats = developerStats.get(creatorId);
+                stats.put("appCount", (Integer) stats.get("appCount") + 1);
+                stats.put("totalDownloads", (Integer) stats.get("totalDownloads") + (app.getDownloadCount() != null ? app.getDownloadCount() : 0));
+            }
+        }
+        
+        // 转换为列表并按总下载量排序
+        return developerStats.values().stream()
+                .sorted((a, b) -> ((Integer) b.get("totalDownloads")).compareTo((Integer) a.get("totalDownloads")))
+                .collect(Collectors.toList());
+    }
+    
     @Scheduled(fixedRate = 600000) // 每10分钟执行一次
     public void updateApps() {
         log.info("开始更新应用信息...");
@@ -75,11 +120,19 @@ public class AppService {
                 
                 if (appListResponse.errorCode == 0 && appListResponse.data != null) {
                     List<App> apps = Arrays.asList(appListResponse.data);
+                    List<App> existingApps = appRepository.findAll();
+                    Set<String> existingPkgIds = existingApps.stream()
+                            .map(App::getPkgId)
+                            .collect(Collectors.toSet());
+                    
                     for (App app : apps) {
                         app.setLastUpdated(Instant.now().toString());
                         app.setPackageName(app.getPkgId());
-                        // 获取下载量
-                        updateDownloadCount(app);
+                        
+                        // 只在新增应用时获取下载量
+                        if (!existingPkgIds.contains(app.getPkgId())) {
+                            updateDownloadCount(app);
+                        }
                     }
                     appRepository.saveAll(apps);
                     log.info("成功更新 {} 个应用信息", apps.size());

@@ -10,6 +10,7 @@ import xyz.mxue.lazycatapp.entity.App;
 import xyz.mxue.lazycatapp.service.AppService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/apps")
@@ -29,6 +30,11 @@ public class AppController {
         return ResponseEntity.ok(appService.findAll(pageRequest));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<App>> getAllApps() {
+        return ResponseEntity.ok(appService.findAll());
+    }
+
     @GetMapping("/{pkgId}")
     public ResponseEntity<App> getApp(@PathVariable String pkgId) {
         return appService.findByPkgId(pkgId)
@@ -43,6 +49,11 @@ public class AppController {
             @RequestParam(defaultValue = "10") int size) {
         PageRequest pageRequest = PageRequest.of(page, size);
         return ResponseEntity.ok(appService.search(keyword, pageRequest));
+    }
+
+    @GetMapping("/search/all")
+    public ResponseEntity<List<App>> searchAllApps(@RequestParam String keyword) {
+        return ResponseEntity.ok(appService.searchAll(keyword));
     }
 
     @GetMapping("/category/{category}")
@@ -64,5 +75,16 @@ public class AppController {
     public ResponseEntity<List<App>> getPopularApps(
             @RequestParam(defaultValue = "10") int limit) {
         return ResponseEntity.ok(appService.findPopularApps(limit));
+    }
+
+    @GetMapping("/used")
+    public ResponseEntity<List<App>> getUsedApps(
+            @RequestParam(defaultValue = "10") int limit) {
+        return ResponseEntity.ok(appService.findUsedApps(limit));
+    }
+
+    @GetMapping("/developers/ranking")
+    public ResponseEntity<List<Map<String, Object>>> getDeveloperRanking() {
+        return ResponseEntity.ok(appService.getDeveloperRanking());
     }
 } 

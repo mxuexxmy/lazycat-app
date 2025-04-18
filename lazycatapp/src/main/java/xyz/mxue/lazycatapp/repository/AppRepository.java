@@ -23,4 +23,9 @@ public interface AppRepository extends JpaRepository<App, String> {
     
     @Query("SELECT a FROM App a WHERE (:platform = 'PC' AND a.supportPC = true) OR (:platform = 'Mobile' AND a.supportMobile = true)")
     List<App> findByPlatformSupport(@Param("platform") String platform);
+    
+    List<App> findByNameContainingOrDescriptionContaining(String name, String description);
+    
+    @Query(value = "SELECT * FROM apps ORDER BY download_count DESC LIMIT ?1", nativeQuery = true)
+    List<App> findTopNByOrderByDownloadCountDesc(int limit);
 } 
