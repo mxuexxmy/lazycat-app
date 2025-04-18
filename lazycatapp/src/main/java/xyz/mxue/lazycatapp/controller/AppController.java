@@ -11,6 +11,7 @@ import xyz.mxue.lazycatapp.service.AppService;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/apps")
@@ -74,7 +75,13 @@ public class AppController {
     @GetMapping("/popular")
     public ResponseEntity<List<App>> getPopularApps(
             @RequestParam(defaultValue = "10") int limit) {
-        return ResponseEntity.ok(appService.findPopularApps(limit));
+        List<App> apps = appService.findPopularApps(limit);
+        apps.sort((a, b) -> {
+            int aCount = a.getDownloadCount() != null ? a.getDownloadCount() : 0;
+            int bCount = b.getDownloadCount() != null ? b.getDownloadCount() : 0;
+            return Integer.compare(bCount, aCount);
+        });
+        return ResponseEntity.ok(apps);
     }
 
     @GetMapping("/used")
@@ -84,7 +91,26 @@ public class AppController {
     }
 
     @GetMapping("/developers/ranking")
-    public ResponseEntity<List<Map<String, Object>>> getDeveloperRanking() {
-        return ResponseEntity.ok(appService.getDeveloperRanking());
+    public ResponseEntity<Map<String, Object>> getDeveloperRanking() {
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "data", appService.getDeveloperRanking()
+        ));
+    }
+
+    @GetMapping("/developers/{creatorId}/apps")
+    public ResponseEntity<Map<String, Object>> getAppsByCreatorId(@PathVariable Long creatorId) {
+        List<App> apps = appService.findByCreatorId(creatorId);
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "data", apps.stream()
+                .map(app -> Map.of(
+                    "pkgId", app.getPkgId(),
+                    "name", app.getName(),
+                    "updateDate", app.getUpdateDate(),
+                    "downloadCount", app.getDownloadCount()
+                ))
+                .collect(Collectors.toList())
+        ));
     }
 } 

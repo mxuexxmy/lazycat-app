@@ -88,10 +88,21 @@ const getUpdateTagType = (time: string) => {
 const fetchRecentUpdates = async () => {
   loading.value = true
   try {
-    const response = await fetch('https://appstore.api.lazycat.cloud/api/app/list')
+    const response = await fetch('/api/apps/latest')
     const result = await response.json()
-    if (result.success && Array.isArray(result.data)) {
-      apps.value = result.data
+    if (Array.isArray(result)) {
+      apps.value = result.map(app => ({
+        pkgId: app.pkgId,
+        name: app.name,
+        description: app.description,
+        brief: app.brief,
+        category: app.category || [],
+        iconPath: app.iconPath,
+        version: app.version,
+        updateDate: app.updateDate,
+        supportPC: app.supportPC,
+        supportMobile: app.supportMobile
+      }))
     }
   } catch (error) {
     console.error('Failed to fetch recent updates:', error)

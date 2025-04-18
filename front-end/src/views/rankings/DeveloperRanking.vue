@@ -9,13 +9,17 @@
               <div class="rank" :class="getRankClass(index + 1)">
                 {{ index + 1 }}
               </div>
-              <n-avatar
-                round
-                size="large"
-                :style="{ background: getAvatarColor(developer.name) }"
-              >
-                {{ getFirstChar(developer.name) }}
-              </n-avatar>
+              <div class="avatar-wrapper">
+                <img
+                  v-if="developer.avatar"
+                  :src="developer.avatar"
+                  :alt="developer.name"
+                  class="avatar-img"
+                />
+                <div v-else class="avatar-placeholder" :style="{ background: getAvatarColor(developer.name) }">
+                  {{ getFirstChar(developer.name) }}
+                </div>
+              </div>
               <div class="developer-info">
                 <div class="developer-name">{{ developer.name }}</div>
                 <div class="developer-stats">
@@ -75,11 +79,28 @@ interface App {
 interface Developer {
   creatorId: number
   name: string
-  nickname?: string
+  avatar?: string
   apps: App[]
   appCount: number
   totalDownloads: number
   lastUpdateDate: string
+}
+
+interface DeveloperRankingResponse {
+  success: boolean
+  data: Array<{
+    creatorId: number
+    name: string
+    avatar?: string
+    apps: Array<{
+      pkgId: string
+      name: string
+      updateDate: string
+    }>
+    appCount: number
+    totalDownloads: number
+    lastUpdateDate: string
+  }>
 }
 
 const router = useRouter()
@@ -139,74 +160,25 @@ const handleAppClick = (app: App) => {
   })
 }
 
-const fetchDeveloperNickname = async (pkgId: string): Promise<string | null> => {
-  try {
-    const response = await fetch(`https://appstore.api.lazycat.cloud/api/app/developer/${pkgId}`)
-    const result = await response.json()
-    if (result.success && result.data?.nickname) {
-      return result.data.nickname
-    }
-  } catch (error) {
-    console.error('Failed to fetch developer nickname:', error)
-  }
-  return null
-}
-
 const fetchAllApps = async () => {
   try {
     loading.value = true
-    const response = await fetch('https://appstore.api.lazycat.cloud/api/app/list')
-    const result = await response.json()
+    const response = await fetch('/api/apps/developers/ranking')
+    const result = await response.json() as DeveloperRankingResponse
     
     if (result.success && result.data) {
-      // 按开发者ID分组应用
-      const developerMap = new Map<number, Developer>()
-      
-      for (const app of result.data as AppData[]) {
-        const creatorId = app.creatorId
-        if (!developerMap.has(creatorId)) {
-          developerMap.set(creatorId, {
-            creatorId,
-            name: '匿名开发者', // 默认为匿名开发者
-            apps: [],
-            appCount: 0,
-            totalDownloads: 0,
-            lastUpdateDate: app.updateDate
-          })
-        }
-        
-        const developer = developerMap.get(creatorId)
-        if (developer) {
-          developer.apps.push({
-            pkgId: app.pkgId,
-            name: app.name,
-            updateDate: app.updateDate,
-            downloads: 0
-          })
-          
-          developer.appCount = developer.apps.length
-          if (new Date(app.updateDate) > new Date(developer.lastUpdateDate)) {
-            developer.lastUpdateDate = app.updateDate
-          }
-        }
-      }
-      
-      // 获取开发者昵称
-      const developerList = Array.from(developerMap.values())
-      for (const developer of developerList) {
-        if (developer.apps.length > 0) {
-          const nickname = await fetchDeveloperNickname(developer.apps[0].pkgId)
-          if (nickname) {
-            developer.nickname = nickname
-            developer.name = nickname
-          }
-        }
-      }
-      
-      developers.value = developerList
+      developers.value = result.data.map(developer => ({
+        creatorId: developer.creatorId,
+        name: developer.name,
+        avatar: developer.avatar,
+        apps: developer.apps,
+        appCount: developer.appCount,
+        totalDownloads: developer.totalDownloads,
+        lastUpdateDate: developer.lastUpdateDate
+      }))
     }
   } catch (error) {
-    console.error('Failed to fetch apps:', error)
+    console.error('Failed to fetch developer ranking:', error)
   } finally {
     loading.value = false
   }
@@ -295,10 +267,39 @@ onMounted(() => {
   background-color: #f0faf5;
 }
 
-:deep(.n-avatar) {
+.avatar-wrapper {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  perspective: 1000px;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  transition: all 0.6s ease-in-out;
+  transform-style: preserve-3d;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #fff;
   font-size: 18px;
-  flex-shrink: 0;
+  transition: all 0.6s ease-in-out;
+  transform-style: preserve-3d;
+}
+
+.avatar-wrapper:hover .avatar-img,
+.avatar-wrapper:hover .avatar-placeholder {
+  transform: rotateY(360deg);
 }
 
 /* 移动端适配 */
@@ -348,12 +349,6 @@ onMounted(() => {
     width: 28px;
     height: 28px;
     font-size: 14px;
-  }
-
-  :deep(.n-avatar) {
-    width: 36px !important;
-    height: 36px !important;
-    font-size: 16px !important;
   }
 
   .developer-name {

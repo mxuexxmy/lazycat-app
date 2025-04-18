@@ -13,6 +13,7 @@ import xyz.mxue.lazycatapp.repository.CommunityUserRepository;
 import xyz.mxue.lazycatapp.repository.UserInfoRepository;
 
 import java.io.IOException;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -94,6 +95,22 @@ public class UserService {
     
     public CommunityUser getCommunityUser(Long userId) {
         return communityUserRepository.findById(userId).orElse(null);
+    }
+    
+    /**
+     * 获取所有用户个人信息
+     * @return 用户个人信息列表
+     */
+    public List<UserInfo> getAllUserInfos() {
+        return userInfoRepository.findAll();
+    }
+    
+    /**
+     * 获取所有用户社区信息
+     * @return 用户社区信息列表
+     */
+    public List<CommunityUser> getAllCommunityUsers() {
+        return communityUserRepository.findAll();
     }
     
     @lombok.Data

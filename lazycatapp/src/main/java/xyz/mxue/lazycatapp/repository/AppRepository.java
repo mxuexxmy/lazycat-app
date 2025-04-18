@@ -6,9 +6,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import xyz.mxue.lazycatapp.entity.App;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public interface AppRepository extends JpaRepository<App, String> {
     Page<App> findByNameContainingOrDescriptionContaining(String name, String description, Pageable pageable);
     
@@ -28,4 +30,9 @@ public interface AppRepository extends JpaRepository<App, String> {
     
     @Query(value = "SELECT * FROM apps ORDER BY download_count DESC LIMIT ?1", nativeQuery = true)
     List<App> findTopNByOrderByDownloadCountDesc(int limit);
+
+    @Query("SELECT DISTINCT a.creatorId FROM App a WHERE a.creatorId IS NOT NULL")
+    List<Long> findDistinctCreatorIds();
+
+    List<App> findByCreatorId(Long creatorId);
 } 

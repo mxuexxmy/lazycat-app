@@ -25,7 +25,7 @@ public class CategoryService {
     
     private static final String CATEGORY_URL = "https://dl.lazycatmicroserver.com/appstore/metarepo/zh/categories.json";
     
-    @Scheduled(fixedRate = 3600000) // 每小时执行一次
+   // @Scheduled(fixedRate = 3600000) // 每小时执行一次
     public void updateCategories() {
         log.info("开始更新分类信息");
         try {

@@ -11,10 +11,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.entity.App;
+import xyz.mxue.lazycatapp.entity.UserInfo;
 import xyz.mxue.lazycatapp.repository.AppRepository;
+import xyz.mxue.lazycatapp.repository.UserInfoRepository;
+import xyz.mxue.lazycatapp.service.UserService;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +33,8 @@ import java.util.stream.Collectors;
 public class AppService {
     
     private final AppRepository appRepository;
+    private final UserInfoRepository userInfoRepository;
+    private final UserService userService;
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
     
@@ -60,7 +66,15 @@ public class AppService {
     }
     
     public List<App> findPopularApps(int limit) {
-        return appRepository.findTopNByOrderByUpdateIdDesc(limit);
+        List<App> allApps = appRepository.findAll();
+        return allApps.stream()
+            .sorted((a, b) -> {
+                int aCount = a.getDownloadCount() != null ? a.getDownloadCount() : 0;
+                int bCount = b.getDownloadCount() != null ? b.getDownloadCount() : 0;
+                return Integer.compare(bCount, aCount);
+            })
+            .limit(limit)
+            .collect(Collectors.toList());
     }
     
     public List<App> searchAll(String keyword) {
@@ -71,36 +85,66 @@ public class AppService {
         return appRepository.findTopNByOrderByDownloadCountDesc(limit);
     }
     
-    public List<Map<String, Object>> getDeveloperRanking() {
-        List<App> allApps = appRepository.findAll();
-        Map<Long, Map<String, Object>> developerStats = new HashMap<>();
-        
-        // 统计每个开发者的应用数量和总下载量
-        for (App app : allApps) {
-            Long creatorId = app.getCreatorId();
-            if (creatorId != null) {
-                developerStats.computeIfAbsent(creatorId, k -> {
-                    Map<String, Object> stats = new HashMap<>();
-                    stats.put("creatorId", creatorId);
-                    stats.put("creator", app.getCreator());
-                    stats.put("appCount", 0);
-                    stats.put("totalDownloads", 0);
-                    return stats;
-                });
-                
-                Map<String, Object> stats = developerStats.get(creatorId);
-                stats.put("appCount", (Integer) stats.get("appCount") + 1);
-                stats.put("totalDownloads", (Integer) stats.get("totalDownloads") + (app.getDownloadCount() != null ? app.getDownloadCount() : 0));
-            }
-        }
-        
-        // 转换为列表并按总下载量排序
-        return developerStats.values().stream()
-                .sorted((a, b) -> ((Integer) b.get("totalDownloads")).compareTo((Integer) a.get("totalDownloads")))
-                .collect(Collectors.toList());
+    public List<App> findByCreatorId(Long creatorId) {
+        return appRepository.findByCreatorId(creatorId);
     }
     
-    @Scheduled(fixedRate = 600000) // 每10分钟执行一次
+    public List<Map<String, Object>> getDeveloperRanking() {
+        List<Long> creatorIds = appRepository.findDistinctCreatorIds();
+        
+        return creatorIds.stream()
+            .map(creatorId -> {
+                UserInfo userInfo = userInfoRepository.findById(creatorId)
+                    .orElse(new UserInfo());
+                
+                List<App> apps = appRepository.findByCreatorId(creatorId);
+                
+                // 按下载量排序并取前三
+                List<App> topApps = apps.stream()
+                    .sorted((a, b) -> {
+                        int aCount = a.getDownloadCount() != null ? a.getDownloadCount() : 0;
+                        int bCount = b.getDownloadCount() != null ? b.getDownloadCount() : 0;
+                        return Integer.compare(bCount, aCount);
+                    })
+                    .limit(3)
+                    .collect(Collectors.toList());
+                
+                int totalDownloads = apps.stream()
+                    .mapToInt(app -> app.getDownloadCount() != null ? app.getDownloadCount() : 0)
+                    .sum();
+                
+                String lastUpdateDate = apps.stream()
+                    .map(App::getUpdateDate)
+                    .max(String::compareTo)
+                    .orElse("");
+                
+                return Map.of(
+                    "creatorId", creatorId,
+                    "name", userInfo.getNickname() != null ? userInfo.getNickname() : "未知用户",
+                    "avatar", userInfo.getAvatar(),
+                    "apps", topApps.stream()
+                        .map(app -> Map.of(
+                            "pkgId", app.getPkgId(),
+                            "name", app.getName(),
+                            "updateDate", app.getUpdateDate()
+                        ))
+                        .collect(Collectors.toList()),
+                    "appCount", apps.size(),
+                    "totalDownloads", totalDownloads,
+                    "lastUpdateDate", lastUpdateDate
+                );
+            })
+            .sorted((a, b) -> {
+                int appCountCompare = ((Integer) b.get("appCount")).compareTo((Integer) a.get("appCount"));
+                if (appCountCompare != 0) {
+                    return appCountCompare;
+                }
+                return ((Integer) b.get("totalDownloads")).compareTo((Integer) a.get("totalDownloads"));
+            })
+            .collect(Collectors.toList());
+    }
+    
+   // @Scheduled(fixedRate = 600000) // 每10分钟执行一次
     public void updateApps() {
         log.info("开始更新应用信息...");
         try {
@@ -132,6 +176,7 @@ public class AppService {
                         // 只在新增应用时获取下载量
                         if (!existingPkgIds.contains(app.getPkgId())) {
                             updateDownloadCount(app);
+                            userService.updateUserInfo(app.getCreatorId());
                         }
                     }
                     appRepository.saveAll(apps);
@@ -145,7 +190,7 @@ public class AppService {
         }
     }
     
-    @Scheduled(fixedRate = 3600000) // 每小时执行一次
+   // @Scheduled(fixedRate = 3600000) // 每小时执行一次
     public void updateDownloadCounts() {
         log.info("开始更新应用下载量...");
         List<App> apps = appRepository.findAll();
@@ -198,5 +243,13 @@ public class AppService {
         private String message;
         private Integer data;
         private boolean success;
+    }
+
+    /**
+     * 获取所有不重复的开发者ID
+     * @return 开发者ID列表
+     */
+    public List<Long> getDistinctCreatorIds() {
+        return appRepository.findDistinctCreatorIds();
     }
 } 
