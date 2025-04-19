@@ -115,6 +115,10 @@ public class UserService {
         return communityUserRepository.findAll();
     }
     
+    public long count() {
+        return userInfoRepository.count();
+    }
+    
     @lombok.Data
     private static class UserResponse {
         private Long uid;

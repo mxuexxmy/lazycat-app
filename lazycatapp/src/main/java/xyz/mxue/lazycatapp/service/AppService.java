@@ -366,4 +366,37 @@ public class AppService {
             .sorted(Comparator.comparingLong(m -> (Long) m.get("updateFrequency")))
             .collect(Collectors.toList());
     }
+
+    public long count() {
+        return appRepository.count();
+    }
+
+    public long getTotalAppsCount() {
+        try {
+            Request request = new Request.Builder()
+                    .url(APP_LIST_URL)
+                    .get()
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    log.error("获取应用总数失败: {}", response);
+                    return 0;
+                }
+                
+                String responseBody = response.body().string();
+                AppListResponse appListResponse = objectMapper.readValue(responseBody, AppListResponse.class);
+                
+                if (appListResponse.errorCode == 0 && appListResponse.data != null) {
+                    return appListResponse.data.length;
+                } else {
+                    log.error("获取应用总数失败: {}", appListResponse.message);
+                    return 0;
+                }
+            }
+        } catch (IOException e) {
+            log.error("获取应用总数时发生错误", e);
+            return 0;
+        }
+    }
 } 

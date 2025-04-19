@@ -131,4 +131,38 @@ public class CategoryService {
     public Category findById(Integer id) {
         return categoryRepository.findById(id).orElse(null);
     }
+    
+    public long count() {
+        return categoryRepository.count();
+    }
+    
+    public long getTotalCategoriesCount() {
+        try {
+            Request request = new Request.Builder()
+                    .url(CATEGORY_URL_ZH)
+                    .get()
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    log.error("获取分类总数失败: {}", response);
+                    return 0;
+                }
+                
+                String responseBody = response.body().string();
+                List<Category> categories = objectMapper.readValue(responseBody, 
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, Category.class));
+                
+                if (categories != null) {
+                    return categories.size();
+                } else {
+                    log.error("获取分类总数失败: 返回数据为空");
+                    return 0;
+                }
+            }
+        } catch (IOException e) {
+            log.error("获取分类总数时发生错误", e);
+            return 0;
+        }
+    }
 } 

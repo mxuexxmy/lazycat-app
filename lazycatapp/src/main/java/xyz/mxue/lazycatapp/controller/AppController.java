@@ -10,9 +10,11 @@ import xyz.mxue.lazycatapp.entity.App;
 import xyz.mxue.lazycatapp.entity.Category;
 import xyz.mxue.lazycatapp.service.AppService;
 import xyz.mxue.lazycatapp.service.CategoryService;
+import xyz.mxue.lazycatapp.service.UserService;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/apps")
@@ -21,6 +23,8 @@ public class AppController {
 
     private final AppService appService;
     private final CategoryService categoryService;
+    private final UserService userService;
+    private boolean isInitialSyncComplete = false;
 
     @GetMapping
     public ResponseEntity<Page<App>> getApps(
@@ -152,5 +156,31 @@ public class AppController {
                 })
                 .toList();
         return ResponseEntity.ok(apps);
+    }
+
+    @GetMapping("/status")
+    public Map<String, Object> getSyncStatus() {
+        Map<String, Object> status = new HashMap<>();
+        status.put("isInitialSyncComplete", isInitialSyncComplete);
+        
+        // 获取当前完成的数量
+        long appCount = appService.count();
+        long categoryCount = categoryService.count();
+        
+        // 从同步接口获取总数量
+        long totalApps = appService.getTotalAppsCount();
+        long totalCategories = categoryService.getTotalCategoriesCount();
+        
+        status.put("appCount", appCount);
+        status.put("categoryCount", categoryCount);
+        status.put("totalApps", totalApps);
+        status.put("totalCategories", totalCategories);
+        
+        return status;
+    }
+
+    // 在数据同步完成后调用此方法
+    public void setInitialSyncComplete() {
+        this.isInitialSyncComplete = true;
     }
 } 
