@@ -139,4 +139,18 @@ public class AppController {
     public ResponseEntity<List<Map<String, Object>>> getUpdateFrequency() {
         return ResponseEntity.ok(appService.getUpdateFrequency());
     }
+
+    @GetMapping("/repositories")
+    public ResponseEntity<List<App>> getAppRepositories() {
+        List<App> apps = appService.findAll().stream()
+                .filter(app -> app.getSource() != null && !app.getSource().isEmpty())
+                .sorted((a, b) -> {
+                    // 按更新时间倒序排序
+                    if (a.getUpdateTime() == null) return 1;
+                    if (b.getUpdateTime() == null) return -1;
+                    return b.getUpdateTime().compareTo(a.getUpdateTime());
+                })
+                .toList();
+        return ResponseEntity.ok(apps);
+    }
 } 

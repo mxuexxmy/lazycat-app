@@ -45,9 +45,9 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/developers/DeveloperRanking.vue')
       },
       {
-        path: 'center',
-        name: 'DeveloperCenter',
-        component: () => import('@/views/developers/DeveloperCenter.vue')
+        path: 'repositories',
+        name: 'AppRepositories',
+        component: () => import('@/views/developers/AppRepositories.vue')
       },
       {
         path: 'apps/:creatorId',

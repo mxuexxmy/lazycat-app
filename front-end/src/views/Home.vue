@@ -144,12 +144,12 @@ const functions: Function[] = [
         route: { name: 'DeveloperRanking' }
       },
       {
-        id: 'developer-center',
-        title: '开发者中心',
-        description: '开发者工具和资源',
-        icon: BulbOutline,
+        id: 'app-repositories',
+        title: '应用代码仓库',
+        description: '开源应用代码仓库',
+        icon: CodeSlashOutline,
         iconColor: '#52c41a',
-        route: { name: 'DeveloperCenter' }
+        route: { name: 'AppRepositories' }
       }
     ]
   },

@@ -145,7 +145,7 @@ const menuOptions = [
       },
       {
         label: '应用代码仓库',
-        key: 'appCodeRepository'
+        key: 'AppRepositories'
       }
     ]
   },
@@ -185,7 +185,7 @@ const refreshRoutes: RouteRefreshConfig = {
 // 监听路由变化
 watch(
   () => route.fullPath,
-  (newPath, oldPath) => {
+  () => {
     const routeName = route.name as string
     if (refreshRoutes[routeName]) {
       const params = refreshRoutes[routeName]
@@ -232,20 +232,26 @@ const handleSearch = () => {
 // 计算是否显示返回按钮
 const showBackButton = computed(() => {
   const routesWithBack = [
-    'AppDetail',
-    'DeveloperApps',
-    'Category',
-    'Search',
+    // 开发者相关
+    'DeveloperCenter',
+    'AppRepositories',
     'DeveloperRanking',
+    'DeveloperApps',
+    // 排行榜相关
     'MostPopular',
     'MonthlyNew',
     'LatestRelease',
     'RecentUpdates',
-    'DeveloperCenter',
+    // 开始探索相关
     'Games',
     'DevTools',
     'Education',
-    'TrendAnalysis'
+    'Category',
+    // 统计分析相关
+    'TrendAnalysis',
+    // 其他
+    'Search',
+    'AppDetail'
   ]
   return routesWithBack.includes(route.name as string)
 })
