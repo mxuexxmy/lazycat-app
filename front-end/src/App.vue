@@ -76,25 +76,77 @@ appStore.fetchCategories()
 const menuOptions = [
   {
     label: '首页',
-    key: 'home'
+    key: 'Home'
   },
   {
     label: '排行榜',
-    key: 'rankings'
+    key: 'Rankings',
+    children: [
+      {
+        label: '最受欢迎',
+        key: 'MostPopular'
+      },
+      {
+        label: '本月新品',
+        key: 'MonthlyNew'
+      },
+      {
+        label: '最新发布',
+        key: 'LatestRelease'
+      },
+      {
+        label: '最近更新',
+        key: 'RecentUpdates'
+      },
+      {
+        label: '开发者排行',
+        key: 'DeveloperRanking'
+      }
+    ]
   },
   {
     label: '开发者',
-    key: 'developers'
+    key: 'Developers',
+    children: [
+      {
+        label: '开发者中心',
+        key: 'DeveloperCenter'
+      },
+      {
+        label: '开发者排行',
+        key: 'DeveloperRanking'
+      }
+    ]
   },
   {
     label: '探索',
-    key: 'explore'
+    key: 'Explore',
+    children: [
+      {
+        label: '游戏',
+        key: 'Games'
+      },
+      {
+        label: '开发工具',
+        key: 'DevTools'
+      },
+      {
+        label: '教育',
+        key: 'Education'
+      }
+    ]
   }
 ]
 
 // 处理菜单点击
 const handleMenuClick = (key: string) => {
-  router.push({ name: key })
+  // 如果是顶级菜单且有子菜单，不进行跳转
+  const menuItem = menuOptions.find(item => item.key === key) ||
+    menuOptions.flatMap(item => item.children || []).find(child => child?.key === key)
+  
+  if (menuItem) {
+    router.push({ name: key })
+  }
 }
 
 // 处理搜索点击
