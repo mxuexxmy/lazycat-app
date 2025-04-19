@@ -190,16 +190,20 @@ public class AppService {
                 if (appListResponse.errorCode == 0 && appListResponse.data != null) {
                     List<App> apps = Arrays.asList(appListResponse.data);
                     List<App> existingApps = appRepository.findAll();
-                    Set<String> existingPkgIds = existingApps.stream()
-                            .map(App::getPkgId)
-                            .collect(Collectors.toSet());
+                    Map<String, App> existingAppMap = existingApps.stream()
+                            .collect(Collectors.toMap(App::getPkgId, app -> app));
                     
                     for (App app : apps) {
                         app.setLastUpdated(Instant.now().toString());
                         app.setPackageName(app.getPkgId());
                         
-                        // 只在新增应用时获取下载量
-                        if (!existingPkgIds.contains(app.getPkgId())) {
+                        // 检查是否为已存在的应用
+                        App existingApp = existingAppMap.get(app.getPkgId());
+                        if (existingApp != null) {
+                            // 如果是已存在的应用，保留原有的下载量
+                            app.setDownloadCount(existingApp.getDownloadCount());
+                        } else {
+                            // 如果是新应用，获取下载量
                             updateDownloadCount(app);
                             userService.updateUserInfo(app.getCreatorId());
                         }
@@ -256,11 +260,11 @@ public class AppService {
                 String responseBody = response.body().string();
                 DownloadCountResponse downloadCountResponse = objectMapper.readValue(responseBody, DownloadCountResponse.class);
                 
-                if (downloadCountResponse.errorCode == 0) {
+                if (downloadCountResponse.errorCode == 0 && downloadCountResponse.data != null) {
                     app.setDownloadCount(downloadCountResponse.data);
                     log.info("成功更新应用 {} 的下载量: {}", app.getPkgId(), downloadCountResponse.data);
                 } else {
-                    log.error("获取应用下载量失败: {}", downloadCountResponse.message);
+                    log.warn("应用 {} 的下载量为空，保留原有值", app.getPkgId());
                 }
             }
         } catch (IOException e) {
