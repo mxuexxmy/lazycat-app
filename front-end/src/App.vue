@@ -7,10 +7,16 @@
             <router-link to="/" class="logo">
               <n-h2>懒猫应用</n-h2>
             </router-link>
-            <n-button text class="menu-toggle" @click="showDrawer = true">
+            <n-button 
+              text 
+              class="menu-toggle" 
+              @click="showDrawer = true"
+              size="large"
+            >
               <template #icon>
-                <n-icon><menu /></n-icon>
+                <n-icon><menu-outline /></n-icon>
               </template>
+              <span class="menu-text">菜单</span>
             </n-button>
           </div>
           <div class="nav-section desktop-only">
@@ -77,7 +83,7 @@ import {
   NDrawerContent
 } from 'naive-ui'
 import { zhCN, dateZhCN } from 'naive-ui'
-import { Search, ArrowBack, Menu } from '@vicons/ionicons5'
+import { Search, ArrowBack, Menu, MenuOutline, HomeOutline, TrophyOutline, CodeSlashOutline, RocketOutline, BookOutline, BuildOutline } from '@vicons/ionicons5'
 
 interface NaiveConfig {
   locale: NLocale
@@ -98,11 +104,13 @@ appStore.fetchCategories()
 const menuOptions = [
   {
     label: '首页',
-    key: 'Home'
+    key: 'Home',
+    icon: () => h(NIcon, null, { default: () => h(HomeOutline) })
   },
   {
     label: '排行榜',
     key: 'Rankings',
+    icon: () => h(NIcon, null, { default: () => h(TrophyOutline) }),
     children: [
       {
         label: '最受欢迎',
@@ -125,8 +133,9 @@ const menuOptions = [
   {
     label: '开发者',
     key: 'Developers',
+    icon: () => h(NIcon, null, { default: () => h(CodeSlashOutline) }),
     children: [
-    {
+      {
         label: '开发者排行',
         key: 'DeveloperRanking'
       },
@@ -138,15 +147,18 @@ const menuOptions = [
   },
   {
     label: '开始探索',
-    key: 'Explore'
+    key: 'Explore',
+    icon: () => h(NIcon, null, { default: () => h(RocketOutline) })
   },
   {
     label: '开发者手册',
-    key: 'DeveloperManual'
+    key: 'DeveloperManual',
+    icon: () => h(NIcon, null, { default: () => h(BookOutline) })
   },
   {
     label: '开发者中心',
-    key: 'DeveloperCenter'
+    key: 'DeveloperCenter',
+    icon: () => h(NIcon, null, { default: () => h(BuildOutline) })
   }
 ]
 
@@ -244,6 +256,34 @@ const handleMobileMenuClick = (key: string) => {
 .menu-toggle {
   display: none;
   font-size: 24px;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  margin-left: 12px;
+  border-radius: 8px;
+  color: #333;
+  background-color: rgba(24, 160, 88, 0.1);
+  transition: all 0.3s ease;
+}
+
+.menu-toggle:hover {
+  background-color: rgba(24, 160, 88, 0.15);
+  transform: translateY(-1px);
+}
+
+.menu-toggle:active {
+  transform: translateY(0);
+}
+
+.menu-toggle .menu-text {
+  font-size: 14px;
+  font-weight: 500;
+  margin-left: 4px;
+  color: #18a058;
+}
+
+.menu-toggle :deep(.n-icon) {
+  color: #18a058;
 }
 
 .logo {
@@ -309,13 +349,28 @@ const handleMobileMenuClick = (key: string) => {
   transform: scale(1.05);
 }
 
+:deep(.n-drawer-content .n-menu-item-content-header) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:deep(.n-drawer-content .n-menu-item-content-header .n-icon) {
+  font-size: 18px;
+}
+
 @media screen and (max-width: 768px) {
   .header-content {
     padding: 0 16px;
   }
 
   .menu-toggle {
-    display: block;
+    display: flex;
+    padding: 6px 10px;
+  }
+
+  .menu-toggle :deep(.n-icon) {
+    font-size: 20px;
   }
 
   .desktop-only {
@@ -357,6 +412,20 @@ const handleMobileMenuClick = (key: string) => {
 
   .right-section :deep(.n-button) {
     font-size: 18px;
+  }
+
+  .menu-toggle {
+    padding: 6px;
+    margin-left: 8px;
+    border-radius: 6px;
+  }
+
+  .menu-toggle :deep(.n-icon) {
+    font-size: 18px;
+  }
+
+  .menu-text {
+    display: none;
   }
 }
 </style> 
