@@ -3,16 +3,21 @@
     <n-space vertical>
       <n-h1>搜索应用</n-h1>
       
-      <n-input
-        v-model:value="searchQuery"
-        placeholder="输入应用名称或关键字..."
-        @keyup.enter="handleSearch"
-        clearable
-      >
-        <template #prefix>
-          <n-icon><search /></n-icon>
-        </template>
-      </n-input>
+      <div class="search-section">
+        <n-input
+          v-model:value="searchQuery"
+          placeholder="输入应用名称、包名、关键词、源码地址、描述等..."
+          @keyup.enter="handleSearch"
+          clearable
+        >
+          <template #prefix>
+            <n-icon><search /></n-icon>
+          </template>
+        </n-input>
+        <div class="search-tips">
+          支持搜索：应用名称、包名、关键词、源码地址、应用描述、简介
+        </div>
+      </div>
 
       <n-divider />
 
@@ -102,5 +107,17 @@ watch(() => route.query.q, (newQuery) => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+}
+
+.search-section {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.search-tips {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #666;
+  text-align: left;
 }
 </style> 

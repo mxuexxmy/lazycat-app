@@ -82,7 +82,23 @@ public class AppService {
     }
     
     public List<App> searchAll(String keyword) {
-        return appRepository.findByNameContainingOrDescriptionContaining(keyword, keyword);
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return List.of();
+        }
+        return appRepository.findAll().stream()
+                .filter(app -> 
+                    containsIgnoreCase(app.getName(), keyword) ||
+                    containsIgnoreCase(app.getPackageName(), keyword) ||
+                    containsIgnoreCase(app.getKeywords(), keyword) ||
+                    containsIgnoreCase(app.getSource(), keyword) ||
+                    containsIgnoreCase(app.getDescription(), keyword) ||
+                    containsIgnoreCase(app.getBrief(), keyword)
+                )
+                .collect(Collectors.toList());
+    }
+    
+    private boolean containsIgnoreCase(String text, String searchTerm) {
+        return text != null && text.toLowerCase().contains(searchTerm.toLowerCase());
     }
     
     public List<App> findUsedApps(int limit) {
