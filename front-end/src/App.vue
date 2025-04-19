@@ -3,10 +3,17 @@
     <n-layout>
       <n-layout-header bordered class="header">
         <div class="header-content">
-          <router-link to="/" class="logo">
-            <n-h2>懒猫应用</n-h2>
-          </router-link>
-          <div class="nav-section">
+          <div class="left-section">
+            <router-link to="/" class="logo">
+              <n-h2>懒猫应用</n-h2>
+            </router-link>
+            <n-button text class="menu-toggle" @click="showDrawer = true">
+              <template #icon>
+                <n-icon><menu /></n-icon>
+              </template>
+            </n-button>
+          </div>
+          <div class="nav-section desktop-only">
             <n-menu
               v-model:value="activeKey"
               mode="horizontal"
@@ -23,6 +30,16 @@
           </div>
         </div>
       </n-layout-header>
+      <n-drawer v-model:show="showDrawer" :width="280" placement="left">
+        <n-drawer-content title="菜单">
+          <n-menu
+            v-model:value="activeKey"
+            :indent="12"
+            :options="menuOptions"
+            @update:value="handleMobileMenuClick"
+          />
+        </n-drawer-content>
+      </n-drawer>
       <n-layout-content :style="{ background: '#f5f6fb', padding: '80px 24px 24px' }">
         <div class="back-button" v-if="showBackButton" @click="handleBack">
           <n-button circle>
@@ -55,10 +72,12 @@ import {
   type NDateLocale,
   NMenu,
   NButton,
-  NIcon
+  NIcon,
+  NDrawer,
+  NDrawerContent
 } from 'naive-ui'
 import { zhCN, dateZhCN } from 'naive-ui'
-import { Search, ArrowBack } from '@vicons/ionicons5'
+import { Search, ArrowBack, Menu } from '@vicons/ionicons5'
 
 interface NaiveConfig {
   locale: NLocale
@@ -107,19 +126,27 @@ const menuOptions = [
     label: '开发者',
     key: 'Developers',
     children: [
-      {
-        label: '开发者中心',
-        key: 'DeveloperCenter'
-      },
-      {
+    {
         label: '开发者排行',
         key: 'DeveloperRanking'
+      },
+      {
+        label: '应用代码仓库',
+        key: 'appCodeRepository'
       }
     ]
   },
   {
     label: '开始探索',
     key: 'Explore'
+  },
+  {
+    label: '开发者手册',
+    key: 'DeveloperManual'
+  },
+  {
+    label: '开发者中心',
+    key: 'DeveloperCenter'
   }
 ]
 
@@ -131,6 +158,10 @@ const handleMenuClick = (key: string) => {
   if (menuItem) {
     if (key === 'Explore') {
       router.push({ name: 'Category', params: { id: '0' } })
+    } else if (key === 'DeveloperManual') {
+      window.open('https://developer.lazycat.cloud/', '_blank')
+    } else if (key === 'DeveloperCenter') {
+      window.open('https://developer.lazycat.cloud/manage', '_blank')
     } else if (!menuItem.children) {
       router.push({ name: key })
     }
@@ -169,6 +200,13 @@ const showBackButton = computed(() => {
 const handleBack = () => {
   router.back()
 }
+
+const showDrawer = ref(false)
+
+const handleMobileMenuClick = (key: string) => {
+  handleMenuClick(key)
+  showDrawer.value = false
+}
 </script>
 
 <style>
@@ -195,6 +233,17 @@ const handleBack = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.left-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-toggle {
+  display: none;
+  font-size: 24px;
 }
 
 .logo {
@@ -265,6 +314,14 @@ const handleBack = () => {
     padding: 0 16px;
   }
 
+  .menu-toggle {
+    display: block;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
   .logo .n-h2 {
     font-size: 18px;
   }
@@ -290,9 +347,16 @@ const handleBack = () => {
 }
 
 @media screen and (max-width: 480px) {
-  .nav-section :deep(.n-menu-item-content) {
-    font-size: 14px;
-    padding: 0 8px;
+  .header-content {
+    padding: 0 12px;
+  }
+
+  .logo .n-h2 {
+    font-size: 16px;
+  }
+
+  .right-section :deep(.n-button) {
+    font-size: 18px;
   }
 }
 </style> 

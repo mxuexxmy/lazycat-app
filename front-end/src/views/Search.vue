@@ -21,23 +21,62 @@
 
       <n-divider />
 
-      <n-grid :cols="4" :x-gap="12" :y-gap="8" v-if="searchResults.length > 0">
-        <n-grid-item v-for="app in searchResults" :key="app.pkgId">
-          <n-card hoverable @click="goToAppDetail(app.pkgId)">
-            <template #cover>
-              <img :src="getAppIcon(app)" :alt="app.name" style="width: 100%; height: 200px; object-fit: cover">
-            </template>
-            <n-h3>{{ app.name }}</n-h3>
-            <n-p>{{ app.brief }}</n-p>
-            <n-space>
-              <n-tag v-for="cat in app.category" :key="cat">{{ cat }}</n-tag>
-            </n-space>
-          </n-card>
-        </n-grid-item>
-      </n-grid>
+      <div class="app-grid">
+        <n-grid 
+          :cols="4" 
+          :x-gap="16" 
+          :y-gap="16" 
+          :item-responsive="true"
+          responsive="screen"
+          :cols-xs="1"
+          :cols-s="1"
+          :cols-m="2"
+          :cols-l="4"
+          v-if="searchResults.length > 0"
+        >
+          <n-grid-item v-for="app in searchResults" :key="app.pkgId">
+            <n-card hoverable @click="goToAppDetail(app.pkgId)" class="app-card">
+              <div class="app-content">
+                <div class="app-icon">
+                  <n-image
+                    :src="getAppIcon(app)"
+                    :fallback-src="defaultIcon"
+                    preview-disabled
+                    object-fit="cover"
+                    class="icon-image"
+                    :intersection-observer-options="{
+                      root: null,
+                      rootMargin: '0px',
+                      threshold: 0.1
+                    }"
+                    lazy
+                  />
+                </div>
+                <div class="app-info">
+                  <div class="app-title">{{ app.name }}</div>
+                  <div class="app-desc">{{ app.brief }}</div>
+                  <div class="app-tags">
+                    <n-space vertical size="small">
+                      <n-space wrap :size="4">
+                        <n-tag v-for="cat in app.category" :key="cat" size="small" round>
+                          {{ cat }}
+                        </n-tag>
+                      </n-space>
+                      <n-space :size="4">
+                        <n-tag size="small" :bordered="false" type="success" v-if="app.supportPC">PC端</n-tag>
+                        <n-tag size="small" :bordered="false" type="info" v-if="app.supportMobile">移动端</n-tag>
+                      </n-space>
+                    </n-space>
+                  </div>
+                </div>
+              </div>
+            </n-card>
+          </n-grid-item>
+        </n-grid>
 
-      <n-empty v-else-if="!loading" description="没有找到相关应用" />
-      <n-spin v-else size="large" />
+        <n-empty v-else-if="!loading" description="没有找到相关应用" />
+        <n-spin v-else size="large" />
+      </div>
     </n-space>
   </div>
 </template>
@@ -47,8 +86,20 @@ import { ref, watch, defineComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Search } from '@vicons/ionicons5'
 import type { App } from '../types'
+import {
+  NSpace,
+  NGrid,
+  NGridItem,
+  NCard,
+  NImage,
+  NTag,
+  NEmpty,
+  NSpin,
+  NDivider
+} from 'naive-ui'
 
 const __name = 'Search'
+const defaultIcon = 'https://dl.lazycatmicroserver.com/appstore/metarepo/default-icon.png'
 
 const route = useRoute()
 const router = useRouter()
@@ -119,5 +170,224 @@ watch(() => route.query.q, (newQuery) => {
   font-size: 13px;
   color: #666;
   text-align: left;
+}
+
+.app-grid {
+  margin-top: 24px;
+}
+
+.app-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.app-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.app-content {
+  display: flex;
+  padding: 16px;
+  height: 100%;
+}
+
+.app-icon {
+  flex-shrink: 0;
+  background: #f9f9f9;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.icon-image {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.icon-image :deep(img) {
+  object-fit: contain !important;
+  padding: 8px;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.app-card:hover .icon-image :deep(img) {
+  transform: scale(1.05);
+}
+
+.app-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding-left: 16px;
+}
+
+.app-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-desc {
+  font-size: 14px;
+  color: #666;
+  margin: 8px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  flex: 1;
+  line-height: 1.5;
+}
+
+.app-tags {
+  margin-top: 12px;
+}
+
+:deep(.n-tag) {
+  transition: all 0.3s ease;
+}
+
+@media screen and (min-width: 769px) {
+  .app-content {
+    flex-direction: column;
+  }
+
+  .app-icon {
+    width: 100%;
+    height: 160px;
+    padding: 16px;
+  }
+
+  .app-info {
+    padding: 16px 0 0;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .search {
+    padding: 16px;
+  }
+
+  .search-section {
+    padding: 0;
+  }
+
+  :deep(.n-grid) {
+    display: block !important;
+  }
+
+  :deep(.n-grid-item) {
+    padding-top: 0 !important;
+    padding-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  :deep(.n-card) {
+    border-radius: 0;
+    margin-bottom: 8px;
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .app-content {
+    gap: 12px;
+  }
+
+  .app-icon {
+    width: 56px;
+    height: 56px;
+    padding: 8px;
+    border-radius: 12px;
+  }
+
+  .icon-image :deep(img) {
+    padding: 4px;
+  }
+
+  .app-info {
+    padding: 4px 0;
+  }
+
+  .app-title {
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+
+  .app-desc {
+    font-size: 13px;
+    margin: 4px 0;
+    color: #666;
+    -webkit-line-clamp: 2;
+  }
+
+  .app-tags {
+    margin-top: 8px;
+  }
+
+  :deep(.n-tag) {
+    font-size: 12px !important;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .search {
+    padding: 12px;
+  }
+
+  .app-content {
+    gap: 8px;
+  }
+
+  .app-icon {
+    width: 48px;
+    height: 48px;
+    padding: 6px;
+    border-radius: 10px;
+  }
+
+  .icon-image :deep(img) {
+    padding: 3px;
+  }
+
+  .app-title {
+    font-size: 14px;
+  }
+
+  .app-desc {
+    font-size: 12px;
+    -webkit-line-clamp: 2;
+    margin: 2px 0;
+  }
+
+  .app-tags {
+    margin-top: 6px;
+  }
+
+  :deep(.n-h1) {
+    font-size: 24px !important;
+    margin-top: 8px !important;
+    margin-bottom: 16px !important;
+  }
 }
 </style> 
