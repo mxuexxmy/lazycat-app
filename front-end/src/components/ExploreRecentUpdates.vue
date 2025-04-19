@@ -72,6 +72,7 @@ import {
 } from 'naive-ui'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
+import { useRoute } from 'vue-router'
 
 interface Category {
   id: number;
@@ -98,6 +99,8 @@ const selectedCategory = ref<number | null>(null)
 const recentUpdates = ref<AppInfo[]>([])
 const categories = ref<Category[]>([])
 const defaultIcon = '/path/to/default-icon.png'
+const categoryName = ref('')
+const route = useRoute()
 
 // Convert categories to select options
 const categoryOptions = computed(() => {
@@ -161,9 +164,25 @@ watch(selectedCategory, () => {
   fetchRecentUpdates()
 })
 
+const fetchCategoryName = async () => {
+  try {
+    const response = await fetch('/api/categories')
+    const result = await response.json()
+    if (result.success) {
+      const category = result.data.find((cat: Category) => cat.id === Number(route.params.id))
+      if (category) {
+        categoryName.value = category.name
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch category name:', error)
+  }
+}
+
 onMounted(async () => {
   await fetchCategories()
   await fetchRecentUpdates()
+  await fetchCategoryName()
 })
 </script>
 

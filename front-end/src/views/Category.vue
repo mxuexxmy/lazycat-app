@@ -149,11 +149,13 @@ const handleAppClick = (app: AppInfo) => {
 // Fetch category name
 const fetchCategoryName = async () => {
   try {
-    const response = await fetch('https://dl.lazycatmicroserver.com/appstore/metarepo/zh/categories.json')
-    const categories = await response.json()
-    const category = categories.find((cat: Category) => cat.id === Number(route.params.id))
-    if (category) {
-      categoryName.value = category.name
+    const response = await fetch('/api/categories')
+    const result = await response.json()
+    if (result.success) {
+      const category = result.data.find((cat: Category) => cat.id === Number(route.params.id))
+      if (category) {
+        categoryName.value = category.name
+      }
     }
   } catch (error) {
     console.error('Failed to fetch category name:', error)

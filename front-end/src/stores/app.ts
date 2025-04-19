@@ -14,7 +14,7 @@ export const useAppStore = defineStore('app', {
     async fetchCategories() {
       try {
         this.loading = true
-        const response = await axios.get('https://appstore.api.lazycat.cloud/api/app/categories')
+        const response = await axios.get('/api/categories')
         if (response.data.success) {
           this.categories = response.data.data.sort((a: Category, b: Category) => a.index - b.index)
         } else {
