@@ -55,8 +55,11 @@
           </n-button>
         </div>
         <router-view v-slot="{ Component }">
-          <keep-alive :include="['Search', 'Category', 'MostPopular', 'MonthlyNew', 'LatestRelease', 'RecentUpdates', 'DeveloperRanking']">
-            <component :is="Component" />
+          <keep-alive :include="['Search', 'MostPopular', 'MonthlyNew', 'LatestRelease', 'RecentUpdates', 'DeveloperRanking']">
+            <component 
+              :is="Component" 
+              :key="shouldRefresh ? route.fullPath : undefined"
+            />
           </keep-alive>
         </router-view>
       </n-layout-content>
@@ -65,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-import { inject, h, ref, computed } from 'vue'
+import { inject, h, ref, computed, onBeforeMount, watch, nextTick } from 'vue'
 import { useAppStore } from './stores/app'
 import { useRouter, useRoute } from 'vue-router'
 import {
@@ -96,6 +99,7 @@ const naiveConfig = inject('naiveConfig') as NaiveConfig
 const route = useRoute()
 const router = useRouter()
 const activeKey = ref<string | null>(null)
+const shouldRefresh = ref(false)
 
 // Fetch categories on component mount
 appStore.fetchCategories()
@@ -161,6 +165,43 @@ const menuOptions = [
     icon: () => h(NIcon, null, { default: () => h(BuildOutline) })
   }
 ]
+
+// 需要刷新的路由配置
+interface RouteRefreshConfig {
+  [key: string]: string[];
+}
+
+const refreshRoutes: RouteRefreshConfig = {
+  'Search': ['keyword'],
+  'Category': ['id'],
+  'DeveloperRanking': ['period'],
+  'MostPopular': ['period'],
+  'MonthlyNew': ['month'],
+  'LatestRelease': ['page'],
+  'RecentUpdates': ['page'],
+  'DeveloperApps': ['developerId']
+}
+
+// 监听路由变化
+watch(
+  () => route.fullPath,
+  (newPath, oldPath) => {
+    const routeName = route.name as string
+    if (refreshRoutes[routeName]) {
+      const params = refreshRoutes[routeName]
+      const shouldForceRefresh = params.some((param: string) => 
+        route.query[param] !== undefined && 
+        route.query[param] !== router.currentRoute.value.query[param]
+      )
+      if (shouldForceRefresh) {
+        shouldRefresh.value = true
+        nextTick(() => {
+          shouldRefresh.value = false
+        })
+      }
+    }
+  }
+)
 
 // 处理菜单点击
 const handleMenuClick = (key: string) => {
