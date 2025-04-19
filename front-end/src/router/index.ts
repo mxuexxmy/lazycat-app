@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+import DeveloperCommunity from '@/views/developers/DeveloperCommunity.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -53,6 +54,11 @@ const routes: RouteRecordRaw[] = [
         path: 'apps/:creatorId',
         name: 'DeveloperApps',
         component: () => import('@/views/developers/DeveloperApps.vue')
+      },
+      {
+        path: 'community',
+        name: 'DeveloperCommunity',
+        component: DeveloperCommunity
       }
     ]
   },

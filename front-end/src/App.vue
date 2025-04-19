@@ -86,7 +86,7 @@ import {
   NDrawerContent
 } from 'naive-ui'
 import { zhCN, dateZhCN } from 'naive-ui'
-import { Search, ArrowBack, Menu, MenuOutline, HomeOutline, TrophyOutline, CodeSlashOutline, RocketOutline, BookOutline, BuildOutline } from '@vicons/ionicons5'
+import { Search, ArrowBack, Menu, MenuOutline, HomeOutline, TrophyOutline, CodeSlashOutline, RocketOutline, BookOutline, BuildOutline, PeopleOutline } from '@vicons/ionicons5'
 
 interface NaiveConfig {
   locale: NLocale
@@ -142,6 +142,10 @@ const menuOptions = [
       {
         label: '开发者排行',
         key: 'DeveloperRanking'
+      },
+      {
+        label: '开发者社区',
+        key: 'DeveloperCommunity'
       },
       {
         label: '应用代码仓库',
@@ -236,6 +240,7 @@ const showBackButton = computed(() => {
     'DeveloperCenter',
     'AppRepositories',
     'DeveloperRanking',
+    'DeveloperCommunity',
     'DeveloperApps',
     // 排行榜相关
     'MostPopular',

@@ -69,7 +69,8 @@ import {
   StarOutline,
   SearchOutline,
   AppsOutline,
-  ShieldCheckmarkOutline
+  ShieldCheckmarkOutline,
+  PeopleOutline
 } from '@vicons/ionicons5'
 
 interface Function {
@@ -142,6 +143,14 @@ const functions: Function[] = [
         icon: StarOutline,
         iconColor: '#fa8c16',
         route: { name: 'DeveloperRanking' }
+      },
+      {
+        id: 'developer-community',
+        title: '开发者社区',
+        description: '探索开发者社区',
+        icon: PeopleOutline,
+        iconColor: '#1890ff',
+        route: { name: 'DeveloperCommunity' }
       },
       {
         id: 'app-repositories',
