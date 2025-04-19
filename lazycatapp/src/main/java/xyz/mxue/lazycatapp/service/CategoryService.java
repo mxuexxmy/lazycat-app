@@ -13,6 +13,8 @@ import xyz.mxue.lazycatapp.repository.CategoryRepository;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -23,20 +25,26 @@ public class CategoryService {
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
     
-    private static final String CATEGORY_URL = "https://dl.lazycatmicroserver.com/appstore/metarepo/zh/categories.json";
+    private static final String CATEGORY_URL_ZH = "https://dl.lazycatmicroserver.com/appstore/metarepo/zh/categories.json";
+    private static final String CATEGORY_URL_EN = "https://dl.lazycatmicroserver.com/appstore/metarepo/en/categories.json";
     
-   // @Scheduled(fixedRate = 3600000) // 每小时执行一次
-    public void updateCategories() {
-        log.info("开始更新分类信息");
+    @Scheduled(fixedRate = 3600000) // 每小时执行一次
+    public void syncCategories() {
+        updateChineseCategories();
+        updateEnglishCategories();
+    }
+    
+    public void updateChineseCategories() {
+        log.info("开始更新中文分类信息");
         try {
             Request request = new Request.Builder()
-                    .url(CATEGORY_URL)
+                    .url(CATEGORY_URL_ZH)
                     .get()
                     .build();
             
             try (Response response = httpClient.newCall(request).execute()) {
                 if (!response.isSuccessful()) {
-                    log.error("获取分类信息失败: {}", response);
+                    log.error("获取中文分类信息失败: {}", response);
                     return;
                 }
                 
@@ -46,11 +54,54 @@ public class CategoryService {
                 
                 if (categories != null && !categories.isEmpty()) {
                     categoryRepository.saveAll(categories);
-                    log.info("成功更新分类信息");
+                    log.info("成功更新中文分类信息");
                 }
             }
         } catch (IOException e) {
-            log.error("更新分类信息时发生错误", e);
+            log.error("更新中文分类信息时发生错误", e);
+        }
+    }
+    
+    public void updateEnglishCategories() {
+        log.info("开始更新英文分类信息");
+        try {
+            Request request = new Request.Builder()
+                    .url(CATEGORY_URL_EN)
+                    .get()
+                    .build();
+            
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    log.error("获取英文分类信息失败: {}", response);
+                    return;
+                }
+                
+                String responseBody = response.body().string();
+                List<Category> englishCategories = objectMapper.readValue(responseBody, 
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, Category.class));
+                
+                if (englishCategories != null && !englishCategories.isEmpty()) {
+                    // 将英文分类信息转换为Map，以id为key
+                    Map<Integer, String> englishNameMap = englishCategories.stream()
+                            .collect(Collectors.toMap(Category::getId, Category::getName));
+                    
+                    // 获取所有中文分类
+                    List<Category> chineseCategories = categoryRepository.findAll();
+                    
+                    // 更新每个中文分类的英文名称
+                    for (Category category : chineseCategories) {
+                        String englishName = englishNameMap.get(category.getId());
+                        if (englishName != null) {
+                            category.setEnglishName(englishName);
+                        }
+                    }
+                    
+                    categoryRepository.saveAll(chineseCategories);
+                    log.info("成功更新英文分类信息");
+                }
+            }
+        } catch (IOException e) {
+            log.error("更新英文分类信息时发生错误", e);
         }
     }
     

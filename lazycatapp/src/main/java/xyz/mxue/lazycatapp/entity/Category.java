@@ -13,4 +13,5 @@ public class Category {
     private Integer id;
     private String name;
     private String icon;
+    private String englishName;
 } 

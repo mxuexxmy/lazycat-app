@@ -61,6 +61,10 @@ public class AppService {
         return appRepository.findByNameContainingOrDescriptionContaining(keyword, keyword, pageable);
     }
     
+    public List<App> findByCategory(String category) {
+        return appRepository.findByCategoryContaining(category);
+    }
+    
     public Page<App> findByCategory(String category, Pageable pageable) {
         return appRepository.findByCategoryContaining(category, pageable);
     }

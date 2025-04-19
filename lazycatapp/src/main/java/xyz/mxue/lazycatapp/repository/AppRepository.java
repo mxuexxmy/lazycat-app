@@ -15,6 +15,9 @@ public interface AppRepository extends JpaRepository<App, String> {
     Page<App> findByNameContainingOrDescriptionContaining(String name, String description, Pageable pageable);
     
     @Query(value = "SELECT * FROM apps WHERE category LIKE %:category%", nativeQuery = true)
+    List<App> findByCategoryContaining(@Param("category") String category);
+    
+    @Query(value = "SELECT * FROM apps WHERE category LIKE %:category%", nativeQuery = true)
     Page<App> findByCategoryContaining(@Param("category") String category, Pageable pageable);
     
     @Query(value = "SELECT * FROM apps ORDER BY last_updated DESC LIMIT ?1", nativeQuery = true)

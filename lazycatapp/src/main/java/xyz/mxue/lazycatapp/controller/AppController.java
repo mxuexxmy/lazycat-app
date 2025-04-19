@@ -7,7 +7,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import xyz.mxue.lazycatapp.entity.App;
+import xyz.mxue.lazycatapp.entity.Category;
 import xyz.mxue.lazycatapp.service.AppService;
+import xyz.mxue.lazycatapp.service.CategoryService;
 
 import java.util.List;
 import java.util.Map;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 public class AppController {
 
     private final AppService appService;
+    private final CategoryService categoryService;
 
     @GetMapping
     public ResponseEntity<Page<App>> getApps(
@@ -57,13 +60,27 @@ public class AppController {
         return ResponseEntity.ok(appService.searchAll(keyword));
     }
 
-    @GetMapping("/category/{category}")
-    public ResponseEntity<Page<App>> getAppsByCategory(
-            @PathVariable String category,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        PageRequest pageRequest = PageRequest.of(page, size);
-        return ResponseEntity.ok(appService.findByCategory(category, pageRequest));
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<List<App>> getAppsByCategory(@PathVariable Integer categoryId) {
+        // 如果 categoryId 为 0，返回所有应用
+        if (categoryId == 0) {
+            return ResponseEntity.ok(appService.findAll());
+        }
+        
+        // 先查询分类信息
+        Category category = categoryService.findById(categoryId);
+        if (category == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        // 先尝试用中文名称查询
+        List<App> apps = appService.findByCategory(category.getName());
+        if (apps.isEmpty() && category.getEnglishName() != null) {
+            // 如果中文名称查询不到结果，且存在英文名称，则尝试用英文名称查询
+            apps = appService.findByCategory(category.getEnglishName());
+        }
+        
+        return ResponseEntity.ok(apps);
     }
 
     @GetMapping("/latest")

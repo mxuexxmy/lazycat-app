@@ -92,6 +92,9 @@ interface AppInfo {
   updateDate: string;
   supportPC: boolean;
   supportMobile: boolean;
+  keywords: string;
+  packageName: string;
+  source: string;
 }
 
 interface Category {
@@ -112,10 +115,11 @@ const filteredApps = computed(() => {
   if (!searchQuery.value) return apps.value
   const query = searchQuery.value.toLowerCase()
   return apps.value.filter(app => 
-    app.name.toLowerCase().includes(query) || 
-    app.description.toLowerCase().includes(query) ||
+    app.name?.toLowerCase().includes(query) || 
     app.brief?.toLowerCase().includes(query) ||
-    app.category.some(cat => cat.toLowerCase().includes(query))
+    app.keywords?.toLowerCase().includes(query) ||
+    app.packageName?.toLowerCase().includes(query) ||
+    app.source?.toLowerCase().includes(query)
   )
 })
 
@@ -156,11 +160,11 @@ const fetchCategoryName = async () => {
 // Fetch apps in category
 const fetchApps = async () => {
   try {
-    const url = `https://appstore.api.lazycat.cloud/api/app/list?category_id=${route.params.id}`
+    const url = `/api/apps/category/${route.params.id}`
     const response = await fetch(url)
     const result = await response.json()
-    if (result.success && Array.isArray(result.data)) {
-      apps.value = result.data
+    if (Array.isArray(result)) {
+      apps.value = result
     }
   } catch (error) {
     console.error('Failed to fetch apps:', error)
@@ -179,14 +183,18 @@ onMounted(async () => {
   padding: 24px;
   min-height: 100vh;
   background: #f5f5f5;
+  padding-top: 120px; /* 为固定头部留出空间 */
 }
 
 .category-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
   text-align: center;
   background: #fff;
   padding: 24px;
-  border-radius: 8px;
-  margin-bottom: 24px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
@@ -313,9 +321,15 @@ onMounted(async () => {
 @media screen and (max-width: 768px) {
   .category-view {
     padding: 0;
+    padding-top: 100px; /* 移动端头部高度较小 */
   }
 
   .category-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
     padding: 16px;
     border-bottom: 1px solid #f0f0f0;
     background: #fff;
