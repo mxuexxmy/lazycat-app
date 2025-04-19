@@ -38,9 +38,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, defineComponent } from 'vue'
+import { ref, watch, defineComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAppStore } from '../stores/app'
 import { Search } from '@vicons/ionicons5'
 import type { App } from '../types'
 
@@ -48,37 +47,54 @@ const __name = 'Search'
 
 const route = useRoute()
 const router = useRouter()
-const appStore = useAppStore()
 const searchQuery = ref(route.query.q as string || '')
 const loading = ref(false)
-
-const searchResults = computed(() => {
-  if (!searchQuery.value) return []
-  return appStore.apps.filter(app => 
-    app.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    app.brief.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    app.keywords.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
-})
+const searchResults = ref<App[]>([])
 
 const getAppIcon = (app: App) => {
-  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/${app.iconPath}`
+  if (!app.iconPath) return 'https://dl.lazycatmicroserver.com/appstore/metarepo/default-icon.png'
+  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`
 }
 
-const handleSearch = () => {
-  router.push({ name: 'Search', query: { q: searchQuery.value } })
+const handleSearch = async () => {
+  if (!searchQuery.value.trim()) {
+    searchResults.value = []
+    return
+  }
+  
+  loading.value = true
+  try {
+    const response = await fetch(`/api/apps/search/all?keyword=${encodeURIComponent(searchQuery.value)}`)
+    const data = await response.json()
+    searchResults.value = data
+  } catch (error) {
+    console.error('搜索失败:', error)
+    searchResults.value = []
+  } finally {
+    loading.value = false
+  }
+  
+  // 更新URL，但不触发新的搜索
+  router.push({ 
+    name: 'Search', 
+    query: { q: searchQuery.value }
+  })
 }
 
 const goToAppDetail = (pkgId: string) => {
-  router.push({ name: 'AppDetail', params: { pkgId } })
+  router.push({
+    name: 'AppDetail',
+    params: { pkgId }
+  })
 }
 
 // Watch for route query changes
 watch(() => route.query.q, (newQuery) => {
   if (newQuery) {
     searchQuery.value = newQuery as string
+    handleSearch()
   }
-})
+}, { immediate: true })
 </script>
 
 <style scoped>
