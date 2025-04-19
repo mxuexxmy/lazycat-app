@@ -46,7 +46,8 @@ public class UserService {
                 
                 if (userResponse != null) {
                     // 更新社区用户信息
-                    CommunityUser communityUser = new CommunityUser();
+                    CommunityUser communityUser = communityUserRepository.findById(userResponse.uid)
+                            .orElse(new CommunityUser());
                     communityUser.setUid(userResponse.uid);
                     communityUser.setReceiveThumbs(userResponse.receiveThumbs);
                     communityUser.setFollows(userResponse.follows);
@@ -61,7 +62,8 @@ public class UserService {
                     communityUserRepository.save(communityUser);
                     
                     // 更新用户个人信息
-                    UserInfo userInfo = new UserInfo();
+                    UserInfo userInfo = userInfoRepository.findById(userResponse.user.id)
+                            .orElse(new UserInfo());
                     userInfo.setId(userResponse.user.id);
                     userInfo.setUsername(userResponse.user.username);
                     userInfo.setIsUsernameSet(userResponse.user.isUsernameSet);
@@ -79,14 +81,6 @@ public class UserService {
         } catch (IOException e) {
             log.error("更新用户信息时发生错误", e);
         }
-    }
-    
-    public boolean existsUserInfo(Long userId) {
-        return userInfoRepository.existsById(userId);
-    }
-    
-    public boolean existsCommunityUser(Long userId) {
-        return communityUserRepository.existsById(userId);
     }
     
     public UserInfo getUserInfo(Long userId) {

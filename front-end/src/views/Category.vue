@@ -10,7 +10,7 @@
               placeholder="搜索应用"
               class="search-input"
               clearable
-              @keyup.enter="handleSearch"
+              @input="debouncedSearch"
             >
               <template #prefix>
                 <n-icon :component="SearchOutline" />
@@ -24,9 +24,9 @@
       </div>
 
       <div class="app-grid">
-        <n-empty v-if="filteredApps.length === 0" description="暂无应用" />
+        <n-empty v-if="displayedApps.length === 0" description="暂无应用" />
         <n-grid v-else :cols="4" :x-gap="16" :y-gap="16" responsive="screen">
-          <n-grid-item v-for="app in filteredApps" :key="app.pkgId">
+          <n-grid-item v-for="app in displayedApps" :key="app.pkgId">
             <n-card class="app-card" hoverable @click="handleAppClick(app)">
               <div class="app-content">
                 <div class="app-icon">
@@ -109,9 +109,11 @@ interface Category {
 const route = useRoute()
 const router = useRouter()
 const apps = ref<AppInfo[]>([])
+const displayedApps = ref<AppInfo[]>([])
 const categoryName = ref('')
 const defaultIcon = '/path/to/default-icon.png'
 const searchQuery = ref('')
+let searchTimeout: NodeJS.Timeout | null = null
 
 // Filter apps based on search query
 const filteredApps = computed(() => {
@@ -126,10 +128,31 @@ const filteredApps = computed(() => {
   )
 })
 
+// 防抖处理搜索
+const debouncedSearch = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  searchTimeout = setTimeout(() => {
+    handleSearch()
+  }, 300)
+}
+
 // Handle search
 const handleSearch = () => {
-  // 搜索逻辑已通过 computed 属性实现
-  // 这里可以添加额外的搜索相关操作
+  const query = searchQuery.value.toLowerCase().trim()
+  if (!query) {
+    displayedApps.value = apps.value
+    return
+  }
+  
+  displayedApps.value = apps.value.filter(app => 
+    app.name?.toLowerCase().includes(query) || 
+    app.brief?.toLowerCase().includes(query) ||
+    app.keywords?.toLowerCase().includes(query) ||
+    app.packageName?.toLowerCase().includes(query) ||
+    app.source?.toLowerCase().includes(query)
+  )
 }
 
 // Get app icon URL
@@ -170,6 +193,7 @@ const fetchApps = async () => {
     const result = await response.json()
     if (Array.isArray(result)) {
       apps.value = result
+      displayedApps.value = result // 初始显示所有应用
     }
   } catch (error) {
     console.error('Failed to fetch apps:', error)
@@ -193,26 +217,32 @@ onMounted(async () => {
 
 .category-header {
   position: fixed;
-  top: 0;
+  top: 64px; /* 为顶部导航栏留出空间 */
   left: 0;
   right: 0;
   z-index: 100;
   text-align: center;
-  background: #fff;
-  padding: 24px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 16px 24px;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .category-header h1 {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 500;
   color: #333;
-  margin: 0 0 24px;
+  margin: 0;
+  flex-shrink: 0;
 }
 
 .search-section {
-  max-width: 600px;
-  margin: 0 auto;
+  flex: 1;
+  max-width: 480px;
+  margin: 0 24px;
 }
 
 .search-input {
@@ -325,28 +355,26 @@ onMounted(async () => {
 
 @media screen and (max-width: 768px) {
   .category-view {
-    padding: 0;
-    padding-top: 100px; /* 移动端头部高度较小 */
+    padding: 16px;
+    padding-top: 112px; /* 调整移动端头部间距 */
   }
 
   .category-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
-    padding: 16px;
-    border-bottom: 1px solid #f0f0f0;
-    background: #fff;
+    top: 56px; /* 移动端顶部导航栏高度较小 */
+    padding: 12px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
   }
 
   .category-header h1 {
     font-size: 18px;
-    margin: 0 0 16px;
+    text-align: left;
   }
 
   .search-section {
-    padding: 0;
+    margin: 0;
+    max-width: none;
   }
 
   .app-grid {
@@ -410,6 +438,15 @@ onMounted(async () => {
 }
 
 @media screen and (max-width: 480px) {
+  .category-view {
+    padding: 12px;
+    padding-top: 104px;
+  }
+
+  .category-header {
+    padding: 8px 12px;
+  }
+
   .category-header h1 {
     font-size: 16px;
   }

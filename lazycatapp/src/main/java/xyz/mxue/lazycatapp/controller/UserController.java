@@ -7,10 +7,12 @@ import xyz.mxue.lazycatapp.entity.CommunityUser;
 import xyz.mxue.lazycatapp.entity.UserInfo;
 import xyz.mxue.lazycatapp.service.UserService;
 import xyz.mxue.lazycatapp.service.AppService;
+import xyz.mxue.lazycatapp.model.Result;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/users")
@@ -106,6 +108,60 @@ public class UserController {
             "success", true,
             "message", "已更新 " + creatorIds.size() + " 个用户的信息"
         ));
+    }
+
+    @GetMapping("/developers")
+    public Result getDeveloperCommunityInfo() {
+        try {
+            List<UserInfo> userInfos = userService.getAllUserInfos();
+            List<CommunityUser> communityUsers = userService.getAllCommunityUsers();
+            
+            // 将用户信息和社区信息合并成开发者列表
+            List<Map<String, Object>> developers = userInfos.stream()
+                .map(userInfo -> {
+                    CommunityUser communityUser = communityUsers.stream()
+                        .filter(cu -> cu.getUid().equals(userInfo.getId()))
+                        .findFirst()
+                        .orElse(new CommunityUser());
+                    
+                    Map<String, Object> developer = new HashMap<>();
+                    
+                    // 添加 user_infos 表的所有字段
+                    developer.put("id", userInfo.getId());
+                    developer.put("username", userInfo.getUsername());
+                    developer.put("isUsernameSet", userInfo.getIsUsernameSet());
+                    developer.put("nickname", userInfo.getNickname());
+                    developer.put("avatar", userInfo.getAvatar());
+                    developer.put("description", userInfo.getDescription());
+                    developer.put("status", userInfo.getStatus());
+                    developer.put("githubUsername", userInfo.getGithubUsername());
+                    developer.put("isCurrentLoginUser", userInfo.getIsCurrentLoginUser());
+                    developer.put("createdAt", userInfo.getCreatedAt());
+                    developer.put("updatedAt", userInfo.getUpdatedAt());
+                    
+                    // 添加 community_users 表的所有字段
+                    developer.put("uid", communityUser.getUid());
+                    developer.put("receiveThumbs", communityUser.getReceiveThumbs());
+                    developer.put("follows", communityUser.getFollows());
+                    developer.put("fans", communityUser.getFans());
+                    developer.put("followed", communityUser.getFollowed());
+                    developer.put("guidelineCounts", communityUser.getGuidelineCounts());
+                    developer.put("hideFollows", communityUser.getHideFollows());
+                    developer.put("hideFans", communityUser.getHideFans());
+                    developer.put("hideThumbs", communityUser.getHideThumbs());
+                    developer.put("onlyFollowedAtMe", communityUser.getOnlyFollowedAtMe());
+                    developer.put("onlyFollowedCommentMe", communityUser.getOnlyFollowedCommentMe());
+                    developer.put("communityCreatedAt", communityUser.getCreatedAt());
+                    developer.put("communityUpdatedAt", communityUser.getUpdatedAt());
+                    
+                    return developer;
+                })
+                .collect(Collectors.toList());
+            
+            return Result.success(developers);
+        } catch (Exception e) {
+            return Result.error("获取开发者社区信息失败: " + e.getMessage());
+        }
     }
 
     @lombok.Data
