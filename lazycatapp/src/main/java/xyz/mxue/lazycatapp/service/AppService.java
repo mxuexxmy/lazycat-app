@@ -193,8 +193,11 @@ public class AppService {
                             updateDownloadCount(app);
                             userService.updateUserInfo(app.getCreatorId());
                         }
+                        
+                        // 逐个保存应用
+                        appRepository.save(app);
+                        log.info("成功保存应用: {}", app.getPkgId());
                     }
-                    appRepository.saveAll(apps);
                     log.info("成功更新 {} 个应用信息", apps.size());
                 } else {
                     log.error("获取应用列表失败: {}", appListResponse.message);

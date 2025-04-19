@@ -3,6 +3,9 @@ package xyz.mxue.lazycatapp;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import xyz.mxue.lazycatapp.service.CategoryService;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -29,5 +32,14 @@ public class LazycatappApplication {
         if (!logsDir.exists()) {
             logsDir.mkdirs();
         }
+    }
+
+    @Bean
+    public CommandLineRunner initCategories(CategoryService categoryService) {
+        return args -> {
+            // 在应用启动时执行一次分类同步
+            categoryService.updateChineseCategories();
+            categoryService.updateEnglishCategories();
+        };
     }
 }

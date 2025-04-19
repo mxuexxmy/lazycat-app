@@ -8,7 +8,6 @@ import jakarta.persistence.*;
 @Table(name = "user_infos")
 public class UserInfo {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
     private String username;

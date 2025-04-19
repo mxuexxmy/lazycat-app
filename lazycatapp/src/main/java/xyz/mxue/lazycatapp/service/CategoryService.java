@@ -49,11 +49,30 @@ public class CategoryService {
                 }
                 
                 String responseBody = response.body().string();
-                List<Category> categories = objectMapper.readValue(responseBody, 
+                List<Category> newCategories = objectMapper.readValue(responseBody, 
                     objectMapper.getTypeFactory().constructCollectionType(List.class, Category.class));
                 
-                if (categories != null && !categories.isEmpty()) {
-                    categoryRepository.saveAll(categories);
+                if (newCategories != null && !newCategories.isEmpty()) {
+                    // 获取现有分类
+                    List<Category> existingCategories = categoryRepository.findAll();
+                    Map<Integer, Category> existingMap = existingCategories.stream()
+                            .collect(Collectors.toMap(Category::getId, category -> category));
+                    
+                    // 更新或添加新分类
+                    for (Category newCategory : newCategories) {
+                        Category existingCategory = existingMap.get(newCategory.getId());
+                        if (existingCategory != null) {
+                            // 更新现有分类
+                            existingCategory.setName(newCategory.getName());
+                            existingCategory.setIcon(newCategory.getIcon());
+                        } else {
+                            // 添加新分类
+                            categoryRepository.save(newCategory);
+                        }
+                    }
+                    
+                    // 保存更新后的分类
+                    categoryRepository.saveAll(existingCategories);
                     log.info("成功更新中文分类信息");
                 }
             }

@@ -13,6 +13,7 @@ import xyz.mxue.lazycatapp.repository.CommunityUserRepository;
 import xyz.mxue.lazycatapp.repository.UserInfoRepository;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 
 @Slf4j
@@ -73,8 +74,15 @@ public class UserService {
                     userInfo.setStatus(userResponse.user.status);
                     userInfo.setGithubUsername(userResponse.user.githubUsername);
                     userInfo.setIsCurrentLoginUser(userResponse.user.isCurrentLoginUser);
-                    userInfoRepository.save(userInfo);
                     
+                    // 设置时间戳
+                    String now = Instant.now().toString();
+                    if (userInfo.getCreatedAt() == null) {
+                        userInfo.setCreatedAt(now);
+                    }
+                    userInfo.setUpdatedAt(now);
+                    
+                    userInfoRepository.save(userInfo);
                     log.info("成功更新用户信息: {}", userId);
                 }
             }
