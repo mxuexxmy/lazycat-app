@@ -101,7 +101,9 @@ public class AppService {
                     containsIgnoreCase(app.getKeywords(), keyword) ||
                     containsIgnoreCase(app.getSource(), keyword) ||
                     containsIgnoreCase(app.getDescription(), keyword) ||
-                    containsIgnoreCase(app.getBrief(), keyword)
+                    containsIgnoreCase(app.getBrief(), keyword) ||
+                    (app.getCategory() != null && app.getCategory().stream()
+                        .anyMatch(cat -> containsIgnoreCase(cat, keyword)))
                 )
                 .collect(Collectors.toList());
     }
