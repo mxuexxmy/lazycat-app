@@ -1,6 +1,7 @@
 <template>
   <div class="home-view">
     <StatisticsCard />
+    <AppWordCloud />
     <div class="search-section">
       <n-input-group>
         <n-input
@@ -75,6 +76,7 @@ import {
   LogoGithub
 } from '@vicons/ionicons5'
 import StatisticsCard from '@/components/StatisticsCard.vue'
+import AppWordCloud from '@/components/AppWordCloud.vue'
 
 interface Function {
   id: string;

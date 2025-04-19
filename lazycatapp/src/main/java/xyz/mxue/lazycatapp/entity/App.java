@@ -72,6 +72,9 @@ public class App {
     @Column(name = "update_time")
     private LocalDateTime updateTime;
     
+    @Column(name = "tags")
+    private String tags;
+    
     @PrePersist
     protected void onCreate() {
         createTime = LocalDateTime.now();
@@ -81,5 +84,13 @@ public class App {
     @PreUpdate
     protected void onUpdate() {
         updateTime = LocalDateTime.now();
+    }
+
+    public String getTags() {
+        return tags;
+    }
+
+    public void setTags(String tags) {
+        this.tags = tags;
     }
 } 
