@@ -11,12 +11,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.entity.App;
+import xyz.mxue.lazycatapp.entity.GitHubInfo;
 import xyz.mxue.lazycatapp.entity.UserInfo;
 import xyz.mxue.lazycatapp.repository.AppRepository;
+import xyz.mxue.lazycatapp.repository.GitHubInfoRepository;
 import xyz.mxue.lazycatapp.repository.UserInfoRepository;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -27,6 +31,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 @Slf4j
 @Service
@@ -38,6 +44,8 @@ public class AppService {
     private final UserService userService;
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
+    private final GitHubInfoRepository githubInfoRepository;
+    private final RestTemplate restTemplate = new RestTemplate();
     
     private static final String APP_LIST_URL = "https://appstore.api.lazycat.cloud/api/app/list";
     private static final String DOWNLOAD_COUNT_URL = "https://appstore.api.lazycat.cloud/api/counting";
@@ -397,6 +405,75 @@ public class AppService {
         } catch (IOException e) {
             log.error("获取应用总数时发生错误", e);
             return 0;
+        }
+    }
+
+    @Scheduled(fixedRate = 6 * 60 * 60 * 1000) // 每6小时执行一次
+    public void syncGitHubInfo() {
+        // 获取所有需要同步 GitHub 信息的用户
+        List<App> apps = appRepository.findAll();
+        Set<Long> userIds = apps.stream()
+            .map(App::getCreatorId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
+        // 为每个用户同步 GitHub 信息
+        for (Long userId : userIds) {
+            try {
+                String url = "https://playground.api.lazycat.cloud/api/github/info/" + userId;
+                String response = restTemplate.getForObject(url, String.class);
+                
+                // 检查是否返回 "record not found"
+                if ("record not found".equals(response)) {
+                    log.warn("用户 {} 的 GitHub 信息不存在", userId);
+                    continue;
+                }
+                
+                // 解析响应
+                JsonNode root = objectMapper.readTree(response);
+                
+                // 更新 GitHub 信息
+                GitHubInfo githubInfo = githubInfoRepository.findByUserId(userId)
+                    .orElse(new GitHubInfo());
+                
+                // 设置基本信息
+                githubInfo.setUserId(userId);
+                githubInfo.setUid(root.get("uid").asLong());
+                githubInfo.setCreatedAt(LocalDateTime.parse(root.get("createdAt").asText().replace("Z", "")));
+                githubInfo.setUpdatedAt(LocalDateTime.parse(root.get("updatedAt").asText().replace("Z", "")));
+                
+                // 设置用户信息
+                JsonNode userNode = root.get("user");
+                githubInfo.setUsername(userNode.get("username").asText());
+                githubInfo.setNickname(userNode.get("nickname").asText());
+                githubInfo.setAvatar(userNode.get("avatar").asText());
+                githubInfo.setDescription(userNode.get("description").asText());
+                githubInfo.setGithubUsername(userNode.get("githubUsername").asText());
+                
+                // 设置统计信息
+                JsonNode summaryNode = root.get("summary");
+                githubInfo.setTotalPRs(summaryNode.get("totalPRs").asInt());
+                githubInfo.setTotalCommits(summaryNode.get("totalCommits").asInt());
+                githubInfo.setTotalIssues(summaryNode.get("totalIssues").asInt());
+                githubInfo.setContributedTo(summaryNode.get("contributedTo").asInt());
+                
+                // 设置排名信息
+                JsonNode rankNode = summaryNode.get("rank");
+                githubInfo.setRankLevel(rankNode.get("level").asText());
+                githubInfo.setRankScore(rankNode.get("score").asDouble());
+                
+                // 设置编程语言信息
+                githubInfo.setTopLangs(root.get("topLangs").toString());
+                
+                // 设置最后同步时间
+                githubInfo.setLastSyncTime(LocalDateTime.now());
+                
+                // 保存信息
+                githubInfoRepository.save(githubInfo);
+                log.info("成功同步用户 {} 的 GitHub 信息", userId);
+            } catch (Exception e) {
+                log.error("同步用户 {} 的 GitHub 信息失败: {}", userId, e.getMessage());
+            }
         }
     }
 } 

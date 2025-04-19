@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import DeveloperCommunity from '@/views/developers/DeveloperCommunity.vue'
+import GitHubAchievements from '../views/GitHubAchievements.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -59,6 +60,14 @@ const routes: RouteRecordRaw[] = [
         path: 'community',
         name: 'DeveloperCommunity',
         component: DeveloperCommunity
+      },
+      {
+        path: 'achievements',
+        name: 'GitHubAchievements',
+        component: GitHubAchievements,
+        meta: {
+          title: 'GitHub 成就'
+        }
       }
     ]
   },

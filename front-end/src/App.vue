@@ -72,6 +72,7 @@
 import { h, ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useAppStore } from './stores/app'
 import { useRouter, useRoute } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 import {
   NConfigProvider,
   NLayout,
@@ -89,6 +90,7 @@ import { Search, ArrowBack, MenuOutline, HomeOutline, TrophyOutline, CodeSlashOu
 import LoadingOverlay from './components/LoadingOverlay.vue'
 
 const appStore = useAppStore()
+const userStore = useUserStore()
 
 const route = useRoute()
 const router = useRouter()
@@ -138,6 +140,10 @@ const menuOptions = [
       {
         label: '开发者排行',
         key: 'DeveloperRanking'
+      },
+      {
+        label: 'GitHub 成就',
+        key: 'GitHubAchievements'
       },
       {
         label: '开发者社区',
@@ -205,6 +211,10 @@ watch(
 
 // 处理菜单点击
 const handleMenuClick = (key: string) => {
+  if (key === 'achievements') {
+    router.push(`/achievements/${userStore.userId}`)
+    return
+  }
   // 如果是顶级菜单且有子菜单，不进行跳转
   const menuItem = menuOptions.find(item => item.key === key)
   
@@ -238,6 +248,7 @@ const showBackButton = computed(() => {
     'DeveloperRanking',
     'DeveloperCommunity',
     'DeveloperApps',
+    'GitHubAchievements',
     // 排行榜相关
     'MostPopular',
     'MonthlyNew',
@@ -275,12 +286,8 @@ const checkSyncStatus = async () => {
     
     // 计算同步进度（只计算应用和分类）
     const totalItems = status.totalApps + status.totalCategories
-    console.log("totalItems",totalItems)
     const completedItems = status.appCount + status.categoryCount
-    console.log("completedItems",completedItems)
     syncProgress.value = Math.round((completedItems / totalItems) * 100)
-    console.log("completedItems / totalItems",completedItems / totalItems) 
-    console.log("syncProgress.value",syncProgress.value)
 
     // 如果同步未完成，继续检查状态
     if (!status.isInitialSyncComplete) {

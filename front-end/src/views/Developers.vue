@@ -15,7 +15,7 @@ const route = useRoute()
 
 <style scoped>
 .developers-view {
-  max-width: 1440px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 24px;
   min-height: 100vh;

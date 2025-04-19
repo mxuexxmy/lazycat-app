@@ -71,7 +71,8 @@ import {
   SearchOutline,
   AppsOutline,
   ShieldCheckmarkOutline,
-  PeopleOutline
+  PeopleOutline,
+  LogoGithub
 } from '@vicons/ionicons5'
 import StatisticsCard from '@/components/StatisticsCard.vue'
 
@@ -145,6 +146,14 @@ const functions: Function[] = [
         icon: StarOutline,
         iconColor: '#fa8c16',
         route: { name: 'DeveloperRanking' }
+      },
+      {
+        id: 'github-achievements',
+        title: 'GitHub 成就',
+        description: '开发者 GitHub 成就展示',
+        icon: LogoGithub,
+        iconColor: '#333',
+        route: { name: 'GitHubAchievements' }
       },
       {
         id: 'developer-community',
