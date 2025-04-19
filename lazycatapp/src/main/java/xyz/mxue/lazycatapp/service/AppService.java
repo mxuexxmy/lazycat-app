@@ -213,10 +213,21 @@ public class AppService {
         log.info("开始更新应用下载量...");
         List<App> apps = appRepository.findAll();
         for (App app : apps) {
-            updateDownloadCount(app);
+            try {
+                updateDownloadCount(app);
+                appRepository.save(app); // 立即保存每个更新后的应用
+                log.info("应用 {} 下载量更新完成", app.getPkgId());
+                Thread.sleep(5000); // 每次更新后睡眠5秒
+            } catch (InterruptedException e) {
+                log.error("更新下载量时被中断", e);
+                Thread.currentThread().interrupt();
+                break;
+            } catch (Exception e) {
+                log.error("更新应用 {} 下载量时发生错误", app.getPkgId(), e);
+                // 继续处理下一个应用
+            }
         }
-        appRepository.saveAll(apps);
-        log.info("成功更新应用下载量");
+        log.info("应用下载量更新完成");
     }
     
     private void updateDownloadCount(App app) {
