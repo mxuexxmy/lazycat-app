@@ -18,8 +18,12 @@ import xyz.mxue.lazycatapp.service.UserService;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,29 +121,26 @@ public class AppService {
                     .map(App::getUpdateDate)
                     .max(String::compareTo)
                     .orElse("");
-                
+
                 return Map.of(
-                    "creatorId", creatorId,
-                    "name", userInfo.getNickname() != null ? userInfo.getNickname() : "未知用户",
+                    "id", creatorId,
+                    "nickName", userInfo.getNickname(),
                     "avatar", userInfo.getAvatar(),
-                    "apps", topApps.stream()
-                        .map(app -> Map.of(
-                            "pkgId", app.getPkgId(),
-                            "name", app.getName(),
-                            "updateDate", app.getUpdateDate()
-                        ))
-                        .collect(Collectors.toList()),
                     "appCount", apps.size(),
                     "totalDownloads", totalDownloads,
+                    "topApps", topApps,
                     "lastUpdateDate", lastUpdateDate
                 );
             })
             .sorted((a, b) -> {
-                int appCountCompare = ((Integer) b.get("appCount")).compareTo((Integer) a.get("appCount"));
-                if (appCountCompare != 0) {
-                    return appCountCompare;
+                Integer bDownloads = (Integer) b.get("totalDownloads");
+                Integer aDownloads = (Integer) a.get("totalDownloads");
+                if (!bDownloads.equals(aDownloads)) {
+                    return bDownloads.compareTo(aDownloads);
                 }
-                return ((Integer) b.get("totalDownloads")).compareTo((Integer) a.get("totalDownloads"));
+                Integer bCount = (Integer) b.get("appCount");
+                Integer aCount = (Integer) a.get("appCount");
+                return bCount.compareTo(aCount);
             })
             .collect(Collectors.toList());
     }
@@ -251,5 +252,90 @@ public class AppService {
      */
     public List<Long> getDistinctCreatorIds() {
         return appRepository.findDistinctCreatorIds();
+    }
+
+    // 获取月度新增应用数据
+    public List<Map<String, Object>> getMonthlyNewApps() {
+        List<App> apps = appRepository.findAll();
+        Map<YearMonth, Long> monthlyCount = apps.stream()
+            .collect(Collectors.groupingBy(
+                app -> YearMonth.from(app.getCreateTime()),
+                Collectors.counting()
+            ));
+
+        return monthlyCount.entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .map(entry -> {
+                Map<String, Object> result = new HashMap<>();
+                result.put("month", entry.getKey().toString());
+                result.put("count", entry.getValue());
+                return result;
+            })
+            .collect(Collectors.toList());
+    }
+
+    // 获取应用类别分布数据
+    public List<Map<String, Object>> getCategoryDistribution() {
+        List<App> apps = appRepository.findAll();
+        Map<String, Long> categoryCount = new HashMap<>();
+        
+        // 遍历所有应用，统计每个类别的数量
+        for (App app : apps) {
+            if (app.getCategory() != null) {
+                for (String category : app.getCategory()) {
+                    categoryCount.merge(category, 1L, Long::sum);
+                }
+            }
+        }
+
+        return categoryCount.entrySet().stream()
+            .map(entry -> {
+                Map<String, Object> result = new HashMap<>();
+                result.put("category", entry.getKey());
+                result.put("count", entry.getValue());
+                return result;
+            })
+            .collect(Collectors.toList());
+    }
+
+    // 获取开发者活跃度数据
+    public List<Map<String, Object>> getDeveloperActivity() {
+        List<App> apps = appRepository.findAll();
+        Map<String, Long> developerAppCounts = new HashMap<>();
+        
+        for (App app : apps) {
+            String creator = app.getCreator();
+            developerAppCounts.merge(creator, 1L, Long::sum);
+        }
+
+        return developerAppCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .map(entry -> {
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("developer", entry.getKey());
+                    result.put("appCount", entry.getValue());
+                    return result;
+                })
+                .collect(Collectors.toList());
+    }
+
+    // 获取应用更新频率数据
+    public List<Map<String, Object>> getUpdateFrequency() {
+        List<App> apps = appRepository.findAll();
+        return apps.stream()
+            .filter(app -> app.getUpdateTime() != null && app.getCreateTime() != null)
+            .map(app -> {
+                Map<String, Object> result = new HashMap<>();
+                result.put("pkgId", app.getPkgId());
+                result.put("name", app.getName());
+                long daysBetween = ChronoUnit.DAYS.between(
+                    app.getCreateTime(),
+                    app.getUpdateTime()
+                );
+                result.put("updateFrequency", daysBetween);
+                return result;
+            })
+            .sorted(Comparator.comparingLong(m -> (Long) m.get("updateFrequency")))
+            .collect(Collectors.toList());
     }
 } 

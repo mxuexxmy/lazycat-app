@@ -80,7 +80,7 @@ interface DeveloperRankingResponse {
   success: boolean
   data: Array<{
     creatorId: number
-    name: string
+    nickName: string
     avatar?: string
     apps: Array<{
       pkgId: string
@@ -103,17 +103,20 @@ const avatarColors = [
   '#722ed1', '#2f54eb', '#fa8c16', '#fadb14', '#a0d911'
 ]
 
-const getAvatarColor = (name: string) => {
+const getAvatarColor = (name: string | undefined) => {
+  if (!name) return avatarColors[0] // 默认返回第一个颜色
   // 使用名字的 charCode 来选择颜色
   const charSum = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)
   return avatarColors[charSum % avatarColors.length]
 }
 
-const getFirstChar = (name: string) => {
+const getFirstChar = (name: string | undefined) => {
+  if (!name) return '?' // 返回问号作为默认字符
   return name.charAt(0)
 }
 
 const sortedDevelopers = computed(() => {
+  if (!developers.value) return []
   return [...developers.value].sort((a, b) => {
     // 首先按应用数量排序
     if (b.appCount !== a.appCount) {
@@ -159,16 +162,19 @@ const fetchAllApps = async () => {
     if (result.success && result.data) {
       developers.value = result.data.map(developer => ({
         creatorId: developer.creatorId,
-        name: developer.name,
+        name: developer.nickName || '未知开发者', // 提供默认名称
         avatar: developer.avatar,
-        apps: developer.apps,
-        appCount: developer.appCount,
-        totalDownloads: developer.totalDownloads,
-        lastUpdateDate: developer.lastUpdateDate
+        apps: developer.apps || [], // 确保 apps 始终是数组
+        appCount: developer.appCount || 0,
+        totalDownloads: developer.totalDownloads || 0,
+        lastUpdateDate: developer.lastUpdateDate || ''
       }))
+    } else {
+      developers.value = [] // 如果没有数据，设置为空数组
     }
   } catch (error) {
     console.error('Failed to fetch developer ranking:', error)
+    developers.value = [] // 发生错误时，设置为空数组
   } finally {
     loading.value = false
   }

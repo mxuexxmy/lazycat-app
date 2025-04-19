@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import xyz.mxue.lazycatapp.converter.StringListConverter;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -64,4 +65,21 @@ public class App {
     
     @Column(name = "download_count")
     private Integer downloadCount;
+    
+    @Column(name = "create_time")
+    private LocalDateTime createTime;
+    
+    @Column(name = "update_time")
+    private LocalDateTime updateTime;
+    
+    @PrePersist
+    protected void onCreate() {
+        createTime = LocalDateTime.now();
+        updateTime = LocalDateTime.now();
+    }
+    
+    @PreUpdate
+    protected void onUpdate() {
+        updateTime = LocalDateTime.now();
+    }
 } 

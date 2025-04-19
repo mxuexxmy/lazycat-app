@@ -113,4 +113,24 @@ public class AppController {
                 .collect(Collectors.toList())
         ));
     }
+
+    @GetMapping("/statistics/monthly-new")
+    public ResponseEntity<List<Map<String, Object>>> getMonthlyNewApps() {
+        return ResponseEntity.ok(appService.getMonthlyNewApps());
+    }
+
+    @GetMapping("/statistics/category-distribution")
+    public ResponseEntity<List<Map<String, Object>>> getCategoryDistribution() {
+        return ResponseEntity.ok(appService.getCategoryDistribution());
+    }
+
+    @GetMapping("/statistics/developer-activity")
+    public ResponseEntity<List<Map<String, Object>>> getDeveloperActivity() {
+        return ResponseEntity.ok(appService.getDeveloperActivity());
+    }
+
+    @GetMapping("/statistics/update-frequency")
+    public ResponseEntity<List<Map<String, Object>>> getUpdateFrequency() {
+        return ResponseEntity.ok(appService.getUpdateFrequency());
+    }
 } 
