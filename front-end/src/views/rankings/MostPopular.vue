@@ -1,33 +1,95 @@
 <template>
   <div class="most-popular">
-    <n-card title="最受欢迎应用">
+    <n-card>
+      <template #header>
+        <div class="header">
+          <h2 class="section-title">最受欢迎</h2>
+          <p class="section-desc">按下载量排序的热门应用</p>
+        </div>
+      </template>
       <n-spin :show="loading">
-        <n-empty v-if="!loading && (!apps || apps.length === 0)" description="暂无数据" />
+        <n-empty 
+          v-if="!loading && (!apps || apps.length === 0)" 
+          description="暂无数据"
+        />
         <n-list v-else>
-          <n-list-item v-for="app in apps" :key="app.pkgId" class="app-item" @click="handleAppClick(app)">
+          <n-list-item 
+            v-for="(app, index) in apps" 
+            :key="app.pkgId" 
+            class="app-item"
+            @click="handleAppClick(app)"
+          >
             <n-thing>
               <template #header>
                 <n-space align="center">
+                  <div class="rank-badge" v-if="index < 3">{{ index + 1 }}</div>
                   <n-avatar
                     :src="getAppIcon(app)"
                     :fallback-src="defaultIcon"
-                    size="small"
-                    object-fit="contain"
+                    round
+                    :size="48"
+                    object-fit="cover"
+                    class="app-icon"
                   />
                   <span class="app-name">{{ app.name }}</span>
-                  <n-tag type="success">下载量: {{ app.downloads }}</n-tag>
+                  <n-tag type="success" size="small" round>
+                    <template #icon>
+                      <n-icon><download-outline /></n-icon>
+                    </template>
+                    {{ formatDownloads(app.downloads) }}
+                  </n-tag>
                 </n-space>
               </template>
               <template #description>
                 <div class="app-desc">{{ app.brief || app.description }}</div>
               </template>
               <template #footer>
-                <n-space>
-                  <n-tag>版本 {{ app.version }}</n-tag>
-                  <n-tag v-for="cat in app.category" :key="cat">{{ cat }}</n-tag>
-                  <n-tag v-if="app.supportPC && app.supportMobile">全平台</n-tag>
-                  <n-tag v-else-if="app.supportPC">PC端</n-tag>
-                  <n-tag v-else-if="app.supportMobile">移动端</n-tag>
+                <n-space wrap :size="4">
+                  <n-tag 
+                    v-for="cat in app.category" 
+                    :key="cat"
+                    size="small"
+                    round
+                    :bordered="false"
+                    type="warning"
+                  >
+                    {{ cat }}
+                  </n-tag>
+                  <n-tag 
+                    size="small"
+                    round
+                    :bordered="false"
+                    type="info"
+                  >
+                    v{{ app.version }}
+                  </n-tag>
+                  <n-tag 
+                    v-if="app.supportPC && app.supportMobile"
+                    size="small"
+                    round
+                    :bordered="false"
+                    type="info"
+                  >
+                    全平台
+                  </n-tag>
+                  <n-tag 
+                    v-else-if="app.supportPC"
+                    size="small"
+                    round
+                    :bordered="false"
+                    type="info"
+                  >
+                    PC端
+                  </n-tag>
+                  <n-tag 
+                    v-else-if="app.supportMobile"
+                    size="small"
+                    round
+                    :bordered="false"
+                    type="info"
+                  >
+                    移动端
+                  </n-tag>
                 </n-space>
               </template>
             </n-thing>
@@ -41,19 +103,31 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { NCard, NList, NListItem, NThing, NTag, NEmpty, NSpin, NSpace, NAvatar } from 'naive-ui'
+import { 
+  NCard, 
+  NList,
+  NListItem,
+  NThing,
+  NTag, 
+  NEmpty, 
+  NSpin, 
+  NSpace, 
+  NAvatar,
+  NIcon
+} from 'naive-ui'
+import { DownloadOutline } from '@vicons/ionicons5'
 
 interface AppInfo {
-  name: string;
-  pkgId: string;
-  description: string;
-  brief: string;
-  category: string[];
-  iconPath: string;
-  version: string;
-  downloads: number;
-  supportPC: boolean;
-  supportMobile: boolean;
+  name: string
+  pkgId: string
+  description: string
+  brief: string
+  category: string[]
+  iconPath: string
+  version: string
+  downloads: number
+  supportPC: boolean
+  supportMobile: boolean
 }
 
 const loading = ref(false)
@@ -64,6 +138,13 @@ const router = useRouter()
 const getAppIcon = (app: AppInfo) => {
   if (!app.iconPath) return defaultIcon
   return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`
+}
+
+const formatDownloads = (downloads: number) => {
+  if (downloads >= 10000) {
+    return `${(downloads / 10000).toFixed(1)}万`
+  }
+  return downloads.toString()
 }
 
 const fetchMostPopularApps = async () => {
@@ -106,15 +187,30 @@ onMounted(() => {
 
 <style scoped>
 .most-popular {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  padding: 16px;
+}
+
+.header {
+  margin-bottom: 8px;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.section-desc {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: #666;
 }
 
 .app-item {
   cursor: pointer;
   transition: all 0.3s ease;
-  border-bottom: 1px solid #f0f0f0;
+  border-radius: 8px;
 }
 
 .app-item:hover {
@@ -132,21 +228,56 @@ onMounted(() => {
   font-size: 14px;
   line-height: 1.6;
   margin: 8px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-:deep(.n-card) {
-  border-radius: 8px;
+.app-icon {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: #fff;
+  padding: 4px;
+}
+
+.rank-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.app-item:nth-child(1) .rank-badge {
+  background: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+}
+
+.app-item:nth-child(2) .rank-badge {
+  background: linear-gradient(120deg, #89f7fe 0%, #66a6ff 100%);
+}
+
+.app-item:nth-child(3) .rank-badge {
+  background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
 }
 
 /* 移动端适配 */
 @media screen and (max-width: 768px) {
   .most-popular {
-    border-radius: 0;
-    box-shadow: none;
+    padding: 12px;
   }
 
-  :deep(.n-card) {
-    border-radius: 0;
+  .section-title {
+    font-size: 18px;
+  }
+
+  .section-desc {
+    font-size: 13px;
   }
 
   .app-name {
@@ -155,20 +286,17 @@ onMounted(() => {
 
   .app-desc {
     font-size: 13px;
-    margin: 4px 0;
-  }
-
-  :deep(.n-tag) {
-    font-size: 12px;
   }
 }
 
 @media screen and (max-width: 480px) {
-  .app-name {
-    font-size: 14px;
+  .most-popular {
+    padding: 8px;
   }
 
-  .app-desc {
+  .rank-badge {
+    width: 20px;
+    height: 20px;
     font-size: 12px;
   }
 }

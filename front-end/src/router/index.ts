@@ -31,11 +31,23 @@ const routes: RouteRecordRaw[] = [
         path: 'recent-updates',
         name: 'RecentUpdates',
         component: () => import('@/views/rankings/RecentUpdates.vue')
+      }
+    ]
+  },
+  {
+    path: '/developers',
+    name: 'Developers',
+    component: () => import('@/views/Developers.vue'),
+    children: [
+      {
+        path: 'ranking',
+        name: 'DeveloperRanking',
+        component: () => import('@/views/developers/DeveloperRanking.vue')
       },
       {
-        path: 'developer-ranking',
-        name: 'DeveloperRanking',
-        component: () => import('@/views/rankings/DeveloperRanking.vue')
+        path: 'center',
+        name: 'DeveloperCenter',
+        component: () => import('@/views/developers/DeveloperCenter.vue')
       }
     ]
   },

@@ -125,29 +125,43 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAppStore } from '../stores/app'
-import type { App } from '../types'
-import { NTabs, NTabPane, NEmpty, NImage, NButton, NIcon } from 'naive-ui'
+import { NTabs, NTabPane, NEmpty, NImage, NButton, NIcon, NSpace, NCard, NDivider, NH2, NH3, NP, NGrid, NGridItem, NDescriptions, NDescriptionsItem } from 'naive-ui'
 import { ArrowBack } from '@vicons/ionicons5'
+
+interface AppDetail {
+  pkgId: string
+  name: string
+  description: string
+  brief: string
+  category: string[]
+  iconPath: string
+  version: string
+  author: string
+  creator: string
+  updateDate: string
+  supportPC: boolean
+  supportMobile: boolean
+  source: string
+  pcScreenshotPaths?: string[]
+  mobileScreenshotPaths?: string[]
+}
 
 const route = useRoute()
 const router = useRouter()
-const appStore = useAppStore()
-const app = ref<App | null>(null)
+const app = ref<AppDetail | null>(null)
 const defaultIcon = 'https://dl.lazycatmicroserver.com/appstore/metarepo/default-icon.png'
 
 const handleBack = () => {
   router.back()
 }
 
-const getAppIcon = (app: App) => {
+const getAppIcon = (app: AppDetail) => {
   if (!app.iconPath) return defaultIcon
   const iconPath = app.iconPath.startsWith('/') ? app.iconPath.slice(1) : app.iconPath
   return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`
 }
 
 const getScreenshotUrl = (pkgId: string, screenshot: string) => {
-  // 将 screenshot 中的 publish  替换为 screenshots 
   const screenshotPath = screenshot.replace('/public', '/screenshots')
   return `https://dl.lazycatmicroserver.com/appstore/metarepo/fallback/apps/${pkgId}${screenshotPath}`
 }
@@ -156,9 +170,19 @@ const formatDate = (date: string) => {
   return new Date(date).toLocaleString('zh-CN')
 }
 
+const fetchAppDetail = async (pkgId: string) => {
+  try {
+    const response = await fetch(`/api/apps/${pkgId}`)
+    const data = await response.json()
+    app.value = data
+  } catch (error) {
+    console.error('Failed to fetch app detail:', error)
+  }
+}
+
 onMounted(async () => {
   const pkgId = route.params.pkgId as string
-  app.value = await appStore.fetchAppInfo(pkgId)
+  await fetchAppDetail(pkgId)
 })
 </script>
 

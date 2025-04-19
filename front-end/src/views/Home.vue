@@ -126,7 +126,15 @@ const functions: Function[] = [
         icon: RefreshOutline,
         iconColor: '#2f54eb',
         route: { name: 'RecentUpdates' }
-      },
+      }
+    ]
+  },
+  {
+    id: 'developers',
+    title: '开发者',
+    icon: CodeSlashOutline,
+    iconColor: '#1890ff',
+    children: [
       {
         id: 'developer-ranking',
         title: '开发者排行',
@@ -134,6 +142,14 @@ const functions: Function[] = [
         icon: StarOutline,
         iconColor: '#fa8c16',
         route: { name: 'DeveloperRanking' }
+      },
+      {
+        id: 'developer-center',
+        title: '开发者中心',
+        description: '开发者工具和资源',
+        icon: BulbOutline,
+        iconColor: '#52c41a',
+        route: { name: 'DeveloperCenter' }
       }
     ]
   },

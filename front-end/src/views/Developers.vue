@@ -1,5 +1,5 @@
 <template>
-  <div class="rankings-view">
+  <div class="developers-view">
     <router-view></router-view>
   </div>
 </template>
@@ -9,7 +9,7 @@
 </script>
 
 <style scoped>
-.rankings-view {
+.developers-view {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
@@ -18,13 +18,13 @@
 }
 
 @media screen and (max-width: 768px) {
-  .rankings-view {
+  .developers-view {
     padding: 12px;
   }
 }
 
 @media screen and (max-width: 480px) {
-  .rankings-view {
+  .developers-view {
     padding: 8px;
   }
 }

@@ -1,73 +1,63 @@
 <template>
-  <n-card title="开发者排行榜" class="developer-ranking">
-    <n-spin :show="loading">
-      <n-empty v-if="!loading && (!developers || developers.length === 0)" description="暂无数据" />
-      <div v-else class="ranking-list">
-        <n-list>
-          <n-list-item v-for="(developer, index) in sortedDevelopers" :key="developer.creatorId">
-            <div class="developer-item">
-              <div class="rank" :class="getRankClass(index + 1)">
-                {{ index + 1 }}
-              </div>
-              <div class="avatar-wrapper">
-                <img
-                  v-if="developer.avatar"
-                  :src="developer.avatar"
-                  :alt="developer.name"
-                  class="avatar-img"
-                />
-                <div v-else class="avatar-placeholder" :style="{ background: getAvatarColor(developer.name) }">
-                  {{ getFirstChar(developer.name) }}
+  <div class="rankings-container">
+    <n-card title="开发者排行榜" class="developer-ranking">
+      <n-spin :show="loading">
+        <n-empty v-if="!loading && (!developers || developers.length === 0)" description="暂无数据" />
+        <div v-else class="ranking-list">
+          <n-list>
+            <n-list-item v-for="(developer, index) in sortedDevelopers" :key="developer.creatorId">
+              <div class="developer-item">
+                <div class="rank" :class="getRankClass(index + 1)">
+                  {{ index + 1 }}
+                </div>
+                <div class="avatar-wrapper">
+                  <img
+                    v-if="developer.avatar"
+                    :src="developer.avatar"
+                    :alt="developer.name"
+                    class="avatar-img"
+                  />
+                  <div v-else class="avatar-placeholder" :style="{ background: getAvatarColor(developer.name) }">
+                    {{ getFirstChar(developer.name) }}
+                  </div>
+                </div>
+                <div class="developer-info">
+                  <div class="developer-name">{{ developer.name }}</div>
+                  <div class="developer-stats">
+                    <span>应用数: {{ developer.appCount }}</span>
+                    <n-divider vertical />
+                    <span>总下载: {{ formatDownloads(developer.totalDownloads) }}</span>
+                    <n-divider vertical />
+                    <span>最近更新: {{ formatDate(developer.lastUpdateDate) }}</span>
+                  </div>
+                  <div class="app-list">
+                    <n-tag
+                      v-for="app in developer.apps.slice(0, 3)"
+                      :key="app.pkgId"
+                      size="small"
+                      :bordered="false"
+                      @click="handleAppClick(app)"
+                    >
+                      {{ app.name }}
+                    </n-tag>
+                    <n-tag v-if="developer.apps.length > 3" size="small" :bordered="false">
+                      等 {{ developer.apps.length }} 个应用
+                    </n-tag>
+                  </div>
                 </div>
               </div>
-              <div class="developer-info">
-                <div class="developer-name">{{ developer.name }}</div>
-                <div class="developer-stats">
-                  <span>应用数: {{ developer.appCount }}</span>
-                  <n-divider vertical />
-                  <span>总下载: {{ formatDownloads(developer.totalDownloads) }}</span>
-                  <n-divider vertical />
-                  <span>最近更新: {{ formatDate(developer.lastUpdateDate) }}</span>
-                </div>
-                <div class="app-list">
-                  <n-tag
-                    v-for="app in developer.apps.slice(0, 3)"
-                    :key="app.pkgId"
-                    size="small"
-                    :bordered="false"
-                    @click="handleAppClick(app)"
-                  >
-                    {{ app.name }}
-                  </n-tag>
-                  <n-tag v-if="developer.apps.length > 3" size="small" :bordered="false">
-                    等 {{ developer.apps.length }} 个应用
-                  </n-tag>
-                </div>
-              </div>
-            </div>
-          </n-list-item>
-        </n-list>
-      </div>
-    </n-spin>
-  </n-card>
+            </n-list-item>
+          </n-list>
+        </div>
+      </n-spin>
+    </n-card>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { NCard, NSpin, NEmpty, NList, NListItem, NAvatar, NDivider, NTag } from 'naive-ui'
-
-interface AppData {
-  pkgId: string
-  name: string
-  creator: string
-  creatorId: number
-  updateDate: string
-}
-
-interface DeveloperInfo {
-  nickname: string
-}
+import { NCard, NSpin, NEmpty, NList, NListItem, NDivider, NTag } from 'naive-ui'
 
 interface App {
   pkgId: string
@@ -190,8 +180,12 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.rankings-container {
+  width: 100%;
+}
+
 .developer-ranking {
-  padding: 16px;
+  width: 100%;
 }
 
 .ranking-list {
