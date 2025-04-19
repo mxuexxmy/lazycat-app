@@ -69,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { inject, h, ref, computed, onBeforeMount, watch, nextTick, onMounted } from 'vue'
+import { h, ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useAppStore } from './stores/app'
 import { useRouter, useRoute } from 'vue-router'
 import {
@@ -78,8 +78,6 @@ import {
   NLayoutHeader,
   NLayoutContent,
   NH2,
-  type NLocale,
-  type NDateLocale,
   NMenu,
   NButton,
   NIcon,
@@ -87,16 +85,10 @@ import {
   NDrawerContent
 } from 'naive-ui'
 import { zhCN, dateZhCN } from 'naive-ui'
-import { Search, ArrowBack, Menu, MenuOutline, HomeOutline, TrophyOutline, CodeSlashOutline, RocketOutline, BookOutline, BuildOutline, PeopleOutline } from '@vicons/ionicons5'
+import { Search, ArrowBack, MenuOutline, HomeOutline, TrophyOutline, CodeSlashOutline, RocketOutline, BookOutline, BuildOutline, PeopleOutline } from '@vicons/ionicons5'
 import LoadingOverlay from './components/LoadingOverlay.vue'
 
-interface NaiveConfig {
-  locale: NLocale
-  dateLocale: NDateLocale
-}
-
 const appStore = useAppStore()
-const naiveConfig = inject('naiveConfig') as NaiveConfig
 
 const route = useRoute()
 const router = useRouter()
@@ -295,7 +287,7 @@ const checkSyncStatus = async () => {
       setTimeout(checkSyncStatus, 5000)
     } else {
       // 同步完成后，等待一段时间后再次检查
-      setTimeout(checkSyncStatus, 30000)
+      setTimeout(checkSyncStatus, 60000)
     }
   } catch (error) {
     console.error('检查同步状态失败:', error)

@@ -134,3 +134,4 @@ local.properties
 /.nb-gradle/ 
 
 /lzcapp
+/lazycatapp/data/

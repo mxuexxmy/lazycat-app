@@ -1,5 +1,6 @@
 <template>
   <div class="home-view">
+    <StatisticsCard />
     <div class="search-section">
       <n-input-group>
         <n-input
@@ -72,6 +73,7 @@ import {
   ShieldCheckmarkOutline,
   PeopleOutline
 } from '@vicons/ionicons5'
+import StatisticsCard from '@/components/StatisticsCard.vue'
 
 interface Function {
   id: string;

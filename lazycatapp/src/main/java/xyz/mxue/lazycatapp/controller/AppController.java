@@ -179,6 +179,22 @@ public class AppController {
         return status;
     }
 
+    @GetMapping("/statistics")
+    public Map<String, Object> getStatistics() {
+        Map<String, Object> statistics = new HashMap<>();
+        
+        // 获取应用总数
+        long totalApps = appService.count();
+        
+        // 获取开发者总数
+        long totalDevelopers = appService.getDistinctCreatorIds().size();
+        
+        statistics.put("totalApps", totalApps);
+        statistics.put("totalDevelopers", totalDevelopers);
+        
+        return statistics;
+    }
+
     // 在数据同步完成后调用此方法
     public void setInitialSyncComplete() {
         this.isInitialSyncComplete = true;
