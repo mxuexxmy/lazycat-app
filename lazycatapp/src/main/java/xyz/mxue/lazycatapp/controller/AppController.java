@@ -10,7 +10,6 @@ import xyz.mxue.lazycatapp.entity.App;
 import xyz.mxue.lazycatapp.entity.Category;
 import xyz.mxue.lazycatapp.service.AppService;
 import xyz.mxue.lazycatapp.service.CategoryService;
-import xyz.mxue.lazycatapp.service.UserService;
 
 import java.util.List;
 import java.util.Map;
@@ -23,7 +22,6 @@ public class AppController {
 
     private final AppService appService;
     private final CategoryService categoryService;
-    private final UserService userService;
     private boolean isInitialSyncComplete = false;
 
     @GetMapping
