@@ -29,6 +29,10 @@ public class KeywordService {
                     if (app.getTags() != null) {
                         keywords.addAll(Arrays.asList(app.getTags().split(",")));
                     }
+                    // 添加应用keywords作为关键词
+                    if (app.getKeywords() != null) {
+                        keywords.addAll(Arrays.asList(app.getKeywords().split(",")));
+                    }
                     return keywords.stream();
                 })
                 .map(String::trim)

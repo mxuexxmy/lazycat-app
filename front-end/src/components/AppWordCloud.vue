@@ -42,6 +42,11 @@ interface Keyword {
   color?: string
 }
 
+interface KeywordData {
+  keyword: string
+  count: number
+}
+
 const loading = ref(false)
 const keywords = ref<Keyword[]>([])
 const isExpanded = ref(false)
@@ -55,7 +60,7 @@ const colors = [
 
 // 计算显示的关键词
 const displayKeywords = computed(() => {
-  return isExpanded.value ? keywords.value : keywords.value.slice(0, 8)
+  return isExpanded.value ? keywords.value : keywords.value.slice(0, 12)
 })
 
 const fetchKeywords = async () => {
@@ -65,7 +70,7 @@ const fetchKeywords = async () => {
     const data = await response.json()
     
     // 处理关键词数据
-    keywords.value = data.map((item: any, index: number) => ({
+    keywords.value = data.map((item: KeywordData, index: number) => ({
       text: item.keyword,
       weight: item.count,
       color: colors[index % colors.length]
