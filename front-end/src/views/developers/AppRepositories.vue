@@ -78,8 +78,18 @@ import { useRouter } from 'vue-router'
 import { NCard, NEmpty, NSpin, NImage, NEllipsis, NIcon, NTag, NTooltip } from 'naive-ui'
 import { DownloadOutline, LogoGithub } from '@vicons/ionicons5'
 
+interface AppData {
+  pkgId: string
+  name: string
+  description: string
+  iconPath: string
+  downloadCount: number | null
+  source: string
+}
+
 // Format downloads to display in 万 units
-const formatDownloads = (count: number) => {
+const formatDownloads = (count: number | null) => {
+  if (count === null || count === undefined) return '0'
   if (count >= 10000) {
     return `${(count / 10000).toFixed(1)}万`
   }
@@ -90,15 +100,6 @@ const formatDownloads = (count: number) => {
 const getAppIcon = (app: AppData) => {
   if (!app.iconPath) return defaultIcon
   return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`
-}
-
-interface AppData {
-  pkgId: string
-  name: string
-  description: string
-  iconPath: string
-  downloadCount: number
-  source: string
 }
 
 const defaultIcon = '/app-icon.png'

@@ -24,40 +24,42 @@
       </div>
 
       <div class="app-grid">
-        <n-empty v-if="displayedApps.length === 0" description="暂无应用" />
-        <n-grid v-else :cols="4" :x-gap="16" :y-gap="16" responsive="screen">
-          <n-grid-item v-for="app in displayedApps" :key="app.pkgId">
-            <n-card class="app-card" hoverable @click="handleAppClick(app)">
-              <div class="app-content">
-                <div class="app-icon">
-                  <n-image
-                    :src="getAppIcon(app)"
-                    :fallback-src="defaultIcon"
-                    preview-disabled
-                    object-fit="contain"
-                  />
-                </div>
-                <div class="app-info">
-                  <div class="app-title">{{ app.name }}</div>
-                  <div class="app-desc">{{ app.brief || app.description }}</div>
-                  <div class="app-tags">
-                    <n-space vertical size="small">
-                      <n-space wrap :size="4">
-                        <n-tag v-for="cat in app.category" :key="cat" size="small" round>
-                          {{ cat }}
-                        </n-tag>
+        <n-spin :show="loading">
+          <n-empty v-if="displayedApps.length === 0" description="暂无应用" />
+          <n-grid v-else :cols="4" :x-gap="16" :y-gap="16" responsive="screen">
+            <n-grid-item v-for="app in displayedApps" :key="app.pkgId">
+              <n-card class="app-card" hoverable @click="handleAppClick(app)">
+                <div class="app-content">
+                  <div class="app-icon">
+                    <n-image
+                      :src="getAppIcon(app)"
+                      :fallback-src="defaultIcon"
+                      preview-disabled
+                      object-fit="contain"
+                    />
+                  </div>
+                  <div class="app-info">
+                    <div class="app-title">{{ app.name }}</div>
+                    <div class="app-desc">{{ app.brief || app.description }}</div>
+                    <div class="app-tags">
+                      <n-space vertical size="small">
+                        <n-space wrap :size="4">
+                          <n-tag v-for="cat in app.category" :key="cat" size="small" round>
+                            {{ cat }}
+                          </n-tag>
+                        </n-space>
+                        <n-space :size="4">
+                          <n-tag size="small" :bordered="false" type="success" v-if="app.supportPC">PC端</n-tag>
+                          <n-tag size="small" :bordered="false" type="info" v-if="app.supportMobile">移动端</n-tag>
+                        </n-space>
                       </n-space>
-                      <n-space :size="4">
-                        <n-tag size="small" :bordered="false" type="success" v-if="app.supportPC">PC端</n-tag>
-                        <n-tag size="small" :bordered="false" type="info" v-if="app.supportMobile">移动端</n-tag>
-                      </n-space>
-                    </n-space>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </n-card>
-          </n-grid-item>
-        </n-grid>
+              </n-card>
+            </n-grid-item>
+          </n-grid>
+        </n-spin>
       </div>
     </n-space>
   </div>
@@ -77,7 +79,8 @@ import {
   NInputGroup,
   NButton,
   NIcon,
-  NEmpty
+  NEmpty,
+  NSpin
 } from 'naive-ui'
 import { SearchOutline } from '@vicons/ionicons5'
 import type { App } from '@/types'
@@ -114,6 +117,7 @@ const categoryName = ref('')
 const defaultIcon = '/path/to/default-icon.png'
 const searchQuery = ref('')
 let searchTimeout: NodeJS.Timeout | null = null
+const loading = ref(true)
 
 // Filter apps based on search query
 const filteredApps = computed(() => {
@@ -201,7 +205,11 @@ const fetchApps = async () => {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchCategoryName(), fetchApps()])
+  try {
+    await Promise.all([fetchCategoryName(), fetchApps()])
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 
