@@ -38,11 +38,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, defineComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { Search } from '@vicons/ionicons5'
 import type { App } from '../types'
+
+const __name = 'Search'
 
 const route = useRoute()
 const router = useRouter()

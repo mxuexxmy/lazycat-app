@@ -1,12 +1,10 @@
 <template>
   <div class="monthly-new">
-    <n-card>
-      <template #header>
-        <div class="header">
-          <h2 class="section-title">月度新品推荐</h2>
-          <p class="section-desc">本月新上架的精选应用</p>
-        </div>
-      </template>
+    <div class="header">
+      <h1>月度新品推荐</h1>
+      <p class="header-desc">本月新上架的精选应用</p>
+    </div>
+    <n-card class="content-card">
       <n-spin :show="loading">
         <n-empty 
           v-if="!loading && (!apps || apps.length === 0)" 
@@ -22,6 +20,7 @@
             <n-thing>
               <template #header>
                 <n-space align="center">
+                  <div class="rank-badge" v-if="index < 3">{{ index + 1 }}</div>
                   <n-avatar
                     :src="getAppIcon(app)"
                     :fallback-src="defaultIcon"
@@ -108,6 +107,9 @@ import {
   NSpace, 
   NAvatar 
 } from 'naive-ui'
+import type { App } from '@/types'
+
+const __name = 'MonthlyNew'
 
 interface AppInfo {
   name: string
@@ -170,24 +172,42 @@ onMounted(() => {
 
 <style scoped>
 .monthly-new {
-  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  min-height: 100vh;
+  padding-top: 120px; /* 为固定头部留出空间 */
 }
 
 .header {
-  margin-bottom: 8px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  text-align: center;
+  background: #fff;
+  padding: 24px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.section-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
+.header h1 {
+  font-size: 28px;
+  font-weight: 500;
   color: #333;
+  margin: 0;
 }
 
-.section-desc {
-  margin: 8px 0 0;
+.header-desc {
   font-size: 14px;
   color: #666;
+  margin: 8px 0 0;
+}
+
+.content-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .app-item {
@@ -223,17 +243,48 @@ onMounted(() => {
   padding: 4px;
 }
 
+.rank-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.app-item:nth-child(1) .rank-badge {
+  background: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+}
+
+.app-item:nth-child(2) .rank-badge {
+  background: linear-gradient(120deg, #89f7fe 0%, #66a6ff 100%);
+}
+
+.app-item:nth-child(3) .rank-badge {
+  background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+}
+
 /* 移动端适配 */
 @media screen and (max-width: 768px) {
   .monthly-new {
-    padding: 12px;
+    padding: 16px;
+    padding-top: 100px; /* 移动端头部高度较小 */
   }
 
-  .section-title {
-    font-size: 18px;
+  .header {
+    padding: 16px;
   }
 
-  .section-desc {
+  .header h1 {
+    font-size: 20px;
+  }
+
+  .header-desc {
     font-size: 13px;
   }
 
@@ -249,6 +300,25 @@ onMounted(() => {
 @media screen and (max-width: 480px) {
   .monthly-new {
     padding: 8px;
+    padding-top: 90px;
+  }
+
+  .header {
+    padding: 12px;
+  }
+
+  .header h1 {
+    font-size: 18px;
+  }
+
+  .header-desc {
+    font-size: 12px;
+  }
+
+  .rank-badge {
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
   }
 }
 </style>

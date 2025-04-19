@@ -1,12 +1,10 @@
 <template>
   <div class="latest-release">
-    <n-card>
-      <template #header>
-        <div class="header">
-          <h2 class="section-title">最新上架</h2>
-          <p class="section-desc">最近发布的新应用</p>
-        </div>
-      </template>
+    <div class="header">
+      <h1>最新上架</h1>
+      <p class="header-desc">最近发布的新应用</p>
+    </div>
+    <n-card class="content-card">
       <n-spin :show="loading">
         <n-empty v-if="!loading && (!apps || apps.length === 0)" description="暂无数据" />
         <n-list v-else>
@@ -100,6 +98,9 @@ import {
   NSpace, 
   NAvatar 
 } from 'naive-ui'
+import type { App } from '@/types'
+
+const __name = 'LatestRelease'
 
 interface AppInfo {
   name: string
@@ -162,24 +163,42 @@ onMounted(() => {
 
 <style scoped>
 .latest-release {
-  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  min-height: 100vh;
+  padding-top: 120px; /* 为固定头部留出空间 */
 }
 
 .header {
-  margin-bottom: 8px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  text-align: center;
+  background: #fff;
+  padding: 24px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.section-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
+.header h1 {
+  font-size: 28px;
+  font-weight: 500;
   color: #333;
+  margin: 0;
 }
 
-.section-desc {
-  margin: 8px 0 0;
+.header-desc {
   font-size: 14px;
   color: #666;
+  margin: 8px 0 0;
+}
+
+.content-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .app-item {
@@ -218,14 +237,19 @@ onMounted(() => {
 /* 移动端适配 */
 @media screen and (max-width: 768px) {
   .latest-release {
-    padding: 12px;
+    padding: 16px;
+    padding-top: 100px; /* 移动端头部高度较小 */
   }
 
-  .section-title {
-    font-size: 18px;
+  .header {
+    padding: 16px;
   }
 
-  .section-desc {
+  .header h1 {
+    font-size: 20px;
+  }
+
+  .header-desc {
     font-size: 13px;
   }
 
@@ -241,6 +265,19 @@ onMounted(() => {
 @media screen and (max-width: 480px) {
   .latest-release {
     padding: 8px;
+    padding-top: 90px;
+  }
+
+  .header {
+    padding: 12px;
+  }
+
+  .header h1 {
+    font-size: 18px;
+  }
+
+  .header-desc {
+    font-size: 12px;
   }
 }
 </style> 

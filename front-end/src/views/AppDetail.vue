@@ -1,19 +1,6 @@
 <template>
   <div class="app-detail" v-if="app">
     <n-space vertical size="large">
-      <n-button 
-        text 
-        class="back-button" 
-        @click="handleBack"
-      >
-        <n-space align="center" :size="4">
-          <n-icon size="18">
-            <arrow-back />
-          </n-icon>
-          <span>返回</span>
-        </n-space>
-      </n-button>
-
       <n-card class="detail-card">
         <n-space vertical size="large">
           <!-- 头部信息 -->
@@ -125,8 +112,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NTabs, NTabPane, NEmpty, NImage, NButton, NIcon, NSpace, NCard, NDivider, NH2, NH3, NP, NGrid, NGridItem, NDescriptions, NDescriptionsItem } from 'naive-ui'
-import { ArrowBack } from '@vicons/ionicons5'
+import { NTabs, NTabPane, NEmpty, NImage, NSpace, NCard, NDivider, NH2, NH3, NP, NGrid, NGridItem, NDescriptions, NDescriptionsItem } from 'naive-ui'
 
 interface AppDetail {
   pkgId: string
@@ -150,10 +136,6 @@ const route = useRoute()
 const router = useRouter()
 const app = ref<AppDetail | null>(null)
 const defaultIcon = 'https://dl.lazycatmicroserver.com/appstore/metarepo/default-icon.png'
-
-const handleBack = () => {
-  router.back()
-}
 
 const getAppIcon = (app: AppDetail) => {
   if (!app.iconPath) return defaultIcon
@@ -192,22 +174,6 @@ onMounted(async () => {
   margin: 0 auto;
   padding: 32px;
   position: relative;
-}
-
-.back-button {
-  position: absolute;
-  left: 32px;
-  top: 32px;
-  z-index: 1;
-  font-size: 14px;
-  padding: 8px 16px;
-  color: #666;
-  transition: all 0.3s ease;
-}
-
-.back-button:hover {
-  color: #18a058;
-  transform: translateX(-4px);
 }
 
 .detail-card {

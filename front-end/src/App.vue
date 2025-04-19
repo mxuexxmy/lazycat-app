@@ -31,7 +31,11 @@
             </template>
           </n-button>
         </div>
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <keep-alive :include="['Search', 'Category', 'MostPopular', 'MonthlyNew', 'LatestRelease', 'RecentUpdates', 'DeveloperRanking']">
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
       </n-layout-content>
     </n-layout>
   </n-config-provider>
@@ -46,7 +50,6 @@ import {
   NLayout,
   NLayoutHeader,
   NLayoutContent,
-  NSpace,
   NH2,
   type NLocale,
   type NDateLocale,
@@ -97,10 +100,6 @@ const menuOptions = [
       {
         label: '最近更新',
         key: 'RecentUpdates'
-      },
-      {
-        label: '开发者排行',
-        key: 'DeveloperRanking'
       }
     ]
   },
@@ -119,32 +118,24 @@ const menuOptions = [
     ]
   },
   {
-    label: '探索',
-    key: 'Explore',
-    children: [
-      {
-        label: '游戏',
-        key: 'Games'
-      },
-      {
-        label: '开发工具',
-        key: 'DevTools'
-      },
-      {
-        label: '教育',
-        key: 'Education'
-      }
-    ]
+    label: '开始探索',
+    key: 'Explore'
   }
 ]
 
 // 处理菜单点击
 const handleMenuClick = (key: string) => {
   // 如果是顶级菜单且有子菜单，不进行跳转
-  const menuItem = menuOptions.find(item => item.key === key) ||
-    menuOptions.flatMap(item => item.children || []).find(child => child?.key === key)
+  const menuItem = menuOptions.find(item => item.key === key)
   
   if (menuItem) {
+    if (key === 'Explore') {
+      router.push({ name: 'Category', params: { id: '0' } })
+    } else if (!menuItem.children) {
+      router.push({ name: key })
+    }
+  } else {
+    // 处理子菜单项点击
     router.push({ name: key })
   }
 }
@@ -165,7 +156,12 @@ const showBackButton = computed(() => {
     'MostPopular',
     'MonthlyNew',
     'LatestRelease',
-    'RecentUpdates'
+    'RecentUpdates',
+    'DeveloperCenter',
+    'Games',
+    'DevTools',
+    'Education',
+    'TrendAnalysis'
   ]
   return routesWithBack.includes(route.name as string)
 })

@@ -80,6 +80,9 @@ import {
   NEmpty
 } from 'naive-ui'
 import { SearchOutline } from '@vicons/ionicons5'
+import type { App } from '@/types'
+
+const __name = 'Category'
 
 interface AppInfo {
   name: string;
