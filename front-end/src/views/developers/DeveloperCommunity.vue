@@ -1,53 +1,36 @@
 <template>
-  <div class="developer-community">
-    <n-card>
-      <template #header>
-        <div class="section-header">
-          <h2>开发者社区</h2>
-          <n-button text type="primary" @click="refreshData">
-            <template #icon>
-              <n-icon><refresh /></n-icon>
-            </template>
-            刷新
-          </n-button>
-        </div>
-      </template>
-
-      <div class="developer-list">
-        <n-spin :show="loading">
-          <n-empty v-if="developers.length === 0" description="暂无开发者信息" />
-          <n-grid :cols="3" :x-gap="16" :y-gap="16" responsive="screen" v-else>
-            <n-grid-item v-for="developer in developers" :key="developer.id">
-              <n-card hoverable @click="handleDeveloperClick(developer)">
-                <div class="developer-card">
-                  <div class="developer-header">
-                    <n-avatar
-                      round
-                      :size="64"
-                      :src="developer.avatar"
-                      :fallback-src="defaultAvatar"
-                    />
-                    <div class="developer-info">
-                      <h3 class="developer-name">{{ developer.nickname || developer.username }}</h3>
-                      <p class="developer-desc" v-if="developer.description">{{ developer.description }}</p>
-                    </div>
+  <div class="rankings-container">
+    <n-card title="开发者社区" class="developer-community">
+      <n-spin :show="loading">
+        <n-empty v-if="!loading && developers.length === 0" description="暂无开发者信息" />
+        <div v-else class="developer-list">
+          <n-list>
+            <n-list-item v-for="developer in developers" :key="developer.id">
+              <div class="developer-item" @click="handleDeveloperClick(developer)">
+                <div class="avatar-wrapper">
+                  <img
+                    v-if="developer.avatar"
+                    :src="developer.avatar"
+                    :alt="developer.nickname || developer.username"
+                    class="avatar-img"
+                  />
+                  <div 
+                    v-else 
+                    class="avatar-placeholder" 
+                    :style="{ background: getAvatarColor(developer.nickname || developer.username) }"
+                  >
+                    {{ getFirstChar(developer.nickname || developer.username) }}
                   </div>
-                  
+                </div>
+                <div class="developer-info">
+                  <div class="developer-name">{{ developer.nickname || developer.username }}</div>
                   <div class="developer-stats">
-                    <div class="stat-item">
-                      <n-icon><apps /></n-icon>
-                      <span>应用: {{ developer.appsCount || 0 }}</span>
-                    </div>
-                    <div class="stat-item">
-                      <n-icon><thumbs-up /></n-icon>
-                      <span>获赞: {{ developer.receiveThumbs || 0 }}</span>
-                    </div>
-                    <div class="stat-item">
-                      <n-icon><people /></n-icon>
-                      <span>粉丝: {{ developer.fans || 0 }}</span>
-                    </div>
+                    <span>应用: {{ developer.appsCount || 0 }}</span>
+                    <n-divider vertical />
+                    <span>获赞: {{ formatNumber(developer.receiveThumbs || 0) }}</span>
+                    <n-divider vertical />
+                    <span>粉丝: {{ formatNumber(developer.fans || 0) }}</span>
                   </div>
-
                   <div class="developer-social">
                     <n-tag v-if="developer.githubUsername" size="small" round>
                       <template #icon>
@@ -58,13 +41,23 @@
                     <n-tag v-if="developer.guidelineCounts" size="small" type="info" round>
                       攻略: {{ developer.guidelineCounts }}
                     </n-tag>
+                    <n-tooltip v-if="developer.description" placement="bottom">
+                      <template #trigger>
+                        <n-ellipsis style="max-width: 200px">
+                          <n-tag size="small" type="success" round>
+                            {{ developer.description }}
+                          </n-tag>
+                        </n-ellipsis>
+                      </template>
+                      {{ developer.description }}
+                    </n-tooltip>
                   </div>
                 </div>
-              </n-card>
-            </n-grid-item>
-          </n-grid>
-        </n-spin>
-      </div>
+              </div>
+            </n-list-item>
+          </n-list>
+        </div>
+      </n-spin>
     </n-card>
   </div>
 </template>
@@ -74,20 +67,18 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   NCard,
-  NGrid,
-  NGridItem,
+  NList,
+  NListItem,
   NAvatar,
   NIcon,
   NTag,
   NSpin,
   NEmpty,
-  NButton
+  NDivider,
+  NTooltip,
+  NEllipsis
 } from 'naive-ui'
 import {
-  RefreshOutline as refresh,
-  AppsOutline as apps,
-  ThumbsUpOutline as thumbsUp,
-  PeopleOutline as people,
   LogoGithub as logoGithub
 } from '@vicons/ionicons5'
 
@@ -114,7 +105,30 @@ interface Developer {
 const router = useRouter()
 const developers = ref<Developer[]>([])
 const loading = ref(false)
-const defaultAvatar = 'https://dl.lazycatmicroserver.com/appstore/metarepo/default-avatar.png'
+
+// 头像背景色列表
+const avatarColors = [
+  '#1677ff', '#13c2c2', '#52c41a', '#faad14', '#eb2f96',
+  '#722ed1', '#2f54eb', '#fa8c16', '#fadb14', '#a0d911'
+]
+
+const getAvatarColor = (name: string | undefined) => {
+  if (!name) return avatarColors[0]
+  const charSum = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)
+  return avatarColors[charSum % avatarColors.length]
+}
+
+const getFirstChar = (name: string | undefined) => {
+  if (!name) return '?'
+  return name.charAt(0).toUpperCase()
+}
+
+const formatNumber = (num: number) => {
+  if (num >= 10000) {
+    return `${(num / 10000).toFixed(1)}万`
+  }
+  return num.toString()
+}
 
 const fetchDevelopers = async () => {
   loading.value = true
@@ -131,10 +145,6 @@ const fetchDevelopers = async () => {
   }
 }
 
-const refreshData = () => {
-  fetchDevelopers()
-}
-
 const handleDeveloperClick = (developer: Developer) => {
   window.open(`https://playground.lazycat.cloud/#/user-profile/${developer.id}/product`, '_blank')
 }
@@ -145,38 +155,66 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.rankings-container {
+  width: 100%;
+}
+
 .developer-community {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.section-header h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 500;
+  width: 100%;
 }
 
 .developer-list {
   margin-top: 16px;
 }
 
-.developer-card {
+.developer-item {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
   gap: 16px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.developer-header {
+.developer-item:hover {
+  background: #f9f9f9;
+}
+
+.avatar-wrapper {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  cursor: pointer;
+  perspective: 1000px;
+  flex-shrink: 0;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  transition: all 0.6s ease-in-out;
+  transform-style: preserve-3d;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
   display: flex;
-  gap: 16px;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 500;
+  transition: all 0.6s ease-in-out;
+  transform-style: preserve-3d;
+}
+
+.avatar-wrapper:hover .avatar-img,
+.avatar-wrapper:hover .avatar-placeholder {
+  transform: rotateY(360deg);
 }
 
 .developer-info {
@@ -185,70 +223,108 @@ onMounted(() => {
 }
 
 .developer-name {
-  margin: 0;
   font-size: 16px;
   font-weight: 500;
   color: #333;
-}
-
-.developer-desc {
-  margin: 8px 0 0;
-  font-size: 14px;
-  color: #666;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  margin-bottom: 8px;
 }
 
 .developer-stats {
   display: flex;
-  gap: 16px;
-  padding: 12px 0;
-  border-top: 1px solid #f0f0f0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.stat-item {
-  display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 14px;
+  gap: 12px;
   color: #666;
+  font-size: 14px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
 }
 
 .developer-social {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
 }
 
-@media screen and (max-width: 1200px) {
-  :deep(.n-grid) {
-    --n-cols: 2 !important;
-  }
+:deep(.n-tag) {
+  transition: all 0.3s ease;
+  max-width: 100%;
+}
+
+:deep(.n-tag:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.n-ellipsis) {
+  display: inline-flex;
 }
 
 @media screen and (max-width: 768px) {
   .developer-community {
-    padding: 16px;
+    padding: 0;
   }
 
-  :deep(.n-grid) {
-    --n-cols: 1 !important;
+  .developer-item {
+    padding: 12px;
+    border-bottom: 1px solid #f0f0f0;
   }
 
-  .developer-card {
-    gap: 12px;
+  .avatar-wrapper {
+    width: 40px;
+    height: 40px;
   }
 
-  .developer-header {
-    gap: 12px;
+  .developer-name {
+    font-size: 15px;
+    margin-bottom: 6px;
   }
 
   .developer-stats {
-    padding: 8px 0;
+    font-size: 13px;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .developer-stats > span {
+    display: flex;
+    align-items: center;
+  }
+
+  :deep(.n-divider) {
+    display: none;
+  }
+
+  .developer-social {
+    margin-top: 8px;
+  }
+
+  :deep(.n-tag) {
+    font-size: 12px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .developer-item {
+    padding: 10px;
+  }
+
+  .avatar-wrapper {
+    width: 36px;
+    height: 36px;
+  }
+
+  .avatar-placeholder {
+    font-size: 16px;
+  }
+
+  .developer-name {
+    font-size: 14px;
+  }
+
+  .developer-stats {
+    font-size: 12px;
+    gap: 8px;
   }
 }
 </style> 

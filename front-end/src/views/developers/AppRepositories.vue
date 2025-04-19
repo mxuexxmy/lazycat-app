@@ -1,8 +1,11 @@
 <template>
   <div class="rankings-container">
     <n-card title="应用代码仓库" class="repositories-card">
-      <template #header-extra>
-        <p class="description">这里展示了所有移植开源的应用程序，你可以查看和学习它们的源代码</p>
+      <template #header>
+        <div class="header-content">
+          <div class="title">应用代码仓库</div>
+          <div class="description">这里展示了所有移植开源的应用程序，你可以查看和学习它们的源代码</div>
+        </div>
       </template>
 
       <n-spin :show="loading">
@@ -23,10 +26,11 @@
                   :fallback-src="defaultIcon"
                   preview-disabled
                   object-fit="contain"
+                  class="icon-image"
                 />
               </div>
               <div class="app-details">
-                <n-ellipsis class="app-name">
+                <n-ellipsis class="app-name" :tooltip="false">
                   {{ app.name }}
                 </n-ellipsis>
                 <div class="app-meta">
@@ -53,9 +57,14 @@
                 </div>
               </div>
             </div>
-            <n-ellipsis class="app-description" :line-clamp="2">
+            <n-tooltip placement="top" trigger="hover">
+              <template #trigger>
+                <n-ellipsis class="app-description" :line-clamp="2">
+                  {{ app.description }}
+                </n-ellipsis>
+              </template>
               {{ app.description }}
-            </n-ellipsis>
+            </n-tooltip>
           </n-card>
         </div>
       </n-spin>
@@ -66,8 +75,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { NCard, NEmpty, NSpin, NImage, NEllipsis, NIcon, NTag } from 'naive-ui'
-import {  DownloadOutline, LogoGithub } from '@vicons/ionicons5'
+import { NCard, NEmpty, NSpin, NImage, NEllipsis, NIcon, NTag, NTooltip } from 'naive-ui'
+import { DownloadOutline, LogoGithub } from '@vicons/ionicons5'
 
 // Format downloads to display in 万 units
 const formatDownloads = (count: number) => {
@@ -130,10 +139,22 @@ onMounted(() => {
   width: 100%;
 }
 
+.header-content {
+  padding: 16px 0;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+}
+
 .description {
   margin: 0;
   color: #666;
   font-size: 14px;
+  line-height: 1.5;
 }
 
 .apps-grid {
@@ -146,39 +167,47 @@ onMounted(() => {
 .app-card {
   cursor: pointer;
   transition: all 0.3s ease;
+  border: 1px solid #f0f0f0;
 }
 
 .app-card.hoverable:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #e0e0e0;
 }
 
 .app-info {
   display: flex;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .app-details {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .app-name {
   font-size: 16px;
   font-weight: 500;
-  margin-bottom: 4px;
+  color: #333;
+  margin-bottom: 8px;
+  line-height: 1.4;
 }
 
 .app-meta {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .app-description {
   color: #666;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .app-icon {
@@ -188,62 +217,33 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   background: #f9f9f9;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid #f0f0f0;
 }
 
-.app-icon :deep(img) {
+.icon-image {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  padding: 4px;
 }
 
-/* 移动端适配 */
-@media screen and (max-width: 768px) {
-  .repositories-card {
-    padding: 0;
-  }
-
-  .apps-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 12px;
-  }
-
-  .app-card {
-    padding: 12px;
-  }
-
-  .app-name {
-    font-size: 15px;
-  }
-
-  .app-description {
-    font-size: 13px;
-  }
-
-  :deep(.n-tag) {
-    font-size: 12px;
-  }
+:deep(.n-card-header) {
+  padding: 0 !important;
 }
 
-@media screen and (max-width: 480px) {
-  .apps-grid {
-    padding: 8px;
-    gap: 8px;
-  }
+:deep(.n-card) {
+  transition: all 0.3s ease;
+}
 
-  .app-card {
-    padding: 10px;
-  }
+:deep(.n-tag) {
+  transition: all 0.3s ease;
+}
 
-  .app-name {
-    font-size: 14px;
-  }
-
-  .app-description {
-    font-size: 12px;
-  }
+:deep(.n-tag:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .repo-link {
@@ -253,5 +253,106 @@ onMounted(() => {
 
 .repo-link:hover {
   text-decoration: underline;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  .header-content {
+    padding: 12px 16px;
+  }
+
+  .title {
+    font-size: 18px;
+    margin-bottom: 6px;
+  }
+
+  .description {
+    font-size: 13px;
+  }
+
+  .apps-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin: 0;
+    padding: 16px;
+  }
+
+  .app-card {
+    border-radius: 12px;
+    margin-bottom: 0;
+  }
+
+  .app-info {
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .app-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .app-name {
+    font-size: 15px;
+    margin-bottom: 6px;
+  }
+
+  .app-description {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  :deep(.n-tag) {
+    font-size: 12px;
+    padding: 0 8px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .header-content {
+    padding: 10px 12px;
+  }
+
+  .title {
+    font-size: 16px;
+  }
+
+  .description {
+    font-size: 12px;
+  }
+
+  .apps-grid {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .app-card {
+    border-radius: 10px;
+  }
+
+  .app-info {
+    gap: 8px;
+  }
+
+  .app-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+  }
+
+  .app-name {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .app-description {
+    font-size: 12px;
+  }
+
+  :deep(.n-tag) {
+    font-size: 11px;
+    padding: 0 6px;
+  }
 }
 </style> 
