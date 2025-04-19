@@ -6,7 +6,7 @@
         <div v-else class="ranking-list">
           <n-list>
             <n-list-item v-for="(developer, index) in sortedDevelopers" :key="developer.creatorId">
-              <div class="developer-item">
+              <div class="developer-item" @click="handleDeveloperClick(developer)">
                 <div class="rank" :class="getRankClass(index + 1)">
                   {{ index + 1 }}
                 </div>
@@ -79,7 +79,7 @@ interface Developer {
 interface DeveloperRankingResponse {
   success: boolean
   data: Array<{
-    creatorId: number
+    id: number
     nickName: string
     avatar?: string
     apps: Array<{
@@ -153,6 +153,17 @@ const handleAppClick = (app: App) => {
   })
 }
 
+const handleDeveloperClick = (developer: Developer) => {
+  if (!developer || typeof developer.creatorId !== 'number') {
+    console.error('Invalid developer data:', developer)
+    return
+  }
+  router.push({
+    name: 'DeveloperApps',
+    params: { creatorId: developer.creatorId.toString() }
+  })
+}
+
 const fetchAllApps = async () => {
   try {
     loading.value = true
@@ -161,20 +172,20 @@ const fetchAllApps = async () => {
     
     if (result.success && result.data) {
       developers.value = result.data.map(developer => ({
-        creatorId: developer.creatorId,
-        name: developer.nickName || '未知开发者', // 提供默认名称
+        creatorId: developer.id,
+        name: developer.nickName || '未知开发者',
         avatar: developer.avatar,
-        apps: developer.apps || [], // 确保 apps 始终是数组
+        apps: developer.apps || [],
         appCount: developer.appCount || 0,
         totalDownloads: developer.totalDownloads || 0,
         lastUpdateDate: developer.lastUpdateDate || ''
       }))
     } else {
-      developers.value = [] // 如果没有数据，设置为空数组
+      developers.value = []
     }
   } catch (error) {
     console.error('Failed to fetch developer ranking:', error)
-    developers.value = [] // 发生错误时，设置为空数组
+    developers.value = []
   } finally {
     loading.value = false
   }

@@ -13,7 +13,6 @@ import xyz.mxue.lazycatapp.service.CategoryService;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/apps")
@@ -116,19 +115,9 @@ public class AppController {
     }
 
     @GetMapping("/developers/{creatorId}/apps")
-    public ResponseEntity<Map<String, Object>> getAppsByCreatorId(@PathVariable Long creatorId) {
+    public ResponseEntity<List<App>> getAppsByCreatorId(@PathVariable Long creatorId) {
         List<App> apps = appService.findByCreatorId(creatorId);
-        return ResponseEntity.ok(Map.of(
-            "success", true,
-            "data", apps.stream()
-                .map(app -> Map.of(
-                    "pkgId", app.getPkgId(),
-                    "name", app.getName(),
-                    "updateDate", app.getUpdateDate(),
-                    "downloadCount", app.getDownloadCount()
-                ))
-                .collect(Collectors.toList())
-        ));
+        return ResponseEntity.ok(apps);
     }
 
     @GetMapping("/statistics/monthly-new")

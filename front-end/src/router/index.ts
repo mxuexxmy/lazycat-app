@@ -48,6 +48,11 @@ const routes: RouteRecordRaw[] = [
         path: 'center',
         name: 'DeveloperCenter',
         component: () => import('@/views/developers/DeveloperCenter.vue')
+      },
+      {
+        path: 'apps/:creatorId',
+        name: 'DeveloperApps',
+        component: () => import('@/views/developers/DeveloperApps.vue')
       }
     ]
   },
