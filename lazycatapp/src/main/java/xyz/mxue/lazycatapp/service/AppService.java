@@ -8,6 +8,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.entity.App;
 import xyz.mxue.lazycatapp.entity.UserInfo;
@@ -161,7 +162,7 @@ public class AppService {
             .collect(Collectors.toList());
     }
     
-   // @Scheduled(fixedRate = 600000) // 每10分钟执行一次
+   @Scheduled(fixedRate = 600000) // 每10分钟执行一次
     public void updateApps() {
         log.info("开始更新应用信息...");
         try {
@@ -207,7 +208,7 @@ public class AppService {
         }
     }
     
-   // @Scheduled(fixedRate = 3600000) // 每小时执行一次
+   @Scheduled(fixedRate = 3600000) // 每小时执行一次
     public void updateDownloadCounts() {
         log.info("开始更新应用下载量...");
         List<App> apps = appRepository.findAll();
