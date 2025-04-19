@@ -8,7 +8,7 @@ spring:
     allow-bean-definition-overriding: true
   datasource:
     driver-class-name: org.sqlite.JDBC
-    url: jdbc:sqlite:lazycatapp.db
+    url: jdbc:sqlite:data/lazycatapp.db
   jpa:
     database-platform: org.hibernate.community.dialect.SQLiteDialect
     hibernate:

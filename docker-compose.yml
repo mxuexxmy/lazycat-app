@@ -22,6 +22,7 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
     volumes:
       - ./logs:/app/logs
+      - ./data:/app/data
     networks:
       - app-network
 

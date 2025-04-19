@@ -2,6 +2,9 @@ FROM openjdk:17-jdk-slim
 
 WORKDIR /app
 
+# 创建必要的目录
+RUN mkdir -p data logs
+
 # 复制构建产物
 COPY target/*.jar app.jar
 

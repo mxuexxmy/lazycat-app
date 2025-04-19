@@ -11,7 +11,7 @@ public class SQLiteConfig {
     public DataSource dataSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("org.sqlite.JDBC");
-        dataSource.setUrl("jdbc:sqlite:lazycatapp.db");
+        dataSource.setUrl("jdbc:sqlite:./data/lazycatapp.db");
         return dataSource;
     }
 } 
