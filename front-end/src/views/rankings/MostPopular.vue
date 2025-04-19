@@ -114,7 +114,6 @@ import {
   NIcon
 } from 'naive-ui'
 import { DownloadOutline } from '@vicons/ionicons5'
-import type { App } from '@/types'
 
 const __name = 'MostPopular'
 
@@ -230,6 +229,7 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.3s ease;
   border-radius: 8px;
+  padding: 12px 16px; /* 减小内边距 */
 }
 
 .app-item:hover {
