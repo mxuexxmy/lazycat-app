@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./front-end
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./lazycatapp
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+# 使用说明：
+# 1. 前端构建：在 front-end 目录下运行 npm run build
+# 2. 后端构建：在 lazycatapp 目录下运行 mvn clean package
+# 3. 启动服务：docker-compose up -d 

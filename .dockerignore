@@ -1,0 +1,37 @@
+# Git
+.git
+.gitignore
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# Logs
+logs/
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# 忽略除 lzcapp 外的所有目录
+front-end/
+lazycatapp/
+
+# Maven
+lazycatapp/target/
+lazycatapp/.mvn/
+lazycatapp/mvnw
+lazycatapp/mvnw.cmd
+
+# Node
+front-end/node_modules/
+front-end/dist/
+front-end/.env
+front-end/npm-debug.log*
+front-end/yarn-debug.log*
+front-end/yarn-error.log* 

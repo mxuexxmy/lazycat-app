@@ -121,13 +121,20 @@ public class AppService {
                 List<App> apps = appRepository.findByCreatorId(creatorId);
                 
                 // 按下载量排序并取前三
-                List<App> topApps = apps.stream()
+                List<Map<String, Object>> topApps = apps.stream()
                     .sorted((a, b) -> {
                         int aCount = a.getDownloadCount() != null ? a.getDownloadCount() : 0;
                         int bCount = b.getDownloadCount() != null ? b.getDownloadCount() : 0;
                         return Integer.compare(bCount, aCount);
                     })
                     .limit(3)
+                    .<Map<String, Object>>map(app -> {
+                        Map<String, Object> appMap = new HashMap<>();
+                        appMap.put("pkgId", app.getPkgId());
+                        appMap.put("name", app.getName());
+                        appMap.put("updateDate", app.getUpdateDate() != null ? app.getUpdateDate() : "");
+                        return appMap;
+                    })
                     .collect(Collectors.toList());
                 
                 int totalDownloads = apps.stream()
@@ -139,25 +146,15 @@ public class AppService {
                     .max(String::compareTo)
                     .orElse("");
 
-                return Map.of(
-                    "id", creatorId,
-                    "nickName", userInfo.getNickname(),
-                    "avatar", userInfo.getAvatar(),
-                    "appCount", apps.size(),
-                    "totalDownloads", totalDownloads,
-                    "topApps", topApps,
-                    "lastUpdateDate", lastUpdateDate
-                );
-            })
-            .sorted((a, b) -> {
-                Integer bDownloads = (Integer) b.get("totalDownloads");
-                Integer aDownloads = (Integer) a.get("totalDownloads");
-                if (!bDownloads.equals(aDownloads)) {
-                    return bDownloads.compareTo(aDownloads);
-                }
-                Integer bCount = (Integer) b.get("appCount");
-                Integer aCount = (Integer) a.get("appCount");
-                return bCount.compareTo(aCount);
+                Map<String, Object> result = new HashMap<>();
+                result.put("id", creatorId);
+                result.put("nickName", userInfo.getNickname() != null ? userInfo.getNickname() : "未知开发者");
+                result.put("avatar", userInfo.getAvatar() != null ? userInfo.getAvatar() : "");
+                result.put("appCount", apps.size());
+                result.put("totalDownloads", totalDownloads);
+                result.put("apps", topApps);
+                result.put("lastUpdateDate", lastUpdateDate);
+                return result;
             })
             .collect(Collectors.toList());
     }
