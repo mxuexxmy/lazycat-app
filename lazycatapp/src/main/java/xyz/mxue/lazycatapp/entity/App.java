@@ -106,7 +106,7 @@ public class App {
     }
 
     public long getDownloads() {
-        return downloadCount;
+        return downloadCount != null ? downloadCount : 0;
     }
 
     public void setDownloads(long downloads) {

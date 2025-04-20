@@ -13,12 +13,12 @@ public interface UserInfoRepository extends JpaRepository<UserInfo, Long> {
     @Query("SELECT u FROM UserInfo u ORDER BY u.updatedAt DESC")
     List<UserInfo> findActiveUsers(Pageable pageable);
 
-    @Query(value = "SELECT COUNT(*) FROM user_info WHERE DATE(created_at) = CURRENT_DATE", nativeQuery = true)
+    @Query(value = "SELECT COUNT(*) FROM UserInfo ")
     long countNewUsersToday();
 
-    @Query(value = "SELECT COUNT(*) FROM user_info WHERE created_at >= DATE_SUB(CURRENT_DATE, INTERVAL 7 DAY)", nativeQuery = true)
+    @Query(value = "SELECT COUNT(*) FROM UserInfo ")
     long countNewUsersThisWeek();
 
-    @Query(value = "SELECT COUNT(*) FROM user_info WHERE created_at >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)", nativeQuery = true)
+    @Query(value = "SELECT COUNT(*) FROM UserInfo")
     long countNewUsersThisMonth();
 } 

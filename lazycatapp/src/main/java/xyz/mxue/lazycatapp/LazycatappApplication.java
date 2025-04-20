@@ -12,7 +12,6 @@ import java.io.File;
 import java.nio.file.Paths;
 
 @SpringBootApplication
-@EnableScheduling
 public class LazycatappApplication {
 
     public static void main(String[] args) {

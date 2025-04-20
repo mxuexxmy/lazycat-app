@@ -16,8 +16,8 @@
               <n-card hoverable>
                 <template #header>
                   <div class="category-header">
-                    <n-icon :component="AppsOutline" size="24" />
-                    <span>{{ category.name }}</span>
+                    <n-icon :component="AppsOutline" size="24"  />
+                    <span>{{ category.category }}</span>
                   </div>
                 </template>
                 <div class="category-value">{{ category.count }}</div>
@@ -45,7 +45,7 @@ interface App {
 }
 
 interface Category {
-  name: string
+  category: string
   count: number
 }
 

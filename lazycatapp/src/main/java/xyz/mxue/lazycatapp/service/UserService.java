@@ -130,6 +130,7 @@ public class UserService {
             Map<String, Object> userMap = new HashMap<>();
             userMap.put("id", user.getId());
             userMap.put("username", user.getUsername());
+            userMap.put("downloads", 100);
             userMap.put("nickname", user.getNickname());
             userMap.put("avatar", user.getAvatar());
             userMap.put("lastActive", user.getUpdatedAt());

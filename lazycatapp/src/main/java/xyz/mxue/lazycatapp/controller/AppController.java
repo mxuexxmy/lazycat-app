@@ -208,7 +208,7 @@ public class AppController {
 
     @GetMapping("/statistics/apps/categories")
     public List<Map<String, Object>> getCategoryStats() {
-        return appService.getCategoryStats();
+        return appService.getCategoryDistribution();
     }
 
     @GetMapping("/statistics/users/active")
