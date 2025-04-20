@@ -7,7 +7,7 @@
             :columns="columns"
             :data="popularApps"
             :loading="loading"
-            :pagination="pagination"
+            :pagination="false"
           />
         </n-tab-pane>
         <n-tab-pane name="categories" tab="分类统计">
@@ -72,10 +72,6 @@ const columns: DataTableColumns<App> = [
   }
 ]
 
-const pagination = {
-  pageSize: 10
-}
-
 const fetchPopularApps = async () => {
   loading.value = true
   try {
@@ -128,5 +124,45 @@ onMounted(() => {
 .category-desc {
   font-size: 14px;
   color: #909399;
+}
+
+@media screen and (max-width: 768px) {
+  .apps-container {
+    padding: 12px;
+  }
+
+  :deep(.n-grid) {
+    grid-template-columns: 1fr !important;
+  }
+
+  .category-header {
+    font-size: 15px;
+  }
+
+  .category-value {
+    font-size: 22px;
+  }
+
+  .category-desc {
+    font-size: 13px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .apps-container {
+    padding: 8px;
+  }
+
+  .category-header {
+    font-size: 14px;
+  }
+
+  .category-value {
+    font-size: 20px;
+  }
+
+  .category-desc {
+    font-size: 12px;
+  }
 }
 </style> 

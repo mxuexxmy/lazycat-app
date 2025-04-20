@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, h } from 'vue'
 import { useRouter } from 'vue-router'
 import { NCard, NSpin, NEmpty, NList, NListItem, NDivider, NTag } from 'naive-ui'
 
@@ -212,20 +212,20 @@ onMounted(() => {
 .developer-item {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 8px;
+  gap: 12px;
+  padding: 12px;
+  cursor: pointer;
 }
 
 .rank {
-  width: 32px;
-  height: 32px;
+  font-weight: bold;
+  color: #666;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  font-weight: bold;
-  background-color: #f0f0f0;
-  flex-shrink: 0;
+  border-radius: 4px;
 }
 
 .rank-gold {
@@ -243,132 +243,97 @@ onMounted(() => {
   color: #fff;
 }
 
-.developer-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.developer-name {
-  font-size: 16px;
-  font-weight: bold;
-  margin-bottom: 4px;
-}
-
-.developer-stats {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #666;
-  font-size: 14px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-}
-
-.app-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-:deep(.n-tag) {
-  cursor: pointer;
-}
-
-:deep(.n-tag:hover) {
-  background-color: #f0faf5;
-}
-
 .avatar-wrapper {
-  position: relative;
   width: 40px;
   height: 40px;
-  cursor: pointer;
-  perspective: 1000px;
+  border-radius: 50%;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.avatar-wrapper:hover {
+  transform: rotate(360deg);
 }
 
 .avatar-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 50%;
-  transition: all 0.6s ease-in-out;
-  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+
+.avatar-img:hover {
+  transform: scale(1.1);
 }
 
 .avatar-placeholder {
   width: 100%;
   height: 100%;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 16px;
   color: #fff;
-  font-size: 18px;
-  transition: all 0.6s ease-in-out;
-  transform-style: preserve-3d;
 }
 
-.avatar-wrapper:hover .avatar-img,
-.avatar-wrapper:hover .avatar-placeholder {
-  transform: rotateY(360deg);
+.developer-info {
+  flex: 1;
+}
+
+.developer-name {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.developer-stats {
+  margin-top: 4px;
+  color: #666;
+}
+
+.app-list {
+  margin-top: 8px;
+}
+
+.app-list n-tag {
+  margin-right: 4px;
 }
 
 /* 移动端适配 */
 @media screen and (max-width: 768px) {
-  .developer-ranking {
-    padding: 0;
+  .developer-item {
+    padding: 8px;
   }
 
-  .developer-item {
-    padding: 12px;
-    border-bottom: 1px solid #f0f0f0;
+  .avatar-wrapper {
+    width: 36px;
+    height: 36px;
+  }
+
+  .avatar-placeholder {
+    font-size: 16px;
   }
 
   .developer-name {
-    font-size: 15px;
-  }
-
-  .developer-stats {
-    font-size: 13px;
-    gap: 12px;
-  }
-
-  .developer-stats > span {
-    display: flex;
-    align-items: center;
-  }
-
-  :deep(.n-divider) {
-    display: none;
-  }
-
-  .app-list {
-    margin-top: 8px;
-  }
-
-  :deep(.n-tag) {
-    font-size: 12px;
+    font-size: 14px;
   }
 }
 
 @media screen and (max-width: 480px) {
   .developer-item {
-    padding: 10px;
+    padding: 6px;
   }
 
-  .rank {
-    width: 28px;
-    height: 28px;
+  .avatar-wrapper {
+    width: 32px;
+    height: 32px;
+  }
+
+  .avatar-placeholder {
     font-size: 14px;
   }
 
   .developer-name {
-    font-size: 14px;
-  }
-
-  .developer-stats {
-    font-size: 12px;
-    gap: 8px;
+    font-size: 13px;
   }
 }
 </style> 

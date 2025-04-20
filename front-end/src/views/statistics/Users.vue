@@ -7,7 +7,6 @@
             :columns="columns"
             :data="activeUsers"
             :loading="loading"
-            :pagination="pagination"
           />
         </n-tab-pane>
         <n-tab-pane name="growth" tab="开发者增长">
@@ -94,9 +93,6 @@ const columns: DataTableColumns<User> = [
   }
 ]
 
-const pagination = {
-  pageSize: 10
-}
 
 const fetchActiveUsers = async () => {
   loading.value = true
@@ -152,5 +148,46 @@ onMounted(() => {
 .stat-desc {
   font-size: 14px;
   color: #909399;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  .users-container {
+    padding: 12px;
+  }
+
+  :deep(.n-grid) {
+    grid-template-columns: 1fr !important;
+  }
+
+  .stat-header {
+    font-size: 15px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+  .stat-desc {
+    font-size: 13px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .users-container {
+    padding: 8px;
+  }
+
+  .stat-header {
+    font-size: 14px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .stat-desc {
+    font-size: 12px;
+  }
 }
 </style> 
