@@ -11,7 +11,7 @@ import xyz.mxue.lazycatapp.entity.Category;
 import xyz.mxue.lazycatapp.service.AppService;
 import xyz.mxue.lazycatapp.service.CategoryService;
 import xyz.mxue.lazycatapp.service.UserService;
-
+import xyz.mxue.lazycatapp.entity.AppComment;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -69,20 +69,20 @@ public class AppController {
         if (categoryId == 0) {
             return ResponseEntity.ok(appService.findAll());
         }
-        
+
         // 先查询分类信息
         Category category = categoryService.findById(categoryId);
         if (category == null) {
             return ResponseEntity.notFound().build();
         }
-        
+
         // 先尝试用中文名称查询
         List<App> apps = appService.findByCategory(category.getName());
         if (apps.isEmpty() && category.getEnglishName() != null) {
             // 如果中文名称查询不到结果，且存在英文名称，则尝试用英文名称查询
             apps = appService.findByCategory(category.getEnglishName());
         }
-        
+
         return ResponseEntity.ok(apps);
     }
 
@@ -113,9 +113,8 @@ public class AppController {
     @GetMapping("/developers/ranking")
     public ResponseEntity<Map<String, Object>> getDeveloperRanking() {
         return ResponseEntity.ok(Map.of(
-            "success", true,
-            "data", appService.getDeveloperRanking()
-        ));
+                "success", true,
+                "data", appService.getDeveloperRanking()));
     }
 
     @GetMapping("/developers/{creatorId}/apps")
@@ -150,8 +149,10 @@ public class AppController {
                 .filter(app -> app.getSource() != null && !app.getSource().isEmpty())
                 .sorted((a, b) -> {
                     // 按更新时间倒序排序
-                    if (a.getUpdateTime() == null) return 1;
-                    if (b.getUpdateTime() == null) return -1;
+                    if (a.getUpdateTime() == null)
+                        return 1;
+                    if (b.getUpdateTime() == null)
+                        return -1;
                     return b.getUpdateTime().compareTo(a.getUpdateTime());
                 })
                 .toList();
@@ -162,36 +163,36 @@ public class AppController {
     public Map<String, Object> getSyncStatus() {
         Map<String, Object> status = new HashMap<>();
         status.put("isInitialSyncComplete", isInitialSyncComplete);
-        
+
         // 获取当前完成的数量
         long appCount = appService.count();
         long categoryCount = categoryService.count();
-        
+
         // 从同步接口获取总数量
         long totalApps = appService.getTotalAppsCount();
         long totalCategories = categoryService.getTotalCategoriesCount();
-        
+
         status.put("appCount", appCount);
         status.put("categoryCount", categoryCount);
         status.put("totalApps", totalApps);
         status.put("totalCategories", totalCategories);
-        
+
         return status;
     }
 
     @GetMapping("/statistics")
     public Map<String, Object> getStatistics() {
         Map<String, Object> statistics = new HashMap<>();
-        
+
         // 获取应用总数
         long totalApps = appService.count();
-        
+
         // 获取开发者总数
         long totalDevelopers = appService.getDistinctCreatorIds().size();
-        
+
         statistics.put("totalApps", totalApps);
         statistics.put("totalDevelopers", totalDevelopers);
-        
+
         return statistics;
     }
 
@@ -224,4 +225,9 @@ public class AppController {
     public void setInitialSyncComplete() {
         this.isInitialSyncComplete = true;
     }
-} 
+
+    @GetMapping("/statistics/comments/{pkgId}")
+    public ResponseEntity<List<AppComment>> getAppComments(@PathVariable String pkgId) {
+        return ResponseEntity.ok(appService.getAppComments(pkgId));
+    }
+}
