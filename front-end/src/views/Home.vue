@@ -45,11 +45,69 @@
         </div>
       </div>
     </div>
+
+    <!-- 最新评论 -->
+    <n-card title="最新评论" class="mt-4">
+      <n-spin :show="loading">
+        <n-empty v-if="comments.length === 0" description="暂无评论" />
+        <div v-else class="comments-container">
+          <n-card v-for="comment in comments" :key="comment.commentId" class="comment-card">
+            <n-space vertical>
+              <!-- 应用信息 -->
+              <n-card size="small" class="app-info">
+                <n-space align="center">
+                  <n-avatar :src="getAppIcon(comment)" round />
+                  <n-space vertical size="small">
+                    <n-text strong>{{ comment.appName }}</n-text>
+                    <n-text depth="3">{{ comment.pkgId }}</n-text>
+                  </n-space>
+                </n-space>
+              </n-card>
+
+              <!-- 评论内容 -->
+              <n-space vertical>
+                <n-space align="center">
+                  <div class="avatar-wrapper">
+                    <img
+                      v-if="comment.avatar"
+                      :src="comment.avatar"
+                      :alt="comment.nickname"
+                      class="avatar-img"
+                    />
+                    <div v-else class="avatar-placeholder" :style="{ background: getAvatarColor(comment.nickname) }">
+                      {{ getFirstChar(comment.nickname) }}
+                    </div>
+                  </div>
+                  <n-space vertical size="small">
+                    <n-text strong>{{ comment.nickname }}</n-text>
+                    <n-space align="center">
+                      <n-rate :value="comment.score" readonly />
+                      <n-text depth="3">{{ formatDate(comment.createdAt) }}</n-text>
+                    </n-space>
+                  </n-space>
+                </n-space>
+                
+                <n-text>{{ comment.content }}</n-text>
+                
+                <n-space justify="space-between" align="center">
+                  <n-space>
+                    <n-text depth="3">{{ formatDate(comment.createdAt) }}</n-text>
+                  </n-space>
+                </n-space>
+              </n-space>
+            </n-space>
+          </n-card>
+        </div>
+      </n-spin>
+      <template #footer>
+        <n-button text @click="router.push('/comments')">查看全部评论</n-button>
+      </template>
+    </n-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import type { Component } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { RouteLocationRaw, RouteRecordName } from 'vue-router'
@@ -78,6 +136,16 @@ import {
 } from '@vicons/ionicons5'
 import StatisticsCard from '@/components/StatisticsCard.vue'
 import AppWordCloud from '@/components/AppWordCloud.vue'
+import request from '@/utils/request'
+import { 
+  NCard, NSpace, NText, NAvatar, NRate, NButton, NIcon, NEmpty, NSpin, 
+  NGrid, NGridItem, NInput 
+} from 'naive-ui'
+import { 
+  Search, TrendingUp, Time, Download, Star, BarChart, 
+  PieChart, Trophy, GitBranch, Apps,
+  Analytics, People 
+} from '@vicons/ionicons5'
 
 interface Function {
   id: string;
@@ -90,10 +158,28 @@ interface Function {
   route?: RouteLocationRaw;
 }
 
+interface Comment {
+  commentId: number
+  pkgId: string
+  userId: number
+  nickname: string
+  avatar: string
+  score: number
+  content: string
+  liked: boolean
+  likeCounts: number
+  createdAt: string
+  updatedAt: string
+  appName: string
+  appIcon: string
+}
+
 const router = useRouter()
 const route = useRoute()
 const searchQuery = ref('')
 const selectedFunction = ref<Function | null>(null)
+const comments = ref<Comment[]>([])
+const loading = ref(true)
 
 const functions: Function[] = [
   {
@@ -347,6 +433,58 @@ const handleFunctionClick = (func: Function) => {
     router.push(func.route)
   }
 }
+
+const fetchComments = async () => {
+  try {
+    const response = await request.get<Comment[]>('/apps/comments/all')
+    // 按创建时间倒序排序，只取前5条
+    comments.value = response
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5)
+  } catch (error) {
+    console.error('获取评论列表失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// 头像背景色列表
+const avatarColors = [
+  '#1677ff', '#13c2c2', '#52c41a', '#faad14', '#eb2f96',
+  '#722ed1', '#2f54eb', '#fa8c16', '#fadb14', '#a0d911'
+]
+
+const getAvatarColor = (name: string | undefined) => {
+  if (!name) return avatarColors[0] // 默认返回第一个颜色
+  // 使用名字的 charCode 来选择颜色
+  const charSum = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)
+  return avatarColors[charSum % avatarColors.length]
+}
+
+const getFirstChar = (name: string | undefined) => {
+  if (!name) return '?' // 返回问号作为默认字符
+  return name.charAt(0)
+}
+
+// Get app icon URL
+const getAppIcon = (comment: Comment) => {
+  if (!comment.appIcon) return '/path/to/default-icon.png'
+  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${comment.pkgId}/icon.png`
+}
+
+onMounted(() => {
+  fetchComments()
+})
 </script>
 
 <style scoped>
@@ -540,5 +678,64 @@ const handleFunctionClick = (func: Function) => {
     font-size: 15px;
     margin: 12px 0 4px;
   }
+}
+
+.mt-4 {
+  margin-top: 16px;
+}
+
+.comments-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.comment-card {
+  transition: all 0.3s;
+}
+
+.comment-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.app-info {
+  background-color: var(--n-color-embedded);
+  margin-bottom: 12px;
+}
+
+.avatar-wrapper {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  perspective: 1000px;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  transition: all 0.6s ease-in-out;
+  transform-style: preserve-3d;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  transition: all 0.6s ease-in-out;
+  transform-style: preserve-3d;
+}
+
+.avatar-wrapper:hover .avatar-img,
+.avatar-wrapper:hover .avatar-placeholder {
+  transform: rotateY(360deg);
 }
 </style> 

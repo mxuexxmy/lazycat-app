@@ -800,4 +800,44 @@ public class AppService {
             .collect(Collectors.toList());
     }
 
+    public void likeComment(Long commentId) {
+        AppComment comment = appCommentRepository.findById(commentId)
+            .orElseThrow(() -> new RuntimeException("Comment not found"));
+        comment.setLikeCounts(comment.getLikeCounts() + 1);
+        appCommentRepository.save(comment);
+    }
+
+    public List<Map<String, Object>> getAllComments() {
+        List<AppComment> comments = appCommentRepository.findAll();
+        return comments.stream().map(comment -> {
+            Map<String, Object> commentMap = new HashMap<>();
+            commentMap.put("commentId", comment.getCommentId());
+            commentMap.put("pkgId", comment.getPkgId());
+            commentMap.put("userId", comment.getUserId());
+            commentMap.put("nickname", comment.getNickname());
+            // 处理头像 URL
+            String avatar = comment.getAvatar();
+            if (avatar == null || avatar.isEmpty()) {
+                // 如果头像 URL 为空，使用默认头像
+                avatar = "https://appstore.api.lazycat.cloud/static/default-avatar.png";
+            }
+            commentMap.put("avatar", avatar);
+            commentMap.put("score", comment.getScore());
+            commentMap.put("content", comment.getContent());
+            commentMap.put("liked", comment.getLiked());
+            commentMap.put("likeCounts", comment.getLikeCounts());
+            commentMap.put("createdAt", comment.getCreatedAt());
+            commentMap.put("updatedAt", comment.getUpdatedAt());
+
+            // 获取应用信息
+            App app = appRepository.findById(comment.getPkgId()).orElse(null);
+            if (app != null) {
+                commentMap.put("appName", app.getName());
+                commentMap.put("appIcon", app.getIconPath());
+            }
+
+            return commentMap;
+        }).collect(Collectors.toList());
+    }
+
 }

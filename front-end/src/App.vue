@@ -267,7 +267,8 @@ const showBackButton = computed(() => {
     "FiveStarApps",
     // 其他
     'Search',
-    'AppDetail'
+    'AppDetail',
+    'Comments'
   ]
   return routesWithBack.includes(route.name as string)
 })

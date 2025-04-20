@@ -145,6 +145,14 @@ const routes: RouteRecordRaw[] = [
     path: '/category/:id',
     name: 'Category',
     component: () => import('@/views/Category.vue')
+  },
+  {
+    path: '/comments',
+    name: 'Comments',
+    component: () => import('@/views/CommentList.vue'),
+    meta: {
+      title: '评论列表'
+    }
   }
 ]
 

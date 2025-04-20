@@ -226,9 +226,15 @@ public class AppController {
         this.isInitialSyncComplete = true;
     }
 
-    @GetMapping("/statistics/comments/{pkgId}")
-    public ResponseEntity<List<AppComment>> getAppComments(@PathVariable String pkgId) {
-        return ResponseEntity.ok(appService.getAppComments(pkgId));
+    @GetMapping("/{pkgId}/comments")
+    public List<AppComment> getAppComments(@PathVariable String pkgId) {
+        return appService.getAppComments(pkgId);
+    }
+
+    @PostMapping("/comments/{commentId}/like")
+    public ResponseEntity<?> likeComment(@PathVariable Long commentId) {
+        appService.likeComment(commentId);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/comments/sync/{pkgId}")
@@ -284,5 +290,10 @@ public class AppController {
     public ResponseEntity<List<Map<String, Object>>> getFiveStarAppsRanking(
             @RequestParam(defaultValue = "10") int limit) {
         return ResponseEntity.ok(appService.getFiveStarAppsRanking(limit));
+    }
+
+    @GetMapping("/comments/all")
+    public List<Map<String, Object>> getAllComments() {
+        return appService.getAllComments();
     }
 }
