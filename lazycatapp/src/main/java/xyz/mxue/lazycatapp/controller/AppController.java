@@ -71,19 +71,19 @@ public class AppController {
         }
 
         // 先查询分类信息
-        Category category = categoryService.findById(categoryId);
-        if (category == null) {
+        try {
+            Category category = categoryService.getCategoryById(categoryId);
+            // 先尝试用中文名称查询
+            List<App> apps = appService.findByCategory(category.getName());
+            if (apps.isEmpty() && category.getEnglishName() != null) {
+                // 如果中文名称查询不到结果，且存在英文名称，则尝试用英文名称查询
+                apps = appService.findByCategory(category.getEnglishName());
+            }
+
+            return ResponseEntity.ok(apps);
+        } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
-
-        // 先尝试用中文名称查询
-        List<App> apps = appService.findByCategory(category.getName());
-        if (apps.isEmpty() && category.getEnglishName() != null) {
-            // 如果中文名称查询不到结果，且存在英文名称，则尝试用英文名称查询
-            apps = appService.findByCategory(category.getEnglishName());
-        }
-
-        return ResponseEntity.ok(apps);
     }
 
     @GetMapping("/latest")
@@ -290,6 +290,22 @@ public class AppController {
     public ResponseEntity<List<Map<String, Object>>> getFiveStarAppsRanking(
             @RequestParam(defaultValue = "10") int limit) {
         return ResponseEntity.ok(appService.getFiveStarAppsRanking(limit));
+    }
+
+    @PostMapping("/fix-package-names")
+    public ResponseEntity<Map<String, Object>> fixPackageNames() {
+        try {
+            appService.fixPackageNames();
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "应用包名修复完成"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "修复应用包名失败: " + e.getMessage()
+            ));
+        }
     }
 
     @GetMapping("/comments/all")

@@ -39,6 +39,8 @@ import java.util.stream.Collectors;
 import java.util.Objects;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import xyz.mxue.lazycatapp.entity.SyncInfo;
+import xyz.mxue.lazycatapp.service.SyncService;
 
 @Slf4j
 @Service
@@ -52,6 +54,7 @@ public class AppService {
     private final ObjectMapper objectMapper;
     private final GitHubInfoRepository githubInfoRepository;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final SyncService syncService;
 
     private static final String APP_LIST_URL = "https://appstore.api.lazycat.cloud/api/app/list";
     private static final String DOWNLOAD_COUNT_URL = "https://appstore.api.lazycat.cloud/api/counting";
@@ -226,6 +229,10 @@ public class AppService {
 
     @Scheduled(fixedRate = 600000) // 每10分钟执行一次
     public void updateApps() {
+        if (!syncService.shouldSync(SyncService.SYNC_TYPE_APP)) {
+            return;
+        }
+
         log.info("开始更新应用信息...");
         try {
             Request request = new Request.Builder()
@@ -235,7 +242,9 @@ public class AppService {
 
             try (Response response = httpClient.newCall(request).execute()) {
                 if (!response.isSuccessful()) {
-                    log.error("获取应用列表失败: {}", response);
+                    String error = "获取应用列表失败: " + response;
+                    log.error(error);
+                    syncService.updateSyncInfo(SyncService.SYNC_TYPE_APP, false, error);
                     return;
                 }
 
@@ -243,37 +252,99 @@ public class AppService {
                 AppListResponse appListResponse = objectMapper.readValue(responseBody, AppListResponse.class);
 
                 if (appListResponse.errorCode == 0 && appListResponse.data != null) {
-                    List<App> apps = Arrays.asList(appListResponse.data);
+                    // 获取现有应用
                     List<App> existingApps = appRepository.findAll();
                     Map<String, App> existingAppMap = existingApps.stream()
                             .collect(Collectors.toMap(App::getPkgId, app -> app));
 
-                    for (App app : apps) {
-                        app.setLastUpdated(Instant.now().toString());
-                        app.setPackageName(app.getPkgId());
+                    // 获取同步信息
+                    SyncInfo syncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_APP);
+                    boolean isInitialSync = !syncInfo.isInitialSyncCompleted();
 
-                        // 检查是否为已存在的应用
-                        App existingApp = existingAppMap.get(app.getPkgId());
-                        if (existingApp != null) {
-                            // 如果是已存在的应用，保留原有的下载量
-                            app.setDownloadCount(existingApp.getDownloadCount());
-                        } else {
-                            // 如果是新应用，获取下载量
-                            updateDownloadCount(app);
-                            userService.updateUserInfo(app.getCreatorId());
+                    for (App app : appListResponse.data) {
+                        try {
+                            App existingApp = existingAppMap.get(app.getPkgId());
+                            LocalDateTime lastUpdateTime = existingApp != null ? existingApp.getUpdateTime() : null;
+
+                            if (existingApp != null) {
+                                // 如果是已存在的应用，检查是否需要更新
+                                LocalDateTime appUpdateTime = LocalDateTime.parse(app.getLastUpdated());
+                                if (appUpdateTime.isAfter(lastUpdateTime)) {
+                                    // 保留原有的下载量
+                                    app.setDownloadCount(existingApp.getDownloadCount());
+                                    // 设置包名
+                                    app.setPackageName(app.getPkgId());
+                                    appRepository.save(app);
+                                    log.info("更新应用: {}", app.getPkgId());
+                                }
+                            } else {
+                                // 如果是新应用，获取下载量
+                                updateDownloadCount(app);
+                                // 设置包名
+                                app.setPackageName(app.getPkgId());
+                                appRepository.save(app);
+                                log.info("新增应用: {}", app.getPkgId());
+                            }
+
+                            // 如果是首次同步，同步相关数据
+                            if (isInitialSync) {
+                                // 同步用户信息
+                                if (app.getCreatorId() != null) {
+                                    userService.updateUserInfo(app.getCreatorId());
+                                }
+
+                                // 同步 GitHub 信息
+                                if (app.getCreatorId() != null) {
+                                    syncGitHubInfoForUser(app.getCreatorId());
+                                }
+
+                                // 同步评分信息
+                                syncAppScore(app.getPkgId());
+
+                                // 同步评论信息
+                                syncAppComments(app.getPkgId());
+
+                                // 添加延迟，避免频繁调用
+                                Thread.sleep(3000);
+                            }
+                        } catch (Exception e) {
+                            log.error("处理应用 {} 时发生错误: {}", app.getPkgId(), e.getMessage());
                         }
-
-                        // 逐个保存应用
-                        appRepository.save(app);
-                        log.info("成功保存应用: {}", app.getPkgId());
                     }
-                    log.info("成功更新 {} 个应用信息", apps.size());
-                } else {
-                    log.error("获取应用列表失败: {}", appListResponse.message);
+
+                    log.info("应用信息更新完成");
+                    syncService.updateSyncInfo(SyncService.SYNC_TYPE_APP, true, null);
                 }
             }
-        } catch (IOException e) {
-            log.error("更新应用信息时发生错误", e);
+        } catch (Exception e) {
+            String error = "更新应用信息时发生错误: " + e.getMessage();
+            log.error(error, e);
+            syncService.updateSyncInfo(SyncService.SYNC_TYPE_APP, false, error);
+        }
+    }
+
+    private void syncGitHubInfoForUser(Long userId) {
+        try {
+            GitHubInfo existingInfo = githubInfoRepository.findByUserId(userId).orElse(null);
+            if (existingInfo == null || 
+                existingInfo.getLastSyncTime() == null ||
+                existingInfo.getLastSyncTime().isBefore(LocalDateTime.now().minusHours(24))) {
+                // 获取 GitHub 信息
+                String url = String.format("https://api.github.com/users/%d", userId);
+                String response = restTemplate.getForObject(url, String.class);
+                JsonNode root = objectMapper.readTree(response);
+
+                GitHubInfo githubInfo = existingInfo != null ? existingInfo : new GitHubInfo();
+                githubInfo.setUserId(userId);
+                githubInfo.setUsername(root.get("login").asText());
+                githubInfo.setAvatar(root.get("avatar_url").asText());
+                githubInfo.setLastSyncTime(LocalDateTime.now());
+
+                githubInfoRepository.save(githubInfo);
+                log.info("成功同步用户 {} 的 GitHub 信息", userId);
+            }
+        } catch (Exception e) {
+            log.error("同步用户 {} 的 GitHub 信息失败: {}", userId, e.getMessage());
         }
     }
 
@@ -471,70 +542,104 @@ public class AppService {
 
     @Scheduled(fixedRate = 6 * 60 * 60 * 1000) // 每6小时执行一次
     public void syncGitHubInfo() {
-        // 获取所有需要同步 GitHub 信息的用户
-        List<App> apps = appRepository.findAll();
-        Set<Long> userIds = apps.stream()
-                .map(App::getCreatorId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        if (!syncService.shouldSync(SyncService.SYNC_TYPE_GITHUB)) {
+            return;
+        }
 
-        // 为每个用户同步 GitHub 信息
-        for (Long userId : userIds) {
-            try {
-                String url = "https://playground.api.lazycat.cloud/api/github/info/" + userId;
-                String response = restTemplate.getForObject(url, String.class);
+        log.info("开始同步 GitHub 信息...");
+        try {
+            // 获取所有需要同步 GitHub 信息的用户
+            List<App> apps = appRepository.findAll();
+            Set<Long> userIds = apps.stream()
+                    .map(App::getCreatorId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
 
-                // 检查是否返回 "record not found"
-                if ("record not found".equals(response)) {
-                    log.warn("用户 {} 的 GitHub 信息不存在", userId);
-                    continue;
-                }
+            // 获取现有 GitHub 信息
+            List<GitHubInfo> existingInfos = githubInfoRepository.findAll();
+            Map<Long, GitHubInfo> existingInfoMap = existingInfos.stream()
+                    .collect(Collectors.toMap(GitHubInfo::getUserId, info -> info));
 
-                // 解析响应
-                JsonNode root = objectMapper.readTree(response);
+            // 获取需要更新的用户列表
+            List<Long> usersToUpdate = userIds.stream()
+                    .filter(userId -> {
+                        GitHubInfo existingInfo = existingInfoMap.get(userId);
+                        return existingInfo == null || 
+                               existingInfo.getLastSyncTime() == null ||
+                               existingInfo.getLastSyncTime().isBefore(LocalDateTime.now().minusHours(24));
+                    })
+                    .collect(Collectors.toList());
 
-                // 更新 GitHub 信息
-                GitHubInfo githubInfo = githubInfoRepository.findByUserId(userId)
-                        .orElse(new GitHubInfo());
-
-                // 设置基本信息
-                githubInfo.setUserId(userId);
-                githubInfo.setUid(root.get("uid").asLong());
-                githubInfo.setCreatedAt(LocalDateTime.parse(root.get("createdAt").asText().replace("Z", "")));
-                githubInfo.setUpdatedAt(LocalDateTime.parse(root.get("updatedAt").asText().replace("Z", "")));
-
-                // 设置用户信息
-                JsonNode userNode = root.get("user");
-                githubInfo.setUsername(userNode.get("username").asText());
-                githubInfo.setNickname(userNode.get("nickname").asText());
-                githubInfo.setAvatar(userNode.get("avatar").asText());
-                githubInfo.setDescription(userNode.get("description").asText());
-                githubInfo.setGithubUsername(userNode.get("githubUsername").asText());
-
-                // 设置统计信息
-                JsonNode summaryNode = root.get("summary");
-                githubInfo.setTotalPRs(summaryNode.get("totalPRs").asInt());
-                githubInfo.setTotalCommits(summaryNode.get("totalCommits").asInt());
-                githubInfo.setTotalIssues(summaryNode.get("totalIssues").asInt());
-                githubInfo.setContributedTo(summaryNode.get("contributedTo").asInt());
-
-                // 设置排名信息
-                JsonNode rankNode = summaryNode.get("rank");
-                githubInfo.setRankLevel(rankNode.get("level").asText());
-                githubInfo.setRankScore(rankNode.get("score").asDouble());
-
-                // 设置编程语言信息
-                githubInfo.setTopLangs(root.get("topLangs").toString());
-
-                // 设置最后同步时间
-                githubInfo.setLastSyncTime(LocalDateTime.now());
-
-                // 保存信息
-                githubInfoRepository.save(githubInfo);
-                log.info("成功同步用户 {} 的 GitHub 信息", userId);
-            } catch (Exception e) {
-                log.error("同步用户 {} 的 GitHub 信息失败: {}", userId, e.getMessage());
+            if (usersToUpdate.isEmpty()) {
+                log.info("没有需要更新的 GitHub 信息");
+                return;
             }
+
+            log.info("需要更新 {} 个用户的 GitHub 信息", usersToUpdate.size());
+
+            // 为每个需要更新的用户同步 GitHub 信息
+            for (Long userId : usersToUpdate) {
+                try {
+                    String url = "https://playground.api.lazycat.cloud/api/github/info/" + userId;
+                    String response = restTemplate.getForObject(url, String.class);
+
+                    // 检查是否返回 "record not found"
+                    if ("record not found".equals(response)) {
+                        log.warn("用户 {} 的 GitHub 信息不存在", userId);
+                        continue;
+                    }
+
+                    // 解析响应
+                    JsonNode root = objectMapper.readTree(response);
+
+                    // 更新 GitHub 信息
+                    GitHubInfo githubInfo = existingInfoMap.getOrDefault(userId, new GitHubInfo());
+
+                    // 设置基本信息
+                    githubInfo.setUserId(userId);
+                    githubInfo.setUid(root.get("uid").asLong());
+                    githubInfo.setCreatedAt(LocalDateTime.parse(root.get("createdAt").asText().replace("Z", "")));
+                    githubInfo.setUpdatedAt(LocalDateTime.parse(root.get("updatedAt").asText().replace("Z", "")));
+
+                    // 设置用户信息
+                    JsonNode userNode = root.get("user");
+                    githubInfo.setUsername(userNode.get("username").asText());
+                    githubInfo.setNickname(userNode.get("nickname").asText());
+                    githubInfo.setAvatar(userNode.get("avatar").asText());
+                    githubInfo.setDescription(userNode.get("description").asText());
+                    githubInfo.setGithubUsername(userNode.get("githubUsername").asText());
+
+                    // 设置统计信息
+                    JsonNode summaryNode = root.get("summary");
+                    githubInfo.setTotalPRs(summaryNode.get("totalPRs").asInt());
+                    githubInfo.setTotalCommits(summaryNode.get("totalCommits").asInt());
+                    githubInfo.setTotalIssues(summaryNode.get("totalIssues").asInt());
+                    githubInfo.setContributedTo(summaryNode.get("contributedTo").asInt());
+
+                    // 设置排名信息
+                    JsonNode rankNode = summaryNode.get("rank");
+                    githubInfo.setRankLevel(rankNode.get("level").asText());
+                    githubInfo.setRankScore(rankNode.get("score").asDouble());
+
+                    // 设置编程语言信息
+                    githubInfo.setTopLangs(root.get("topLangs").toString());
+
+                    // 设置最后同步时间
+                    githubInfo.setLastSyncTime(LocalDateTime.now());
+
+                    // 保存信息
+                    githubInfoRepository.save(githubInfo);
+                    log.info("成功同步用户 {} 的 GitHub 信息", userId);
+                } catch (Exception e) {
+                    log.error("同步用户 {} 的 GitHub 信息失败: {}", userId, e.getMessage());
+                }
+            }
+            log.info("GitHub 信息同步完成");
+            syncService.updateSyncInfo(SyncService.SYNC_TYPE_GITHUB, true, null);
+        } catch (Exception e) {
+            String error = "同步 GitHub 信息时发生错误: " + e.getMessage();
+            log.error(error, e);
+            syncService.updateSyncInfo(SyncService.SYNC_TYPE_GITHUB, false, error);
         }
     }
 
@@ -574,6 +679,24 @@ public class AppService {
                 .sum());
         overview.put("developerCount", userInfoRepository.count());
         return overview;
+    }
+
+    /**
+     * 修复现有应用的 packageName 字段
+     */
+    public void fixPackageNames() {
+        log.info("开始修复应用包名...");
+        List<App> apps = appRepository.findAll();
+        int fixed = 0;
+        for (App app : apps) {
+            if (app.getPackageName() == null) {
+                app.setPackageName(app.getPkgId());
+                appRepository.save(app);
+                fixed++;
+                log.info("修复应用包名: {}", app.getPkgId());
+            }
+        }
+        log.info("应用包名修复完成，共修复 {} 个应用", fixed);
     }
 
     public void syncAppScore(String pkgId) {
@@ -621,18 +744,54 @@ public class AppService {
 
     @Scheduled(cron = "0 0 */2 * * *") // 每2小时执行一次，从0点开始
     public void syncAllAppScores() {
-        log.info("开始同步所有应用评分...");
-        List<App> apps = appRepository.findAll();
-        for (App app : apps) {
-            try {
-                syncAppScore(app.getPkgId());
-                Thread.sleep(1000); // 添加1秒延迟，避免请求过于频繁
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
+        if (!syncService.shouldSync(SyncService.SYNC_TYPE_SCORE)) {
+            return;
         }
-        log.info("应用评分同步完成");
+
+        log.info("开始同步应用评分...");
+        try {
+            // 获取所有应用
+            List<App> apps = appRepository.findAll();
+            
+            // 获取现有评分信息
+            List<AppScore> existingScores = appScoreRepository.findAll();
+            Map<String, AppScore> existingScoreMap = existingScores.stream()
+                    .collect(Collectors.toMap(AppScore::getPkgId, score -> score));
+
+            // 获取需要更新的应用列表
+            List<String> appsToUpdate = apps.stream()
+                    .map(App::getPkgId)
+                    .filter(pkgId -> {
+                        AppScore existingScore = existingScoreMap.get(pkgId);
+                        return existingScore == null || 
+                               existingScore.getLastSyncTime() == null ||
+                               existingScore.getLastSyncTime().isBefore(LocalDateTime.now().minusHours(24));
+                    })
+                    .collect(Collectors.toList());
+
+            if (appsToUpdate.isEmpty()) {
+                log.info("没有需要更新的应用评分");
+                return;
+            }
+
+            log.info("需要更新 {} 个应用的评分", appsToUpdate.size());
+
+            for (String pkgId : appsToUpdate) {
+                try {
+                    syncAppScore(pkgId);
+                    Thread.sleep(1000); // 添加1秒延迟，避免请求过于频繁
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+            log.info("应用评分同步完成");
+            syncService.updateSyncInfo(SyncService.SYNC_TYPE_SCORE, true, null);
+        } catch (Exception e) {
+            String error = "同步应用评分时发生错误: " + e.getMessage();
+            log.error(error, e);
+            syncService.updateSyncInfo(SyncService.SYNC_TYPE_SCORE, false, error);
+        }
     }
 
     public List<Map<String, Object>> getFiveStarApps() {
@@ -746,21 +905,65 @@ public class AppService {
 
     @Scheduled(cron = "0 0 */2 * * *") // 每2小时执行一次，从0点开始
     public void syncAllAppComments() {
-        log.info("开始同步所有应用评论...");
-        List<AppScore> scores = appScoreRepository.findAll().stream()
-            .filter(score -> score.getTotalReviews() != null && score.getTotalReviews() > 0)
-            .collect(Collectors.toList());
-            
-        for (AppScore score : scores) {
-            try {
-                syncAppComments(score.getPkgId());
-                Thread.sleep(5000); // 添加5秒延迟，避免请求过于频繁
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
+        if (!syncService.shouldSync(SyncService.SYNC_TYPE_COMMENT)) {
+            return;
         }
-        log.info("应用评论同步完成");
+
+        log.info("开始同步应用评论...");
+        try {
+            // 获取所有有评论的应用
+            List<AppScore> scores = appScoreRepository.findAll().stream()
+                    .filter(score -> score.getTotalReviews() != null && score.getTotalReviews() > 0)
+                    .collect(Collectors.toList());
+
+            // 获取现有评论信息
+            List<AppComment> existingComments = appCommentRepository.findAll();
+            Map<String, LocalDateTime> lastCommentTimeMap = existingComments.stream()
+                    .collect(Collectors.groupingBy(
+                            AppComment::getPkgId,
+                            Collectors.mapping(
+                                    AppComment::getCreatedAt,
+                                    Collectors.maxBy(LocalDateTime::compareTo)
+                            )
+                    ))
+                    .entrySet().stream()
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            entry -> entry.getValue().orElse(LocalDateTime.MIN)
+                    ));
+
+            // 获取需要更新的应用列表
+            List<String> appsToUpdate = scores.stream()
+                    .map(AppScore::getPkgId)
+                    .filter(pkgId -> {
+                        LocalDateTime lastCommentTime = lastCommentTimeMap.getOrDefault(pkgId, LocalDateTime.MIN);
+                        return lastCommentTime.isBefore(LocalDateTime.now().minusHours(24));
+                    })
+                    .collect(Collectors.toList());
+
+            if (appsToUpdate.isEmpty()) {
+                log.info("没有需要更新的应用评论");
+                return;
+            }
+
+            log.info("需要更新 {} 个应用的评论", appsToUpdate.size());
+
+            for (String pkgId : appsToUpdate) {
+                try {
+                    syncAppComments(pkgId);
+                    Thread.sleep(5000); // 添加5秒延迟，避免请求过于频繁
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+            log.info("应用评论同步完成");
+            syncService.updateSyncInfo(SyncService.SYNC_TYPE_COMMENT, true, null);
+        } catch (Exception e) {
+            String error = "同步应用评论时发生错误: " + e.getMessage();
+            log.error(error, e);
+            syncService.updateSyncInfo(SyncService.SYNC_TYPE_COMMENT, false, error);
+        }
     }
 
     public List<AppComment> getAppComments(String pkgId) {
