@@ -1,6 +1,7 @@
 package xyz.mxue.lazycatapp.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
@@ -45,13 +46,15 @@ public class GitHubInfoService {
     private static class GitHubUser {
         private Long id;
         private String username;
-        private boolean isUsernameSet;
+        @JsonProperty("isUsernameSet")
+        private boolean usernameSet;
         private String nickname;
         private String avatar;
         private String description;
         private int status;
         private String githubUsername;
-        private boolean isCurrentLoginUser;
+        @JsonProperty("isCurrentLoginUser")
+        private boolean currentLoginUser;
     }
 
     @lombok.Data
