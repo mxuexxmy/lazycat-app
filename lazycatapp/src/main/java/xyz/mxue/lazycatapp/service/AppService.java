@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.Objects;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Slf4j
 @Service
@@ -87,6 +88,7 @@ public class AppService {
     @lombok.Data
     private static class CommentListData {
         private List<Comment> list;
+        @JsonProperty("isNext")
         private boolean isNext;
     }
 
@@ -708,14 +710,10 @@ public class AppService {
                             CommentListResponse.class);
 
                     if (commentResponse.errorCode == 0 && commentResponse.data != null) {
-                        // 删除旧的评论
-                        if (page == 1) {
-                            appCommentRepository.deleteByPkgId(pkgId);
-                        }
-
-                        // 保存新的评论
+                        // 保存或更新评论
                         for (Comment comment : commentResponse.data.list) {
-                            AppComment appComment = new AppComment();
+                            AppComment appComment = appCommentRepository.findById(comment.commentId)
+                                    .orElse(new AppComment());
                             appComment.setCommentId(comment.commentId);
                             appComment.setPkgId(comment.appId);
                             appComment.setUserId(comment.userid);
@@ -749,11 +747,14 @@ public class AppService {
     @Scheduled(cron = "0 0 */2 * * *") // 每2小时执行一次，从0点开始
     public void syncAllAppComments() {
         log.info("开始同步所有应用评论...");
-        List<AppScore> scores = appScoreRepository.findAll();
+        List<AppScore> scores = appScoreRepository.findAll().stream()
+            .filter(score -> score.getTotalReviews() != null && score.getTotalReviews() > 0)
+            .collect(Collectors.toList());
+            
         for (AppScore score : scores) {
             try {
                 syncAppComments(score.getPkgId());
-                Thread.sleep(5000); // 添加10秒延迟，避免请求过于频繁
+                Thread.sleep(5000); // 添加5秒延迟，避免请求过于频繁
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
@@ -764,6 +765,39 @@ public class AppService {
 
     public List<AppComment> getAppComments(String pkgId) {
         return appCommentRepository.findByPkgId(pkgId);
+    }
+
+    public List<Map<String, Object>> getFiveStarAppsRanking(int limit) {
+        return appScoreRepository.findAll().stream()
+            .filter(score -> score.getScore() != null && score.getScore() >= 4.5) // 筛选评分大于等于4.5的应用
+            .sorted((a, b) -> {
+                // 首先按评分排序
+                int scoreCompare = Double.compare(b.getScore(), a.getScore());
+                if (scoreCompare != 0) {
+                    return scoreCompare;
+                }
+                // 如果评分相同，则按评论数排序
+                return Integer.compare(b.getTotalReviews(), a.getTotalReviews());
+            })
+            .limit(limit)
+            .map(score -> {
+                Map<String, Object> appMap = new HashMap<>();
+                // 获取应用信息
+                App app = appRepository.findById(score.getPkgId()).orElse(null);
+                if (app != null) {
+                    appMap.put("pkgId", app.getPkgId());
+                    appMap.put("name", app.getName());
+                    appMap.put("iconPath", app.getIconPath());
+                    appMap.put("description", app.getDescription());
+                    appMap.put("downloadCount", app.getDownloadCount());
+                    appMap.put("score", score.getScore());
+                    appMap.put("totalReviews", score.getTotalReviews());
+                    appMap.put("category", app.getCategory());
+                    appMap.put("creator", app.getCreator());
+                }
+                return appMap;
+            })
+            .collect(Collectors.toList());
     }
 
 }

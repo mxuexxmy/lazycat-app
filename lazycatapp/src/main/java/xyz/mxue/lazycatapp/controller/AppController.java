@@ -230,4 +230,59 @@ public class AppController {
     public ResponseEntity<List<AppComment>> getAppComments(@PathVariable String pkgId) {
         return ResponseEntity.ok(appService.getAppComments(pkgId));
     }
+
+    @PostMapping("/comments/sync/{pkgId}")
+    public ResponseEntity<Map<String, Object>> syncAppComments(@PathVariable String pkgId) {
+        try {
+            appService.syncAppComments(pkgId);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "评论同步成功"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "评论同步失败: " + e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/comments/sync/all")
+    public ResponseEntity<Map<String, Object>> syncAllAppComments() {
+        try {
+            appService.syncAllAppComments();
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "所有应用评论同步成功"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "评论同步失败: " + e.getMessage()
+            ));
+        }
+    }
+    
+
+    @PostMapping("/scores/sync/all")
+    public ResponseEntity<Map<String, Object>> syncAllAppScores() {
+        try {
+            appService.syncAllAppScores();
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "所有应用评分同步成功"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "评分同步失败: " + e.getMessage()
+            ));
+        }
+    }
+
+    @GetMapping("/statistics/apps/five-star")
+    public ResponseEntity<List<Map<String, Object>>> getFiveStarAppsRanking(
+            @RequestParam(defaultValue = "10") int limit) {
+        return ResponseEntity.ok(appService.getFiveStarAppsRanking(limit));
+    }
 }

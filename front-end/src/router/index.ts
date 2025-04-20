@@ -120,6 +120,14 @@ const routes: RouteRecordRaw[] = [
         name: 'StatisticsUsers',
         component: () => import('@/views/statistics/Users.vue'),
         meta: { title: '用户统计' }
+      },
+      {
+        path: 'five-star',
+        name: 'FiveStarApps',
+        component: () => import('../views/statistics/FiveStarApps.vue'),
+        meta: {
+          title: '五星应用排行榜'
+        }
       }
     ]
   },

@@ -81,7 +81,7 @@ const growthStats = ref<GrowthStat[]>([
 const columns: DataTableColumns<User> = [
   {
     title: '用户名',
-    key: 'username'
+    key: 'nickname'
   },
   {
     title: '下载量',

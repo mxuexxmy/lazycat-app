@@ -12,6 +12,8 @@ import xyz.mxue.lazycatapp.entity.CommunityUser;
 import xyz.mxue.lazycatapp.entity.UserInfo;
 import xyz.mxue.lazycatapp.repository.CommunityUserRepository;
 import xyz.mxue.lazycatapp.repository.UserInfoRepository;
+import xyz.mxue.lazycatapp.repository.AppRepository;
+import xyz.mxue.lazycatapp.entity.App;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -28,6 +30,7 @@ public class UserService {
     
     private final UserInfoRepository userInfoRepository;
     private final CommunityUserRepository communityUserRepository;
+    private final AppRepository appRepository;
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
     
@@ -130,10 +133,17 @@ public class UserService {
             Map<String, Object> userMap = new HashMap<>();
             userMap.put("id", user.getId());
             userMap.put("username", user.getUsername());
-            userMap.put("downloads", 100);
             userMap.put("nickname", user.getNickname());
             userMap.put("avatar", user.getAvatar());
             userMap.put("lastActive", user.getUpdatedAt());
+
+            // 获取该用户的所有应用并计算总下载量
+            List<App> userApps = appRepository.findByCreatorId(user.getId());
+            int totalDownloads = userApps.stream()
+                .mapToInt(app -> app.getDownloadCount() != null ? app.getDownloadCount() : 0)
+                .sum();
+            
+            userMap.put("downloads", totalDownloads);
             return userMap;
         }).collect(Collectors.toList());
     }

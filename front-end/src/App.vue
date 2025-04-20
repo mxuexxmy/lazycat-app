@@ -264,6 +264,7 @@ const showBackButton = computed(() => {
     'StatisticsOverview',
     "StatisticsApps",
     "StatisticsUsers",
+    "FiveStarApps",
     // 其他
     'Search',
     'AppDetail'

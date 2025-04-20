@@ -173,6 +173,14 @@ const functions: Function[] = [
         icon: TrendingUpOutline,
         iconColor: '#fa8c16',
         route: { name: 'TrendAnalysis' }
+      },
+      {
+        id: 'five-star',
+        title: '五星应用排行榜',
+        description: '评分最高的应用',
+        icon: StarOutline,
+        iconColor: '#ffb800',
+        route: { name: 'FiveStarApps' }
       }
     ]
   },
