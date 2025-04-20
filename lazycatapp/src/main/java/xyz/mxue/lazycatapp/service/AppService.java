@@ -18,7 +18,6 @@ import xyz.mxue.lazycatapp.repository.GitHubInfoRepository;
 import xyz.mxue.lazycatapp.repository.UserInfoRepository;
 import xyz.mxue.lazycatapp.repository.AppScoreRepository;
 import xyz.mxue.lazycatapp.repository.AppCommentRepository;
-import org.springframework.web.client.RestTemplate;
 import xyz.mxue.lazycatapp.entity.Category;
 import xyz.mxue.lazycatapp.entity.AppScore;
 import xyz.mxue.lazycatapp.entity.AppComment;
@@ -39,7 +38,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import xyz.mxue.lazycatapp.entity.SyncInfo;
 import xyz.mxue.lazycatapp.repository.CategoryRepository;
-
+import java.util.ArrayList;
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -51,7 +50,6 @@ public class AppService {
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final GitHubInfoRepository githubInfoRepository;
-    private final RestTemplate restTemplate = new RestTemplate();
     private final SyncService syncService;
     private final CategoryRepository categoryRepository;
 
@@ -359,75 +357,158 @@ public class AppService {
             if (existingInfo == null || 
                 existingInfo.getLastSyncTime() == null ||
                 existingInfo.getLastSyncTime().isBefore(LocalDateTime.now().minusHours(24))) {
-                // 获取 GitHub 信息
-                String url = String.format("https://api.github.com/users/%d", userId);
-                String response = restTemplate.getForObject(url, String.class);
-                JsonNode root = objectMapper.readTree(response);
+                
+                String url = "https://playground.api.lazycat.cloud/api/github/info/" + userId;
+                Request request = new Request.Builder()
+                        .url(url)
+                        .get()
+                        .build();
 
-                GitHubInfo githubInfo = existingInfo != null ? existingInfo : new GitHubInfo();
-                githubInfo.setUserId(userId);
-                githubInfo.setUsername(root.get("login").asText());
-                githubInfo.setAvatar(root.get("avatar_url").asText());
-                githubInfo.setLastSyncTime(LocalDateTime.now());
+                try (Response response = httpClient.newCall(request).execute()) {
+                    if (!response.isSuccessful()) {
+                        log.error("获取用户 {} 的 GitHub 信息失败: {}", userId, response);
+                        return;
+                    }
 
-                githubInfoRepository.save(githubInfo);
-                log.info("成功同步用户 {} 的 GitHub 信息", userId);
+                    String responseBody = response.body().string();
+                    if ("record not found".equals(responseBody)) {
+                        log.warn("用户 {} 的 GitHub 信息不存在", userId);
+                        return;
+                    }
+
+                    // 解析响应
+                    JsonNode root = objectMapper.readTree(responseBody);
+
+                    // 更新 GitHub 信息
+                    GitHubInfo githubInfo = existingInfo != null ? existingInfo : new GitHubInfo();
+
+                    // 设置基本信息
+                    githubInfo.setUserId(userId);
+                    githubInfo.setUid(root.get("uid").asLong());
+                    githubInfo.setCreatedAt(LocalDateTime.parse(root.get("createdAt").asText().replace("Z", "")));
+                    githubInfo.setUpdatedAt(LocalDateTime.parse(root.get("updatedAt").asText().replace("Z", "")));
+
+                    // 设置用户信息
+                    JsonNode userNode = root.get("user");
+                    githubInfo.setUsername(userNode.get("username").asText());
+                    githubInfo.setNickname(userNode.get("nickname").asText());
+                    githubInfo.setAvatar(userNode.get("avatar").asText());
+                    githubInfo.setDescription(userNode.get("description").asText());
+                    githubInfo.setGithubUsername(userNode.get("githubUsername").asText());
+
+                    // 设置统计信息
+                    JsonNode summaryNode = root.get("summary");
+                    githubInfo.setTotalPRs(summaryNode.get("totalPRs").asInt());
+                    githubInfo.setTotalCommits(summaryNode.get("totalCommits").asInt());
+                    githubInfo.setTotalIssues(summaryNode.get("totalIssues").asInt());
+                    githubInfo.setContributedTo(summaryNode.get("contributedTo").asInt());
+
+                    // 设置排名信息
+                    JsonNode rankNode = root.get("rank");
+                    githubInfo.setRankLevel(rankNode.get("level").asText());
+                    githubInfo.setRankScore(rankNode.get("score").asDouble());
+
+                    // 设置编程语言信息
+                    githubInfo.setTopLangs(root.get("topLangs").toString());
+
+                    // 设置最后同步时间
+                    githubInfo.setLastSyncTime(LocalDateTime.now());
+
+                    // 保存更新
+                    githubInfoRepository.save(githubInfo);
+                    log.info("成功更新用户 {} 的 GitHub 信息", userId);
+                }
             }
         } catch (Exception e) {
-            log.error("同步用户 {} 的 GitHub 信息失败: {}", userId, e.getMessage());
+            log.error("处理用户 {} 的 GitHub 信息时发生错误: {}", userId, e.getMessage());
         }
     }
 
-    @Scheduled(cron = "0 0 * * *") // 从 0 点开始每小时执行一次
-    public void updateDownloadCounts() {
-        log.info("开始更新应用下载量...");
-        List<App> apps = appRepository.findAll();
-        for (App app : apps) {
+    @Scheduled(cron = "0 0 */1 * * *") // 每1小时执行一次，从0点开始
+public void updateDownloadCounts() {
+    log.info("开始更新应用下载量...");
+    List<App> apps = appRepository.findAll();
+    int batchSize = 10; // 每批处理的应用数量
+    int totalApps = apps.size();
+    int processedApps = 0;
+    int successCount = 0;
+    int failureCount = 0;
+
+    for (int i = 0; i < totalApps; i += batchSize) {
+        List<App> batch = apps.subList(i, Math.min(i + batchSize, totalApps));
+        List<App> updatedApps = new ArrayList<>();
+        
+        for (App app : batch) {
             try {
                 updateDownloadCount(app);
-                appRepository.save(app); // 立即保存每个更新后的应用
+                updatedApps.add(app);
+                successCount++;
                 log.info("应用 {} 下载量更新完成", app.getPkgId());
-                Thread.sleep(5000); // 每次更新后睡眠5秒
-            } catch (InterruptedException e) {
-                log.error("更新下载量时被中断", e);
-                Thread.currentThread().interrupt();
-                break;
+            } catch (IOException e) {
+                log.error("网络错误: 更新应用 {} 下载量失败", app.getPkgId(), e);
+                failureCount++;
             } catch (Exception e) {
                 log.error("更新应用 {} 下载量时发生错误", app.getPkgId(), e);
-                // 继续处理下一个应用
+                failureCount++;
+            }
+            processedApps++;
+        }
+
+        // 批量保存更新后的应用
+        if (!updatedApps.isEmpty()) {
+            try {
+                appRepository.saveAll(updatedApps);
+                log.info("批量保存 {} 个应用的更新", updatedApps.size());
+            } catch (Exception e) {
+                log.error("批量保存应用更新失败", e);
             }
         }
-        log.info("应用下载量更新完成");
-    }
 
-    private void updateDownloadCount(App app) {
+        // 每批处理完后等待5秒
         try {
-            Request request = new Request.Builder()
-                    .url(DOWNLOAD_COUNT_URL + "?pkgId=" + app.getPkgId())
-                    .get()
-                    .build();
-
-            try (Response response = httpClient.newCall(request).execute()) {
-                if (!response.isSuccessful()) {
-                    log.error("获取应用下载量失败: {}", response);
-                    return;
-                }
-
-                String responseBody = response.body().string();
-                DownloadCountResponse downloadCountResponse = objectMapper.readValue(responseBody,
-                        DownloadCountResponse.class);
-
-                if (downloadCountResponse.errorCode == 0 && downloadCountResponse.data != null) {
-                    app.setDownloadCount(downloadCountResponse.data);
-                    log.info("成功更新应用 {} 的下载量: {}", app.getPkgId(), downloadCountResponse.data);
-                } else {
-                    log.warn("应用 {} 的下载量为空，保留原有值", app.getPkgId());
-                }
-            }
-        } catch (IOException e) {
-            log.error("更新应用下载量时发生错误", e);
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            log.error("更新下载量时被中断", e);
+            Thread.currentThread().interrupt();
+            break;
         }
     }
+
+    log.info("应用下载量更新完成。总计: {} 个应用, 成功: {} 个, 失败: {} 个", 
+        totalApps, successCount, failureCount);
+}
+
+private void updateDownloadCount(App app) throws IOException {
+    try {
+        Request request = new Request.Builder()
+                .url(DOWNLOAD_COUNT_URL + "?pkgId=" + app.getPkgId())
+                .get()
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("HTTP请求失败: " + response.code() + " " + response.message());
+            }
+
+            String responseBody = response.body().string();
+            DownloadCountResponse downloadCountResponse = objectMapper.readValue(responseBody,
+                    DownloadCountResponse.class);
+
+            if (downloadCountResponse.errorCode == 0 && downloadCountResponse.data != null) {
+                app.setDownloadCount(downloadCountResponse.data);
+                log.info("成功更新应用 {} 的下载量: {}", app.getPkgId(), downloadCountResponse.data);
+            } else {
+                throw new IOException("API返回错误: " + downloadCountResponse.message);
+            }
+        }
+    } catch (IOException e) {
+        log.error("网络错误: 更新应用 {} 下载量失败", app.getPkgId(), e);
+        throw e;
+    } catch (Exception e) {
+        log.error("更新应用 {} 下载量时发生未知错误", app.getPkgId(), e);
+        throw new IOException("更新下载量失败: " + e.getMessage(), e);
+    }
+}
 
     @lombok.Data
     private static class AppListResponse {
@@ -611,65 +692,75 @@ public class AppService {
             for (Long userId : usersToUpdate) {
                 try {
                     String url = "https://playground.api.lazycat.cloud/api/github/info/" + userId;
-                    String response = restTemplate.getForObject(url, String.class);
+                    Request request = new Request.Builder()
+                            .url(url)
+                            .get()
+                            .build();
 
-                    // 检查是否返回 "record not found"
-                    if ("record not found".equals(response)) {
-                        log.warn("用户 {} 的 GitHub 信息不存在", userId);
-                        continue;
+                    try (Response response = httpClient.newCall(request).execute()) {
+                        if (!response.isSuccessful()) {
+                            log.error("获取用户 {} 的 GitHub 信息失败: {}", userId, response);
+                            continue;
+                        }
+
+                        String responseBody = response.body().string();
+                        if ("record not found".equals(responseBody)) {
+                            log.warn("用户 {} 的 GitHub 信息不存在", userId);
+                            continue;
+                        }
+
+                        // 解析响应
+                        JsonNode root = objectMapper.readTree(responseBody);
+
+                        // 更新 GitHub 信息
+                        GitHubInfo githubInfo = existingInfoMap.getOrDefault(userId, new GitHubInfo());
+
+                        // 设置基本信息
+                        githubInfo.setUserId(userId);
+                        githubInfo.setUid(root.get("uid").asLong());
+                        githubInfo.setCreatedAt(LocalDateTime.parse(root.get("createdAt").asText().replace("Z", "")));
+                        githubInfo.setUpdatedAt(LocalDateTime.parse(root.get("updatedAt").asText().replace("Z", "")));
+
+                        // 设置用户信息
+                        JsonNode userNode = root.get("user");
+                        githubInfo.setUsername(userNode.get("username").asText());
+                        githubInfo.setNickname(userNode.get("nickname").asText());
+                        githubInfo.setAvatar(userNode.get("avatar").asText());
+                        githubInfo.setDescription(userNode.get("description").asText());
+                        githubInfo.setGithubUsername(userNode.get("githubUsername").asText());
+
+                        // 设置统计信息
+                        JsonNode summaryNode = root.get("summary");
+                        githubInfo.setTotalPRs(summaryNode.get("totalPRs").asInt());
+                        githubInfo.setTotalCommits(summaryNode.get("totalCommits").asInt());
+                        githubInfo.setTotalIssues(summaryNode.get("totalIssues").asInt());
+                        githubInfo.setContributedTo(summaryNode.get("contributedTo").asInt());
+
+                        // 设置排名信息
+                        JsonNode rankNode = root.get("rank");
+                        githubInfo.setRankLevel(rankNode.get("level").asText());
+                        githubInfo.setRankScore(rankNode.get("score").asDouble());
+
+                        // 设置编程语言信息
+                        githubInfo.setTopLangs(root.get("topLangs").toString());
+
+                        // 设置最后同步时间
+                        githubInfo.setLastSyncTime(LocalDateTime.now());
+
+                        // 保存更新
+                        githubInfoRepository.save(githubInfo);
+                        log.info("成功更新用户 {} 的 GitHub 信息", userId);
                     }
-
-                    // 解析响应
-                    JsonNode root = objectMapper.readTree(response);
-
-                    // 更新 GitHub 信息
-                    GitHubInfo githubInfo = existingInfoMap.getOrDefault(userId, new GitHubInfo());
-
-                    // 设置基本信息
-                    githubInfo.setUserId(userId);
-                    githubInfo.setUid(root.get("uid").asLong());
-                    githubInfo.setCreatedAt(LocalDateTime.parse(root.get("createdAt").asText().replace("Z", "")));
-                    githubInfo.setUpdatedAt(LocalDateTime.parse(root.get("updatedAt").asText().replace("Z", "")));
-
-                    // 设置用户信息
-                    JsonNode userNode = root.get("user");
-                    githubInfo.setUsername(userNode.get("username").asText());
-                    githubInfo.setNickname(userNode.get("nickname").asText());
-                    githubInfo.setAvatar(userNode.get("avatar").asText());
-                    githubInfo.setDescription(userNode.get("description").asText());
-                    githubInfo.setGithubUsername(userNode.get("githubUsername").asText());
-
-                    // 设置统计信息
-                    JsonNode summaryNode = root.get("summary");
-                    githubInfo.setTotalPRs(summaryNode.get("totalPRs").asInt());
-                    githubInfo.setTotalCommits(summaryNode.get("totalCommits").asInt());
-                    githubInfo.setTotalIssues(summaryNode.get("totalIssues").asInt());
-                    githubInfo.setContributedTo(summaryNode.get("contributedTo").asInt());
-
-                    // 设置排名信息
-                    JsonNode rankNode = summaryNode.get("rank");
-                    githubInfo.setRankLevel(rankNode.get("level").asText());
-                    githubInfo.setRankScore(rankNode.get("score").asDouble());
-
-                    // 设置编程语言信息
-                    githubInfo.setTopLangs(root.get("topLangs").toString());
-
-                    // 设置最后同步时间
-                    githubInfo.setLastSyncTime(LocalDateTime.now());
-
-                    // 保存信息
-                    githubInfoRepository.save(githubInfo);
-                    log.info("成功同步用户 {} 的 GitHub 信息", userId);
                 } catch (Exception e) {
-                    log.error("同步用户 {} 的 GitHub 信息失败: {}", userId, e.getMessage());
+                    log.error("处理用户 {} 的 GitHub 信息时发生错误: {}", userId, e.getMessage());
                 }
             }
+
             log.info("GitHub 信息同步完成");
             syncService.updateSyncInfo(SyncService.SYNC_TYPE_GITHUB, true, null);
         } catch (Exception e) {
-            String error = "同步 GitHub 信息时发生错误: " + e.getMessage();
-            log.error(error, e);
-            syncService.updateSyncInfo(SyncService.SYNC_TYPE_GITHUB, false, error);
+            log.error("同步 GitHub 信息时发生错误", e);
+            syncService.updateSyncInfo(SyncService.SYNC_TYPE_GITHUB, false, e.getMessage());
         }
     }
 

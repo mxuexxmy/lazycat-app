@@ -11,9 +11,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.entity.Category;
 import xyz.mxue.lazycatapp.repository.CategoryRepository;
-import xyz.mxue.lazycatapp.service.SyncService;
 
-import java.io.IOException;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
