@@ -2,27 +2,11 @@ server:
   port: 8080
 
 spring:
-  profiles:
-    active: dev
-  application:
-    name: lazycatapp
-  main:
-    allow-bean-definition-overriding: true
   datasource:
     driver-class-name: org.sqlite.JDBC
     url: jdbc:sqlite:data/lazycatapp.db
   jpa:
-    database-platform: org.hibernate.community.dialect.SQLiteDialect
-    hibernate:
-      ddl-auto: update
     show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-  cache:
-    type: caffeine
-    caffeine:
-      spec: maximumSize=500,expireAfterWrite=600s
 
 logging:
   level:
@@ -40,10 +24,3 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-
-springdoc:
-  api-docs:
-    path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    operationsSorter: method 
