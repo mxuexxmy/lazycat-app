@@ -8,7 +8,6 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.entity.App;
@@ -24,13 +23,12 @@ import xyz.mxue.lazycatapp.entity.Category;
 import xyz.mxue.lazycatapp.entity.AppScore;
 import xyz.mxue.lazycatapp.entity.AppComment;
 import java.io.IOException;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,7 +38,7 @@ import java.util.Objects;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import xyz.mxue.lazycatapp.entity.SyncInfo;
-import xyz.mxue.lazycatapp.service.SyncService;
+import xyz.mxue.lazycatapp.repository.CategoryRepository;
 
 @Slf4j
 @Service
@@ -55,6 +53,7 @@ public class AppService {
     private final GitHubInfoRepository githubInfoRepository;
     private final RestTemplate restTemplate = new RestTemplate();
     private final SyncService syncService;
+    private final CategoryRepository categoryRepository;
 
     private static final String APP_LIST_URL = "https://appstore.api.lazycat.cloud/api/app/list";
     private static final String DOWNLOAD_COUNT_URL = "https://appstore.api.lazycat.cloud/api/counting";
@@ -227,7 +226,7 @@ public class AppService {
                 .collect(Collectors.toList());
     }
 
-    @Scheduled(fixedRate = 600000) // 每10分钟执行一次
+    @Scheduled(fixedRate = 1800000) // 每30分钟执行一次
     public void updateApps() {
         if (!syncService.shouldSync(SyncService.SYNC_TYPE_APP)) {
             return;
@@ -257,6 +256,11 @@ public class AppService {
                     Map<String, App> existingAppMap = existingApps.stream()
                             .collect(Collectors.toMap(App::getPkgId, app -> app));
 
+                    // 获取所有分类
+                    List<Category> allCategories = categoryRepository.findAll();
+                    Map<String, Category> categoryMap = allCategories.stream()
+                            .collect(Collectors.toMap(Category::getName, category -> category));
+
                     // 获取同步信息
                     SyncInfo syncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_APP);
                     boolean isInitialSync = !syncInfo.isInitialSyncCompleted();
@@ -274,6 +278,19 @@ public class AppService {
                                     app.setDownloadCount(existingApp.getDownloadCount());
                                     // 设置包名
                                     app.setPackageName(app.getPkgId());
+                                    
+                                    // 设置分类关联
+                                    Set<Category> categories = new HashSet<>();
+                                    if (app.getCategory() != null) {
+                                        for (String categoryName : app.getCategory()) {
+                                            Category category = categoryMap.get(categoryName);
+                                            if (category != null) {
+                                                categories.add(category);
+                                            }
+                                        }
+                                    }
+                                    app.setCategories(categories);
+                                    
                                     appRepository.save(app);
                                     log.info("更新应用: {}", app.getPkgId());
                                 }
@@ -282,6 +299,19 @@ public class AppService {
                                 updateDownloadCount(app);
                                 // 设置包名
                                 app.setPackageName(app.getPkgId());
+                                
+                                // 设置分类关联
+                                Set<Category> categories = new HashSet<>();
+                                if (app.getCategory() != null) {
+                                    for (String categoryName : app.getCategory()) {
+                                        Category category = categoryMap.get(categoryName);
+                                        if (category != null) {
+                                            categories.add(category);
+                                        }
+                                    }
+                                }
+                                app.setCategories(categories);
+                                
                                 appRepository.save(app);
                                 log.info("新增应用: {}", app.getPkgId());
                             }
@@ -348,7 +378,7 @@ public class AppService {
         }
     }
 
-    @Scheduled(fixedRate = 3600000) // 每小时执行一次
+    @Scheduled(cron = "0 0 * * *") // 从 0 点开始每小时执行一次
     public void updateDownloadCounts() {
         log.info("开始更新应用下载量...");
         List<App> apps = appRepository.findAll();
@@ -1018,13 +1048,7 @@ public class AppService {
             commentMap.put("pkgId", comment.getPkgId());
             commentMap.put("userId", comment.getUserId());
             commentMap.put("nickname", comment.getNickname());
-            // 处理头像 URL
-            String avatar = comment.getAvatar();
-            if (avatar == null || avatar.isEmpty()) {
-                // 如果头像 URL 为空，使用默认头像
-                avatar = "https://appstore.api.lazycat.cloud/static/default-avatar.png";
-            }
-            commentMap.put("avatar", avatar);
+            commentMap.put("avatar", comment.getAvatar());
             commentMap.put("score", comment.getScore());
             commentMap.put("content", comment.getContent());
             commentMap.put("liked", comment.getLiked());
