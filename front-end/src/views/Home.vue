@@ -73,7 +73,8 @@ import {
   AppsOutline,
   ShieldCheckmarkOutline,
   PeopleOutline,
-  LogoGithub
+  LogoGithub,
+  TrendingUpOutline
 } from '@vicons/ionicons5'
 import StatisticsCard from '@/components/StatisticsCard.vue'
 import AppWordCloud from '@/components/AppWordCloud.vue'
@@ -132,6 +133,46 @@ const functions: Function[] = [
         icon: RefreshOutline,
         iconColor: '#2f54eb',
         route: { name: 'RecentUpdates' }
+      }
+    ]
+  },
+  {
+    id: 'statistics',
+    title: '统计分析',
+    icon: AnalyticsOutline,
+    iconColor: '#722ed1',
+    children: [
+      {
+        id: 'overview',
+        title: '数据概览',
+        description: '平台整体数据统计',
+        icon: StatsChartOutline,
+        iconColor: '#722ed1',
+        route: { name: 'StatisticsOverview' }
+      },
+      {
+        id: 'apps',
+        title: '应用统计',
+        description: '应用相关数据统计',
+        icon: AppsOutline,
+        iconColor: '#13c2c2',
+        route: { name: 'StatisticsApps' }
+      },
+      {
+        id: 'users',
+        title: '用户统计',
+        description: '用户相关数据统计',
+        icon: PeopleOutline,
+        iconColor: '#1890ff',
+        route: { name: 'StatisticsUsers' }
+      },
+      {
+        id: 'trend-analysis',
+        title: '趋势分析',
+        description: '数据趋势分析',
+        icon: TrendingUpOutline,
+        iconColor: '#fa8c16',
+        route: { name: 'TrendAnalysis' }
       }
     ]
   },
@@ -260,22 +301,6 @@ const functions: Function[] = [
         icon: BulbOutline,
         iconColor: '#faad14',
         route: { name: 'Category', params: { id: 24 } }
-      }
-    ]
-  },
-  {
-    id: 'statistics',
-    title: '统计分析',
-    icon: StatsChartOutline,
-    iconColor: '#1890ff',
-    children: [
-      {
-        id: 'trend-analysis',
-        title: '趋势分析',
-        description: '应用发布和更新趋势',
-        icon: AnalyticsOutline,
-        iconColor: '#52c41a',
-        route: { name: 'TrendAnalysis' }
       }
     ]
   }

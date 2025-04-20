@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.entity.CommunityUser;
 import xyz.mxue.lazycatapp.entity.UserInfo;
@@ -14,7 +15,11 @@ import xyz.mxue.lazycatapp.repository.UserInfoRepository;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -117,6 +122,27 @@ public class UserService {
     
     public long count() {
         return userInfoRepository.count();
+    }
+    
+    public List<Map<String, Object>> getActiveUsers(int limit) {
+        List<UserInfo> users = userInfoRepository.findActiveUsers(PageRequest.of(0, limit));
+        return users.stream().map(user -> {
+            Map<String, Object> userMap = new HashMap<>();
+            userMap.put("id", user.getId());
+            userMap.put("username", user.getUsername());
+            userMap.put("nickname", user.getNickname());
+            userMap.put("avatar", user.getAvatar());
+            userMap.put("lastActive", user.getUpdatedAt());
+            return userMap;
+        }).collect(Collectors.toList());
+    }
+    
+    public Map<String, Object> getUserGrowthStats() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("daily", userInfoRepository.countNewUsersToday());
+        stats.put("weekly", userInfoRepository.countNewUsersThisWeek());
+        stats.put("monthly", userInfoRepository.countNewUsersThisMonth());
+        return stats;
     }
     
     @lombok.Data

@@ -5,6 +5,8 @@ import lombok.Data;
 import xyz.mxue.lazycatapp.converter.StringListConverter;
 import java.util.List;
 import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.HashSet;
 
 @Data
 @Entity
@@ -30,6 +32,7 @@ public class App {
     
     private String iconPath;
     private String keywords;
+    @Column(nullable = false)
     private String version;
     private String creator;
     private Long creatorId;
@@ -74,6 +77,14 @@ public class App {
     
     @Column(name = "tags")
     private String tags;
+
+    @ManyToMany
+    @JoinTable(
+        name = "app_category",
+        joinColumns = @JoinColumn(name = "app_id"),
+        inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    private Set<Category> categories = new HashSet<>();
     
     @PrePersist
     protected void onCreate() {
@@ -92,5 +103,21 @@ public class App {
 
     public void setTags(String tags) {
         this.tags = tags;
+    }
+
+    public long getDownloads() {
+        return downloadCount;
+    }
+
+    public void setDownloads(long downloads) {
+        this.downloadCount = (int) downloads;
+    }
+
+    public Set<Category> getCategories() {
+        return categories;
+    }
+
+    public void setCategories(Set<Category> categories) {
+        this.categories = categories;
     }
 } 

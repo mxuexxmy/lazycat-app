@@ -10,6 +10,7 @@ import xyz.mxue.lazycatapp.entity.App;
 import xyz.mxue.lazycatapp.entity.Category;
 import xyz.mxue.lazycatapp.service.AppService;
 import xyz.mxue.lazycatapp.service.CategoryService;
+import xyz.mxue.lazycatapp.service.UserService;
 
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ public class AppController {
 
     private final AppService appService;
     private final CategoryService categoryService;
+    private final UserService userService;
     private boolean isInitialSyncComplete = false;
 
     @GetMapping
@@ -191,6 +193,31 @@ public class AppController {
         statistics.put("totalDevelopers", totalDevelopers);
         
         return statistics;
+    }
+
+    @GetMapping("/statistics/overview")
+    public Map<String, Object> getStatisticsOverview() {
+        return appService.getStatisticsOverview();
+    }
+
+    @GetMapping("/statistics/apps/popular")
+    public List<Map<String, Object>> getPopularApps() {
+        return appService.getPopularApps(10);
+    }
+
+    @GetMapping("/statistics/apps/categories")
+    public List<Map<String, Object>> getCategoryStats() {
+        return appService.getCategoryStats();
+    }
+
+    @GetMapping("/statistics/users/active")
+    public List<Map<String, Object>> getActiveUsers() {
+        return userService.getActiveUsers(10);
+    }
+
+    @GetMapping("/statistics/users/growth")
+    public Map<String, Object> getUserGrowth() {
+        return userService.getUserGrowthStats();
     }
 
     // 在数据同步完成后调用此方法

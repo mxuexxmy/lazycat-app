@@ -102,6 +102,24 @@ const routes: RouteRecordRaw[] = [
         path: 'trend-analysis',
         name: 'TrendAnalysis',
         component: () => import('@/views/statistics/TrendAnalysis.vue')
+      },
+      {
+        path: 'overview',
+        name: 'StatisticsOverview',
+        component: () => import('@/views/statistics/Overview.vue'),
+        meta: { title: '数据概览' }
+      },
+      {
+        path: 'apps',
+        name: 'StatisticsApps',
+        component: () => import('@/views/statistics/Apps.vue'),
+        meta: { title: '应用统计' }
+      },
+      {
+        path: 'users',
+        name: 'StatisticsUsers',
+        component: () => import('@/views/statistics/Users.vue'),
+        meta: { title: '用户统计' }
       }
     ]
   },

@@ -261,6 +261,9 @@ const showBackButton = computed(() => {
     'Category',
     // 统计分析相关
     'TrendAnalysis',
+    'StatisticsOverview',
+    "StatisticsApps",
+    "StatisticsUsers",
     // 其他
     'Search',
     'AppDetail'
@@ -434,6 +437,10 @@ onMounted(() => {
 .back-button :deep(.n-button:hover) {
   background-color: #f5f5f5;
   transform: scale(1.05);
+}
+
+.back-button :deep(.n-icon) {
+  font-size: 16px;
 }
 
 :deep(.n-drawer-content .n-menu-item-content-header) {

@@ -9,6 +9,7 @@ import xyz.mxue.lazycatapp.entity.App;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public interface AppRepository extends JpaRepository<App, String> {
@@ -38,4 +39,13 @@ public interface AppRepository extends JpaRepository<App, String> {
     List<Long> findDistinctCreatorIds();
 
     List<App> findByCreatorId(Long creatorId);
+
+    @Query("SELECT SUM(a.downloadCount) FROM App a")
+    long getTotalDownloads();
+
+    @Query("SELECT a FROM App a ORDER BY a.downloadCount DESC")
+    List<App> findPopularApps(Pageable pageable);
+
+    @Query("SELECT c.name as category, COUNT(a) as count FROM App a JOIN a.categories c GROUP BY c.name")
+    List<Map<String, Object>> getCategoryStats();
 } 

@@ -13,10 +13,10 @@ spring:
     database-platform: org.hibernate.community.dialect.SQLiteDialect
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
   cache:
     type: caffeine
     caffeine:
@@ -24,11 +24,11 @@ spring:
 
 logging:
   level:
-    root: INFO
-    xyz.mxue.lazycatapp: DEBUG
+    root: ERROR
+    xyz.mxue.lazycatapp: ERROR
     org.springframework.web: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.SQL: ERROR
+    org.hibernate.type.descriptor.sql.BasicBinder: ERROR
     org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
     org.springframework.web.servlet.DispatcherServlet: DEBUG
     org.springframework.web.client.RestTemplate: DEBUG

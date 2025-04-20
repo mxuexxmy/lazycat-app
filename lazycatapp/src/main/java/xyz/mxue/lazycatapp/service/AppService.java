@@ -8,6 +8,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.entity.App;
@@ -17,6 +18,7 @@ import xyz.mxue.lazycatapp.repository.AppRepository;
 import xyz.mxue.lazycatapp.repository.GitHubInfoRepository;
 import xyz.mxue.lazycatapp.repository.UserInfoRepository;
 import org.springframework.web.client.RestTemplate;
+import xyz.mxue.lazycatapp.entity.Category;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -481,5 +483,43 @@ public class AppService {
                 log.error("同步用户 {} 的 GitHub 信息失败: {}", userId, e.getMessage());
             }
         }
+    }
+
+    public long getTotalDownloads() {
+        return appRepository.getTotalDownloads();
+    }
+
+    public List<Map<String, Object>> getPopularApps(int limit) {
+        List<App> apps = appRepository.findAll().stream()
+            .sorted((a, b) -> {
+                int aCount = a.getDownloadCount() != null ? a.getDownloadCount() : 0;
+                int bCount = b.getDownloadCount() != null ? b.getDownloadCount() : 0;
+                return Integer.compare(bCount, aCount);
+            })
+            .limit(limit)
+            .collect(Collectors.toList());
+
+        return apps.stream().map(app -> {
+            Map<String, Object> appMap = new HashMap<>();
+            appMap.put("name", app.getName());
+            appMap.put("pkgId", app.getPkgId());
+            appMap.put("downloads", app.getDownloadCount() != null ? app.getDownloadCount() : 0);
+            appMap.put("category", app.getCategory());
+            return appMap;
+        }).collect(Collectors.toList());
+    }
+
+    public List<Map<String, Object>> getCategoryStats() {
+        return appRepository.getCategoryStats();
+    }
+
+    public Map<String, Object> getStatisticsOverview() {
+        Map<String, Object> overview = new HashMap<>();
+        overview.put("totalApps", appRepository.count());
+        overview.put("totalDownloads", appRepository.findAll().stream()
+            .mapToInt(app -> app.getDownloadCount() != null ? app.getDownloadCount() : 0)
+            .sum());
+        overview.put("developerCount", userInfoRepository.count());
+        return overview;
     }
 } 
