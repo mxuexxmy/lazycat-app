@@ -11,10 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.entity.App;
-import xyz.mxue.lazycatapp.entity.GitHubInfo;
 import xyz.mxue.lazycatapp.entity.UserInfo;
 import xyz.mxue.lazycatapp.repository.AppRepository;
-import xyz.mxue.lazycatapp.repository.GitHubInfoRepository;
 import xyz.mxue.lazycatapp.repository.UserInfoRepository;
 import xyz.mxue.lazycatapp.repository.AppScoreRepository;
 import xyz.mxue.lazycatapp.repository.AppCommentRepository;
@@ -49,7 +47,7 @@ public class AppService {
     private final UserService userService;
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
-    private final GitHubInfoRepository githubInfoRepository;
+    private final GitHubInfoService gitHubInfoService;
     private final SyncService syncService;
     private final CategoryRepository categoryRepository;
 
@@ -323,7 +321,7 @@ public class AppService {
 
                                 // 同步 GitHub 信息
                                 if (app.getCreatorId() != null) {
-                                    syncGitHubInfoForUser(app.getCreatorId());
+                                    gitHubInfoService.publicSyncGitHubInfoForUser(app.getCreatorId());
                                 }
 
                                 // 同步评分信息
@@ -348,79 +346,6 @@ public class AppService {
             String error = "更新应用信息时发生错误: " + e.getMessage();
             log.error(error, e);
             syncService.updateSyncInfo(SyncService.SYNC_TYPE_APP, false, error);
-        }
-    }
-
-    private void syncGitHubInfoForUser(Long userId) {
-        try {
-            GitHubInfo existingInfo = githubInfoRepository.findByUserId(userId).orElse(null);
-            if (existingInfo == null || 
-                existingInfo.getLastSyncTime() == null ||
-                existingInfo.getLastSyncTime().isBefore(LocalDateTime.now().minusHours(24))) {
-                
-                String url = "https://playground.api.lazycat.cloud/api/github/info/" + userId;
-                Request request = new Request.Builder()
-                        .url(url)
-                        .get()
-                        .build();
-
-                try (Response response = httpClient.newCall(request).execute()) {
-                    if (!response.isSuccessful()) {
-                        log.error("获取用户 {} 的 GitHub 信息失败: {}", userId, response);
-                        return;
-                    }
-
-                    String responseBody = response.body().string();
-                    if ("record not found".equals(responseBody)) {
-                        log.warn("用户 {} 的 GitHub 信息不存在", userId);
-                        return;
-                    }
-
-                    // 解析响应
-                    JsonNode root = objectMapper.readTree(responseBody);
-
-                    // 更新 GitHub 信息
-                    GitHubInfo githubInfo = existingInfo != null ? existingInfo : new GitHubInfo();
-
-                    // 设置基本信息
-                    githubInfo.setUserId(userId);
-                    githubInfo.setUid(root.get("uid").asLong());
-                    githubInfo.setCreatedAt(LocalDateTime.parse(root.get("createdAt").asText().replace("Z", "")));
-                    githubInfo.setUpdatedAt(LocalDateTime.parse(root.get("updatedAt").asText().replace("Z", "")));
-
-                    // 设置用户信息
-                    JsonNode userNode = root.get("user");
-                    githubInfo.setUsername(userNode.get("username").asText());
-                    githubInfo.setNickname(userNode.get("nickname").asText());
-                    githubInfo.setAvatar(userNode.get("avatar").asText());
-                    githubInfo.setDescription(userNode.get("description").asText());
-                    githubInfo.setGithubUsername(userNode.get("githubUsername").asText());
-
-                    // 设置统计信息
-                    JsonNode summaryNode = root.get("summary");
-                    githubInfo.setTotalPRs(summaryNode.get("totalPRs").asInt());
-                    githubInfo.setTotalCommits(summaryNode.get("totalCommits").asInt());
-                    githubInfo.setTotalIssues(summaryNode.get("totalIssues").asInt());
-                    githubInfo.setContributedTo(summaryNode.get("contributedTo").asInt());
-
-                    // 设置排名信息
-                    JsonNode rankNode = root.get("rank");
-                    githubInfo.setRankLevel(rankNode.get("level").asText());
-                    githubInfo.setRankScore(rankNode.get("score").asDouble());
-
-                    // 设置编程语言信息
-                    githubInfo.setTopLangs(root.get("topLangs").toString());
-
-                    // 设置最后同步时间
-                    githubInfo.setLastSyncTime(LocalDateTime.now());
-
-                    // 保存更新
-                    githubInfoRepository.save(githubInfo);
-                    log.info("成功更新用户 {} 的 GitHub 信息", userId);
-                }
-            }
-        } catch (Exception e) {
-            log.error("处理用户 {} 的 GitHub 信息时发生错误: {}", userId, e.getMessage());
         }
     }
 
@@ -648,119 +573,6 @@ private void updateDownloadCount(App app) throws IOException {
         } catch (IOException e) {
             log.error("获取应用总数时发生错误", e);
             return 0;
-        }
-    }
-
-    @Scheduled(fixedRate = 6 * 60 * 60 * 1000) // 每6小时执行一次
-    public void syncGitHubInfo() {
-        if (!syncService.shouldSync(SyncService.SYNC_TYPE_GITHUB)) {
-            return;
-        }
-
-        log.info("开始同步 GitHub 信息...");
-        try {
-            // 获取所有需要同步 GitHub 信息的用户
-            List<App> apps = appRepository.findAll();
-            Set<Long> userIds = apps.stream()
-                    .map(App::getCreatorId)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toSet());
-
-            // 获取现有 GitHub 信息
-            List<GitHubInfo> existingInfos = githubInfoRepository.findAll();
-            Map<Long, GitHubInfo> existingInfoMap = existingInfos.stream()
-                    .collect(Collectors.toMap(GitHubInfo::getUserId, info -> info));
-
-            // 获取需要更新的用户列表
-            List<Long> usersToUpdate = userIds.stream()
-                    .filter(userId -> {
-                        GitHubInfo existingInfo = existingInfoMap.get(userId);
-                        return existingInfo == null || 
-                               existingInfo.getLastSyncTime() == null ||
-                               existingInfo.getLastSyncTime().isBefore(LocalDateTime.now().minusHours(24));
-                    })
-                    .collect(Collectors.toList());
-
-            if (usersToUpdate.isEmpty()) {
-                log.info("没有需要更新的 GitHub 信息");
-                return;
-            }
-
-            log.info("需要更新 {} 个用户的 GitHub 信息", usersToUpdate.size());
-
-            // 为每个需要更新的用户同步 GitHub 信息
-            for (Long userId : usersToUpdate) {
-                try {
-                    String url = "https://playground.api.lazycat.cloud/api/github/info/" + userId;
-                    Request request = new Request.Builder()
-                            .url(url)
-                            .get()
-                            .build();
-
-                    try (Response response = httpClient.newCall(request).execute()) {
-                        if (!response.isSuccessful()) {
-                            log.error("获取用户 {} 的 GitHub 信息失败: {}", userId, response);
-                            continue;
-                        }
-
-                        String responseBody = response.body().string();
-                        if ("record not found".equals(responseBody)) {
-                            log.warn("用户 {} 的 GitHub 信息不存在", userId);
-                            continue;
-                        }
-
-                        // 解析响应
-                        JsonNode root = objectMapper.readTree(responseBody);
-
-                        // 更新 GitHub 信息
-                        GitHubInfo githubInfo = existingInfoMap.getOrDefault(userId, new GitHubInfo());
-
-                        // 设置基本信息
-                        githubInfo.setUserId(userId);
-                        githubInfo.setUid(root.get("uid").asLong());
-                        githubInfo.setCreatedAt(LocalDateTime.parse(root.get("createdAt").asText().replace("Z", "")));
-                        githubInfo.setUpdatedAt(LocalDateTime.parse(root.get("updatedAt").asText().replace("Z", "")));
-
-                        // 设置用户信息
-                        JsonNode userNode = root.get("user");
-                        githubInfo.setUsername(userNode.get("username").asText());
-                        githubInfo.setNickname(userNode.get("nickname").asText());
-                        githubInfo.setAvatar(userNode.get("avatar").asText());
-                        githubInfo.setDescription(userNode.get("description").asText());
-                        githubInfo.setGithubUsername(userNode.get("githubUsername").asText());
-
-                        // 设置统计信息
-                        JsonNode summaryNode = root.get("summary");
-                        githubInfo.setTotalPRs(summaryNode.get("totalPRs").asInt());
-                        githubInfo.setTotalCommits(summaryNode.get("totalCommits").asInt());
-                        githubInfo.setTotalIssues(summaryNode.get("totalIssues").asInt());
-                        githubInfo.setContributedTo(summaryNode.get("contributedTo").asInt());
-
-                        // 设置排名信息
-                        JsonNode rankNode = root.get("rank");
-                        githubInfo.setRankLevel(rankNode.get("level").asText());
-                        githubInfo.setRankScore(rankNode.get("score").asDouble());
-
-                        // 设置编程语言信息
-                        githubInfo.setTopLangs(root.get("topLangs").toString());
-
-                        // 设置最后同步时间
-                        githubInfo.setLastSyncTime(LocalDateTime.now());
-
-                        // 保存更新
-                        githubInfoRepository.save(githubInfo);
-                        log.info("成功更新用户 {} 的 GitHub 信息", userId);
-                    }
-                } catch (Exception e) {
-                    log.error("处理用户 {} 的 GitHub 信息时发生错误: {}", userId, e.getMessage());
-                }
-            }
-
-            log.info("GitHub 信息同步完成");
-            syncService.updateSyncInfo(SyncService.SYNC_TYPE_GITHUB, true, null);
-        } catch (Exception e) {
-            log.error("同步 GitHub 信息时发生错误", e);
-            syncService.updateSyncInfo(SyncService.SYNC_TYPE_GITHUB, false, e.getMessage());
         }
     }
 
