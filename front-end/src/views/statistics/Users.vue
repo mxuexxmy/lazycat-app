@@ -1,8 +1,8 @@
 <template>
   <div class="users-container">
-    <n-card title="用户统计" :bordered="false">
+    <n-card title="开发者统计" :bordered="false">
       <n-tabs type="line" animated>
-        <n-tab-pane name="active" tab="活跃用户">
+        <n-tab-pane name="active" tab="活跃开发者">
           <n-data-table
             :columns="columns"
             :data="activeUsers"
@@ -10,7 +10,7 @@
             :pagination="pagination"
           />
         </n-tab-pane>
-        <n-tab-pane name="growth" tab="用户增长">
+        <n-tab-pane name="growth" tab="开发者增长">
           <n-grid :cols="3" :x-gap="16" :y-gap="16" responsive="screen">
             <n-grid-item v-for="(stat, index) in growthStats" :key="index">
               <n-card hoverable>
