@@ -13,7 +13,11 @@
                     :alt="developer.name"
                     class="avatar-img"
                   />
-                  <div v-else class="avatar-placeholder" :style="{ background: getAvatarColor(developer.name) }">
+                  <div
+                    v-else
+                    class="avatar-placeholder"
+                    :style="{ background: getAvatarColor(developer.name) }"
+                  >
                     {{ getFirstChar(developer.name) }}
                   </div>
                 </div>
@@ -22,9 +26,15 @@
                   <div class="developer-stats">
                     <span>应用数: {{ developer.appCount }}</span>
                     <n-divider vertical />
-                    <span>总下载: {{ formatDownloads(developer.totalDownloads) }}</span>
+                    <span
+                      >总下载:
+                      {{ formatDownloads(developer.totalDownloads) }}</span
+                    >
                     <n-divider vertical />
-                    <span>最近更新: {{ formatDate(developer.lastUpdateDate) }}</span>
+                    <span
+                      >最近更新:
+                      {{ formatDate(developer.lastUpdateDate) }}</span
+                    >
                   </div>
                 </div>
               </div>
@@ -50,7 +60,10 @@
       <div class="content-wrapper">
         <n-card>
           <n-spin :show="loading">
-            <n-empty v-if="!loading && (!filteredApps || filteredApps.length === 0)" description="暂无应用" />
+            <n-empty
+              v-if="!loading && (!filteredApps || filteredApps.length === 0)"
+              description="暂无应用"
+            />
             <div v-else class="app-grid">
               <n-card
                 v-for="app in filteredApps"
@@ -64,7 +77,7 @@
                     :src="getAppIcon(app)"
                     :fallback-src="defaultIcon"
                     preview-disabled
-                    object-fit="contain"
+                    object-fit="cover"
                     class="app-icon"
                   />
                 </template>
@@ -72,9 +85,13 @@
                   <div class="app-name" :title="app.name">{{ app.name }}</div>
                 </template>
                 <template #header-extra>
-                  <n-tag size="small" type="info">{{ formatDownloads(app.downloads || 0) }}</n-tag>
+                  <n-tag size="small" type="info">{{
+                    formatDownloads(app.downloads || 0)
+                  }}</n-tag>
                 </template>
-                <div class="app-description">{{ app.description || '暂无描述' }}</div>
+                <div class="app-description">
+                  {{ app.description || "暂无描述" }}
+                </div>
               </n-card>
             </div>
           </n-spin>
@@ -85,152 +102,178 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { NCard, NSpin, NEmpty, NInput, NIcon, NDivider, NTag, NImage } from 'naive-ui'
-import { Search } from '@vicons/ionicons5'
+import { ref, computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import {
+  NCard,
+  NSpin,
+  NEmpty,
+  NInput,
+  NIcon,
+  NDivider,
+  NTag,
+  NImage,
+} from "naive-ui";
+import { Search } from "@vicons/ionicons5";
 
 interface App {
-  pkgId: string
-  name: string
-  description?: string
-  icon: string
-  downloads?: number
-  updateDate: string
+  pkgId: string;
+  name: string;
+  description?: string;
+  icon: string;
+  downloads?: number;
+  updateDate: string;
 }
 
 interface Developer {
-  creatorId: number
-  name: string
-  avatar?: string
-  appCount: number
-  totalDownloads: number
-  lastUpdateDate: string
+  creatorId: number;
+  name: string;
+  avatar?: string;
+  appCount: number;
+  totalDownloads: number;
+  lastUpdateDate: string;
 }
 
-const route = useRoute()
-const router = useRouter()
-const loading = ref(true)
-const searchQuery = ref('')
-const defaultIcon = '/path/to/default-icon.png'
+const route = useRoute();
+const router = useRouter();
+const loading = ref(true);
+const searchQuery = ref("");
+const defaultIcon = "/path/to/default-icon.png";
 const developer = ref<Developer>({
   creatorId: 0,
-  name: '',
+  name: "",
   appCount: 0,
   totalDownloads: 0,
-  lastUpdateDate: ''
-})
-const apps = ref<App[]>([])
+  lastUpdateDate: "",
+});
+const apps = ref<App[]>([]);
 
 // 头像背景色列表
 const avatarColors = [
-  '#1677ff', '#13c2c2', '#52c41a', '#faad14', '#eb2f96',
-  '#722ed1', '#2f54eb', '#fa8c16', '#fadb14', '#a0d911'
-]
+  "#1677ff",
+  "#13c2c2",
+  "#52c41a",
+  "#faad14",
+  "#eb2f96",
+  "#722ed1",
+  "#2f54eb",
+  "#fa8c16",
+  "#fadb14",
+  "#a0d911",
+];
 
 const getAvatarColor = (name: string) => {
-  if (!name) return avatarColors[0]
-  const charSum = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)
-  return avatarColors[charSum % avatarColors.length]
-}
+  if (!name) return avatarColors[0];
+  const charSum = name
+    .split("")
+    .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return avatarColors[charSum % avatarColors.length];
+};
 
 const getFirstChar = (name: string) => {
-  if (!name) return '?'
-  return name.charAt(0)
-}
+  if (!name) return "?";
+  return name.charAt(0);
+};
 
 const formatDownloads = (downloads: number) => {
   if (downloads >= 10000) {
-    return `${(downloads / 10000).toFixed(1)}万`
+    return `${(downloads / 10000).toFixed(1)}万`;
   }
-  return downloads.toString()
-}
+  return downloads.toString();
+};
 
 const formatDate = (dateStr: string) => {
-  if (!dateStr) return '未知'
-  const date = new Date(dateStr)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-}
+  if (!dateStr) return "未知";
+  const date = new Date(dateStr);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+};
 
 const filteredApps = computed(() => {
-  if (!searchQuery.value) return apps.value
-  const query = searchQuery.value.toLowerCase()
-  return apps.value.filter(app => 
-    app.name.toLowerCase().includes(query) ||
-    app.description?.toLowerCase().includes(query)
-  )
-})
+  if (!searchQuery.value) return apps.value;
+  const query = searchQuery.value.toLowerCase();
+  return apps.value.filter(
+    (app) =>
+      app.name.toLowerCase().includes(query) ||
+      app.description?.toLowerCase().includes(query),
+  );
+});
 
 const handleAppClick = (app: App) => {
   router.push({
-    name: 'AppDetail',
-    params: { pkgId: app.pkgId }
-  })
-}
+    name: "AppDetail",
+    params: { pkgId: app.pkgId },
+  });
+};
 
 const handleBackClick = () => {
-  router.back()
-}
+  router.back();
+};
 
 const getAppIcon = (app: App) => {
-  if (!app.icon) return defaultIcon
-  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`
-}
+  if (!app.icon) return defaultIcon;
+  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`;
+};
 
 const fetchDeveloperInfo = async () => {
   try {
-    loading.value = true
-    const creatorId = route.params.creatorId
+    loading.value = true;
+    const creatorId = route.params.creatorId;
     const [userResponse, appsResponse] = await Promise.all([
       fetch(`/api/users/${creatorId}/info`),
-      fetch(`/api/apps/developers/${creatorId}/apps`)
-    ])
-    
-    const userResult = await userResponse.json()
-    const appsResult = await appsResponse.json()
-    
+      fetch(`/api/apps/developers/${creatorId}/apps`),
+    ]);
+
+    const userResult = await userResponse.json();
+    const appsResult = await appsResponse.json();
+
     if (userResult.id) {
       developer.value = {
         creatorId: userResult.id,
-        name: userResult.nickname || userResult.username || '未知开发者',
+        name: userResult.nickname || userResult.username || "未知开发者",
         avatar: userResult.avatar,
         appCount: 0,
         totalDownloads: 0,
-        lastUpdateDate: ''
-      }
+        lastUpdateDate: "",
+      };
     }
 
     if (Array.isArray(appsResult)) {
-      apps.value = appsResult.map(app => ({
+      apps.value = appsResult.map((app) => ({
         pkgId: app.pkgId,
-        name: app.name || '',
-        description: app.description || app.brief || '',
-        icon: app.iconPath ? `/api${app.iconPath}` : '',
+        name: app.name || "",
+        description: app.description || app.brief || "",
+        icon: app.iconPath ? `/api${app.iconPath}` : "",
         downloads: app.downloadCount || 0,
-        updateDate: app.updateDate || app.lastUpdated || ''
-      }))
+        updateDate: app.updateDate || app.lastUpdated || "",
+      }));
 
       // 更新开发者统计信息
       if (developer.value) {
-        developer.value.appCount = apps.value.length
-        developer.value.totalDownloads = apps.value.reduce((sum, app) => sum + (app.downloads || 0), 0)
-        developer.value.lastUpdateDate = apps.value.length > 0 ? 
-          apps.value.reduce((latest, app) => 
-            app.updateDate > latest ? app.updateDate : latest, 
-            apps.value[0].updateDate
-          ) : ''
+        developer.value.appCount = apps.value.length;
+        developer.value.totalDownloads = apps.value.reduce(
+          (sum, app) => sum + (app.downloads || 0),
+          0,
+        );
+        developer.value.lastUpdateDate =
+          apps.value.length > 0
+            ? apps.value.reduce(
+                (latest, app) =>
+                  app.updateDate > latest ? app.updateDate : latest,
+                apps.value[0].updateDate,
+              )
+            : "";
       }
     }
   } catch (error) {
-    console.error('Failed to fetch developer data:', error)
+    console.error("Failed to fetch developer data:", error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 onMounted(() => {
-  fetchDeveloperInfo()
-})
+  fetchDeveloperInfo();
+});
 </script>
 
 <style scoped>
@@ -343,8 +386,8 @@ onMounted(() => {
   width: 100%;
   height: 160px;
   object-fit: contain;
-  background-color: #f9f9f9;
-  padding: 24px;
+  /* background-color: #f9f9f9; */
+  /* padding: 24px; */
   border-bottom: 1px solid #f0f0f0;
 }
 
@@ -396,4 +439,4 @@ onMounted(() => {
     padding: 16px;
   }
 }
-</style> 
+</style>

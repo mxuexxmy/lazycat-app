@@ -4,7 +4,10 @@
       <n-spin :show="loading">
         <div v-if="achievementsList.length > 0" class="achievements-list">
           <n-grid :cols="3" :x-gap="12" :y-gap="12" responsive="screen">
-            <n-grid-item v-for="achievements in achievementsList" :key="achievements.user.id">
+            <n-grid-item
+              v-for="achievements in achievementsList"
+              :key="achievements.user.id"
+            >
               <n-card class="achievement-card">
                 <!-- 用户信息 -->
                 <div class="user-info">
@@ -14,20 +17,18 @@
                     :size="48"
                     round
                   />
-                  <n-avatar
-                    v-else
-                    :size="48"
-                    round
-                  >
+                  <n-avatar v-else :size="48" round>
                     {{ achievements.user.nickname.charAt(0).toUpperCase() }}
                   </n-avatar>
                   <div class="user-details">
                     <h3>{{ achievements.user.nickname }}</h3>
-                    <n-tag 
-                      type="info" 
+                    <n-tag
+                      type="info"
                       size="small"
-                      @click="openGitHubProfile(achievements.user.githubUsername)"
-                      style="cursor: pointer;"
+                      @click="
+                        openGitHubProfile(achievements.user.githubUsername)
+                      "
+                      style="cursor: pointer"
                     >
                       <template #icon>
                         <n-icon><logo-github /></n-icon>
@@ -41,28 +42,40 @@
                 <div class="contributions">
                   <n-grid :cols="2" :x-gap="8" :y-gap="8">
                     <n-grid-item>
-                      <n-statistic label="提交" :value="achievements.contributions.totalCommits">
+                      <n-statistic
+                        label="提交"
+                        :value="achievements.contributions.totalCommits"
+                      >
                         <template #prefix>
                           <n-icon><git-branch-outline /></n-icon>
                         </template>
                       </n-statistic>
                     </n-grid-item>
                     <n-grid-item>
-                      <n-statistic label="PR" :value="achievements.contributions.totalPRs">
+                      <n-statistic
+                        label="PR"
+                        :value="achievements.contributions.totalPRs"
+                      >
                         <template #prefix>
                           <n-icon><git-pull-request-outline /></n-icon>
                         </template>
                       </n-statistic>
                     </n-grid-item>
                     <n-grid-item>
-                      <n-statistic label="Issues" :value="achievements.contributions.totalIssues">
+                      <n-statistic
+                        label="Issues"
+                        :value="achievements.contributions.totalIssues"
+                      >
                         <template #prefix>
                           <n-icon><alert-circle-outline /></n-icon>
                         </template>
                       </n-statistic>
                     </n-grid-item>
                     <n-grid-item>
-                      <n-statistic label="贡献项目" :value="achievements.contributions.contributedTo">
+                      <n-statistic
+                        label="贡献项目"
+                        :value="achievements.contributions.contributedTo"
+                      >
                         <template #prefix>
                           <n-icon><code-outline /></n-icon>
                         </template>
@@ -73,7 +86,10 @@
 
                 <!-- 排名信息 -->
                 <div class="rank-info">
-                  <n-tag :type="getRankType(achievements.rank.level)" size="large">
+                  <n-tag
+                    :type="getRankType(achievements.rank.level)"
+                    size="large"
+                  >
                     {{ achievements.rank.level }}
                   </n-tag>
                   <n-progress
@@ -112,7 +128,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted } from "vue";
 import {
   NCard,
   NButton,
@@ -124,105 +140,109 @@ import {
   NGridItem,
   NStatistic,
   NProgress,
-  NEmpty
-} from 'naive-ui'
+  NEmpty,
+} from "naive-ui";
 import {
   RefreshOutline,
   LogoGithub,
   GitBranchOutline,
   GitPullRequestOutline,
   AlertCircleOutline,
-  CodeOutline
-} from '@vicons/ionicons5'
+  CodeOutline,
+} from "@vicons/ionicons5";
 
 interface Language {
-  color: string
-  size: number
-  name: string
+  color: string;
+  size: number;
+  name: string;
 }
 
 interface Contributions {
-  totalCommits: number
-  totalIssues: number
-  totalPRs: number
-  contributedTo: number
+  totalCommits: number;
+  totalIssues: number;
+  totalPRs: number;
+  contributedTo: number;
 }
 
 interface Rank {
-  score: number
-  level: string
+  score: number;
+  level: string;
 }
 
 interface User {
-  id: number
-  username: string
-  nickname: string
-  avatar: string
-  description: string
-  githubUsername: string
+  id: number;
+  username: string;
+  nickname: string;
+  avatar: string;
+  description: string;
+  githubUsername: string;
 }
 
 interface Achievement {
-  user: User
-  contributions: Contributions
-  languages: Record<string, Language>
-  rank: Rank
+  user: User;
+  contributions: Contributions;
+  languages: Record<string, Language>;
+  rank: Rank;
 }
 
-const loading = ref(true)
-const achievementsList = ref<Achievement[]>([])
+const loading = ref(true);
+const achievementsList = ref<Achievement[]>([]);
 
 const fetchData = async () => {
   try {
-    loading.value = true
-    const response = await fetch('/api/github/achievements')
-    if (!response.ok) throw new Error('获取数据失败')
-    achievementsList.value = await response.json()
+    loading.value = true;
+    const response = await fetch("/api/github/achievements");
+    if (!response.ok) throw new Error("获取数据失败");
+    achievementsList.value = await response.json();
   } catch (error) {
-    console.error('获取 GitHub 成就数据失败:', error)
+    console.error("获取 GitHub 成就数据失败:", error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const refreshData = () => {
-  fetchData()
-}
+  fetchData();
+};
 
 const getRankType = (level: string) => {
   switch (level) {
-    case 'A+': return 'success'
-    case 'A': return 'success'
-    case 'B': return 'warning'
-    case 'C': return 'error'
-    default: return 'default'
+    case "A+":
+      return "success";
+    case "A":
+      return "success";
+    case "B":
+      return "warning";
+    case "C":
+      return "error";
+    default:
+      return "default";
   }
-}
+};
 
 const formatSize = (size: number) => {
   if (size >= 1000000) {
-    return `${(size / 1000000).toFixed(1)}M`
+    return `${(size / 1000000).toFixed(1)}M`;
   }
   if (size >= 1000) {
-    return `${(size / 1000).toFixed(1)}K`
+    return `${(size / 1000).toFixed(1)}K`;
   }
-  return size.toString()
-}
+  return size.toString();
+};
 
 const openGitHubProfile = (githubUsername: string) => {
-  window.open(`https://github.com/${githubUsername}`, '_blank')
-}
+  window.open(`https://github.com/${githubUsername}`, "_blank");
+};
 
 onMounted(() => {
-  fetchData()
-})
+  fetchData();
+});
 </script>
 
 <style scoped>
 .github-achievements {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 24px;
 }
 
 .achievements-list {
@@ -307,4 +327,4 @@ onMounted(() => {
     grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
   }
 }
-</style> 
+</style>
