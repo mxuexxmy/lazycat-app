@@ -4,19 +4,24 @@
       <template #header>
         <div class="header-content">
           <div class="title">应用代码仓库</div>
-          <div class="description">这里展示了所有移植开源的应用程序，你可以查看和学习它们的源代码</div>
+          <div class="description">
+            这里展示了所有移植开源的应用程序，你可以查看和学习它们的源代码
+          </div>
         </div>
       </template>
 
       <n-spin :show="loading">
-        <n-empty v-if="!loading && (!apps || apps.length === 0)" description="暂无开源应用" />
-        
+        <n-empty
+          v-if="!loading && (!apps || apps.length === 0)"
+          description="暂无开源应用"
+        />
+
         <div v-else class="apps-grid">
-          <n-card 
-            v-for="app in apps" 
+          <n-card
+            v-for="app in apps"
             :key="app.pkgId"
             class="app-card"
-            :class="{ 'hoverable': true }"
+            :class="{ hoverable: true }"
             @click="handleAppClick(app)"
           >
             <div class="app-info">
@@ -44,9 +49,9 @@
                     <template #icon>
                       <n-icon><logo-github /></n-icon>
                     </template>
-                    <a 
-                      :href="app.source" 
-                      target="_blank" 
+                    <a
+                      :href="app.source"
+                      target="_blank"
                       rel="noopener noreferrer"
                       class="repo-link"
                       @click.stop
@@ -73,62 +78,71 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { NCard, NEmpty, NSpin, NImage, NEllipsis, NIcon, NTag, NTooltip } from 'naive-ui'
-import { DownloadOutline, LogoGithub } from '@vicons/ionicons5'
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import {
+  NCard,
+  NEmpty,
+  NSpin,
+  NImage,
+  NEllipsis,
+  NIcon,
+  NTag,
+  NTooltip,
+} from "naive-ui";
+import { DownloadOutline, LogoGithub } from "@vicons/ionicons5";
 
 interface AppData {
-  pkgId: string
-  name: string
-  description: string
-  iconPath: string
-  downloadCount: number | null
-  source: string
+  pkgId: string;
+  name: string;
+  description: string;
+  iconPath: string;
+  downloadCount: number | null;
+  source: string;
 }
 
 // Format downloads to display in 万 units
 const formatDownloads = (count: number | null) => {
-  if (count === null || count === undefined) return '0'
+  if (count === null || count === undefined) return "0";
   if (count >= 10000) {
-    return `${(count / 10000).toFixed(1)}万`
+    return `${(count / 10000).toFixed(1)}万`;
   }
-  return count.toString()
-}
+  return count.toString();
+};
 
 // Get app icon URL
 const getAppIcon = (app: AppData) => {
-  if (!app.iconPath) return defaultIcon
-  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`
-}
+  if (!app.iconPath) return defaultIcon;
+  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`;
+};
 
-const defaultIcon = '/app-icon.png'
-const router = useRouter()
-const loading = ref(true)
-const apps = ref<AppData[]>([])
+const defaultIcon = "/app-icon.png";
+const router = useRouter();
+const loading = ref(true);
+const apps = ref<AppData[]>([]);
 
 const fetchApps = async () => {
   try {
-    const response = await fetch('/api/apps/repositories')
-    const data = await response.json()
-    apps.value = data
+    const response = await fetch("/api/apps/repositories");
+    const data = await response.json();
+    apps.value = data;
   } catch (error) {
-    console.error('Failed to fetch apps:', error)
+    console.error("Failed to fetch apps:", error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const handleAppClick = (app: AppData) => {
   router.push({
-    name: 'AppDetail',
-    params: { pkgId: app.pkgId }
-  })
-}
+    name: "AppDetail",
+    params: { pkgId: app.pkgId },
+  });
+};
 
 onMounted(() => {
-  fetchApps()
-})
+  fetchApps();
+});
 </script>
 
 <style scoped>
@@ -231,7 +245,7 @@ onMounted(() => {
 }
 
 :deep(.n-card-header) {
-  padding: 0 !important;
+  /* padding: 0 !important; */
 }
 
 :deep(.n-card) {
@@ -356,4 +370,4 @@ onMounted(() => {
     padding: 0 6px;
   }
 }
-</style> 
+</style>

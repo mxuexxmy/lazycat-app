@@ -6,14 +6,14 @@
     </div>
     <n-card class="content-card">
       <n-spin :show="loading">
-        <n-empty 
-          v-if="!loading && (!apps || apps.length === 0)" 
+        <n-empty
+          v-if="!loading && (!apps || apps.length === 0)"
           description="暂无数据"
         />
         <n-list v-else>
-          <n-list-item 
-            v-for="(app, index) in apps" 
-            :key="app.pkgId" 
+          <n-list-item
+            v-for="(app, index) in apps"
+            :key="app.pkgId"
             class="app-item"
             @click="handleAppClick(app)"
           >
@@ -24,7 +24,6 @@
                   <n-avatar
                     :src="getAppIcon(app)"
                     :fallback-src="defaultIcon"
-                    round
                     :size="48"
                     object-fit="cover"
                     class="app-icon"
@@ -43,8 +42,8 @@
               </template>
               <template #footer>
                 <n-space wrap :size="4">
-                  <n-tag 
-                    v-for="cat in app.category" 
+                  <n-tag
+                    v-for="cat in app.category"
                     :key="cat"
                     size="small"
                     round
@@ -53,15 +52,10 @@
                   >
                     {{ cat }}
                   </n-tag>
-                  <n-tag 
-                    size="small"
-                    round
-                    :bordered="false"
-                    type="info"
-                  >
+                  <n-tag size="small" round :bordered="false" type="info">
                     v{{ app.version }}
                   </n-tag>
-                  <n-tag 
+                  <n-tag
                     v-if="app.supportPC && app.supportMobile"
                     size="small"
                     round
@@ -70,7 +64,7 @@
                   >
                     全平台
                   </n-tag>
-                  <n-tag 
+                  <n-tag
                     v-else-if="app.supportPC"
                     size="small"
                     round
@@ -79,7 +73,7 @@
                   >
                     PC端
                   </n-tag>
-                  <n-tag 
+                  <n-tag
                     v-else-if="app.supportMobile"
                     size="small"
                     round
@@ -99,61 +93,61 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { 
-  NCard, 
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import {
+  NCard,
   NList,
   NListItem,
   NThing,
-  NTag, 
-  NEmpty, 
-  NSpin, 
-  NSpace, 
+  NTag,
+  NEmpty,
+  NSpin,
+  NSpace,
   NAvatar,
-  NIcon
-} from 'naive-ui'
-import { DownloadOutline } from '@vicons/ionicons5'
+  NIcon,
+} from "naive-ui";
+import { DownloadOutline } from "@vicons/ionicons5";
 
-const __name = 'MostPopular'
+const __name = "MostPopular";
 
 interface AppInfo {
-  name: string
-  pkgId: string
-  description: string
-  brief: string
-  category: string[]
-  iconPath: string
-  version: string
-  downloads: number
-  supportPC: boolean
-  supportMobile: boolean
+  name: string;
+  pkgId: string;
+  description: string;
+  brief: string;
+  category: string[];
+  iconPath: string;
+  version: string;
+  downloads: number;
+  supportPC: boolean;
+  supportMobile: boolean;
 }
 
-const loading = ref(false)
-const apps = ref<AppInfo[]>([])
-const defaultIcon = '/path/to/default-icon.png'
-const router = useRouter()
+const loading = ref(false);
+const apps = ref<AppInfo[]>([]);
+const defaultIcon = "/path/to/default-icon.png";
+const router = useRouter();
 
 const getAppIcon = (app: AppInfo) => {
-  if (!app.iconPath) return defaultIcon
-  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`
-}
+  if (!app.iconPath) return defaultIcon;
+  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`;
+};
 
 const formatDownloads = (downloads: number) => {
   if (downloads >= 10000) {
-    return `${(downloads / 10000).toFixed(1)}万`
+    return `${(downloads / 10000).toFixed(1)}万`;
   }
-  return downloads.toString()
-}
+  return downloads.toString();
+};
 
 const fetchMostPopularApps = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const response = await fetch('/api/apps/popular')
-    const result = await response.json()
+    const response = await fetch("/api/apps/popular");
+    const result = await response.json();
     if (Array.isArray(result)) {
-      apps.value = result.map(app => ({
+      apps.value = result.map((app) => ({
         pkgId: app.pkgId,
         name: app.name,
         description: app.description,
@@ -163,26 +157,26 @@ const fetchMostPopularApps = async () => {
         version: app.version,
         downloads: app.downloadCount || 0,
         supportPC: app.supportPC,
-        supportMobile: app.supportMobile
-      }))
+        supportMobile: app.supportMobile,
+      }));
     }
   } catch (error) {
-    console.error('Failed to fetch most popular apps:', error)
+    console.error("Failed to fetch most popular apps:", error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const handleAppClick = (app: AppInfo) => {
   router.push({
-    name: 'AppDetail',
-    params: { pkgId: app.pkgId }
-  })
-}
+    name: "AppDetail",
+    params: { pkgId: app.pkgId },
+  });
+};
 
 onMounted(() => {
-  fetchMostPopularApps()
-})
+  fetchMostPopularApps();
+});
 </script>
 
 <style scoped>
@@ -254,9 +248,10 @@ onMounted(() => {
 }
 
 .app-icon {
+  border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   background: #fff;
-  padding: 4px;
+  /* padding: 4px; */
 }
 
 .rank-badge {
@@ -337,4 +332,4 @@ onMounted(() => {
     font-size: 12px;
   }
 }
-</style> 
+</style>

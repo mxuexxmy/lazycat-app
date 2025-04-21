@@ -2,11 +2,20 @@
   <div class="rankings-container">
     <n-card title="开发者排行榜" class="developer-ranking">
       <n-spin :show="loading">
-        <n-empty v-if="!loading && (!developers || developers.length === 0)" description="暂无数据" />
+        <n-empty
+          v-if="!loading && (!developers || developers.length === 0)"
+          description="暂无数据"
+        />
         <div v-else class="ranking-list">
           <n-list>
-            <n-list-item v-for="(developer, index) in sortedDevelopers" :key="developer.creatorId">
-              <div class="developer-item" @click="handleDeveloperClick(developer)">
+            <n-list-item
+              v-for="(developer, index) in sortedDevelopers"
+              :key="developer.creatorId"
+            >
+              <div
+                class="developer-item"
+                @click="handleDeveloperClick(developer)"
+              >
                 <div class="rank" :class="getRankClass(index + 1)">
                   {{ index + 1 }}
                 </div>
@@ -17,7 +26,11 @@
                     :alt="developer.name"
                     class="avatar-img"
                   />
-                  <div v-else class="avatar-placeholder" :style="{ background: getAvatarColor(developer.name) }">
+                  <div
+                    v-else
+                    class="avatar-placeholder"
+                    :style="{ background: getAvatarColor(developer.name) }"
+                  >
                     {{ getFirstChar(developer.name) }}
                   </div>
                 </div>
@@ -26,9 +39,15 @@
                   <div class="developer-stats">
                     <span>应用数: {{ developer.appCount }}</span>
                     <n-divider vertical />
-                    <span>总下载: {{ formatDownloads(developer.totalDownloads) }}</span>
+                    <span
+                      >总下载:
+                      {{ formatDownloads(developer.totalDownloads) }}</span
+                    >
                     <n-divider vertical />
-                    <span>最近更新: {{ formatDate(developer.lastUpdateDate) }}</span>
+                    <span
+                      >最近更新:
+                      {{ formatDate(developer.lastUpdateDate) }}</span
+                    >
                   </div>
                   <div class="app-list">
                     <n-tag
@@ -40,7 +59,11 @@
                     >
                       {{ app.name }}
                     </n-tag>
-                    <n-tag v-if="developer.apps.length > 3" size="small" :bordered="false">
+                    <n-tag
+                      v-if="developer.apps.length > 3"
+                      size="small"
+                      :bordered="false"
+                    >
                       等 {{ developer.apps.length }} 个应用
                     </n-tag>
                   </div>
@@ -55,145 +78,163 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, h } from 'vue'
-import { useRouter } from 'vue-router'
-import { NCard, NSpin, NEmpty, NList, NListItem, NDivider, NTag } from 'naive-ui'
+import { ref, computed, onMounted, h } from "vue";
+import { useRouter } from "vue-router";
+import {
+  NCard,
+  NSpin,
+  NEmpty,
+  NList,
+  NListItem,
+  NDivider,
+  NTag,
+} from "naive-ui";
 
 interface App {
-  pkgId: string
-  name: string
-  updateDate: string
-  downloads?: number
+  pkgId: string;
+  name: string;
+  updateDate: string;
+  downloads?: number;
 }
 
 interface Developer {
-  creatorId: number
-  name: string
-  avatar?: string
-  apps: App[]
-  appCount: number
-  totalDownloads: number
-  lastUpdateDate: string
+  creatorId: number;
+  name: string;
+  avatar?: string;
+  apps: App[];
+  appCount: number;
+  totalDownloads: number;
+  lastUpdateDate: string;
 }
 
 interface DeveloperRankingResponse {
-  success: boolean
+  success: boolean;
   data: Array<{
-    id: number
-    nickName: string
-    avatar?: string
+    id: number;
+    nickName: string;
+    avatar?: string;
     apps: Array<{
-      pkgId: string
-      name: string
-      updateDate: string
-    }>
-    appCount: number
-    totalDownloads: number
-    lastUpdateDate: string
-  }>
+      pkgId: string;
+      name: string;
+      updateDate: string;
+    }>;
+    appCount: number;
+    totalDownloads: number;
+    lastUpdateDate: string;
+  }>;
 }
 
-const router = useRouter()
-const loading = ref(true)
-const developers = ref<Developer[]>([])
+const router = useRouter();
+const loading = ref(true);
+const developers = ref<Developer[]>([]);
 
 // 头像背景色列表
 const avatarColors = [
-  '#1677ff', '#13c2c2', '#52c41a', '#faad14', '#eb2f96',
-  '#722ed1', '#2f54eb', '#fa8c16', '#fadb14', '#a0d911'
-]
+  "#1677ff",
+  "#13c2c2",
+  "#52c41a",
+  "#faad14",
+  "#eb2f96",
+  "#722ed1",
+  "#2f54eb",
+  "#fa8c16",
+  "#fadb14",
+  "#a0d911",
+];
 
 const getAvatarColor = (name: string | undefined) => {
-  if (!name) return avatarColors[0] // 默认返回第一个颜色
+  if (!name) return avatarColors[0]; // 默认返回第一个颜色
   // 使用名字的 charCode 来选择颜色
-  const charSum = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)
-  return avatarColors[charSum % avatarColors.length]
-}
+  const charSum = name
+    .split("")
+    .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return avatarColors[charSum % avatarColors.length];
+};
 
 const getFirstChar = (name: string | undefined) => {
-  if (!name) return '?' // 返回问号作为默认字符
-  return name.charAt(0)
-}
+  if (!name) return "?"; // 返回问号作为默认字符
+  return name.charAt(0);
+};
 
 const sortedDevelopers = computed(() => {
-  if (!developers.value) return []
+  if (!developers.value) return [];
   return [...developers.value].sort((a, b) => {
     // 首先按应用数量排序
     if (b.appCount !== a.appCount) {
-      return b.appCount - a.appCount
+      return b.appCount - a.appCount;
     }
     // 其次按下载量排序
-    return b.totalDownloads - a.totalDownloads
-  })
-})
+    return b.totalDownloads - a.totalDownloads;
+  });
+});
 
 const getRankClass = (rank: number) => {
-  if (rank === 1) return 'rank-gold'
-  if (rank === 2) return 'rank-silver'
-  if (rank === 3) return 'rank-bronze'
-  return ''
-}
+  if (rank === 1) return "rank-gold";
+  if (rank === 2) return "rank-silver";
+  if (rank === 3) return "rank-bronze";
+  return "";
+};
 
 const formatDownloads = (downloads: number) => {
   if (downloads >= 10000) {
-    return `${(downloads / 10000).toFixed(1)}万`
+    return `${(downloads / 10000).toFixed(1)}万`;
   }
-  return downloads.toString()
-}
+  return downloads.toString();
+};
 
 const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-}
+  const date = new Date(dateStr);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+};
 
 const handleAppClick = (app: App) => {
   router.push({
-    name: 'AppDetail',
-    params: { pkgId: app.pkgId }
-  })
-}
+    name: "AppDetail",
+    params: { pkgId: app.pkgId },
+  });
+};
 
 const handleDeveloperClick = (developer: Developer) => {
-  if (!developer || typeof developer.creatorId !== 'number') {
-    console.error('Invalid developer data:', developer)
-    return
+  if (!developer || typeof developer.creatorId !== "number") {
+    console.error("Invalid developer data:", developer);
+    return;
   }
   router.push({
-    name: 'DeveloperApps',
-    params: { creatorId: developer.creatorId.toString() }
-  })
-}
+    name: "DeveloperApps",
+    params: { creatorId: developer.creatorId.toString() },
+  });
+};
 
 const fetchAllApps = async () => {
   try {
-    loading.value = true
-    const response = await fetch('/api/apps/developers/ranking')
-    const result = await response.json() as DeveloperRankingResponse
-    
+    loading.value = true;
+    const response = await fetch("/api/apps/developers/ranking");
+    const result = (await response.json()) as DeveloperRankingResponse;
+
     if (result.success && result.data) {
-      developers.value = result.data.map(developer => ({
+      developers.value = result.data.map((developer) => ({
         creatorId: developer.id,
-        name: developer.nickName || '未知开发者',
+        name: developer.nickName || "未知开发者",
         avatar: developer.avatar,
         apps: developer.apps || [],
         appCount: developer.appCount || 0,
         totalDownloads: developer.totalDownloads || 0,
-        lastUpdateDate: developer.lastUpdateDate || ''
-      }))
+        lastUpdateDate: developer.lastUpdateDate || "",
+      }));
     } else {
-      developers.value = []
+      developers.value = [];
     }
   } catch (error) {
-    console.error('Failed to fetch developer ranking:', error)
-    developers.value = []
+    console.error("Failed to fetch developer ranking:", error);
+    developers.value = [];
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 onMounted(() => {
-  fetchAllApps()
-})
+  fetchAllApps();
+});
 </script>
 
 <style scoped>
@@ -291,6 +332,8 @@ onMounted(() => {
 }
 
 .app-list {
+  display: flex;
+  gap: 8px;
   margin-top: 8px;
 }
 
@@ -336,4 +379,4 @@ onMounted(() => {
     font-size: 13px;
   }
 }
-</style> 
+</style>
