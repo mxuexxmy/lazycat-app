@@ -12,9 +12,7 @@ import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.entity.Category;
 import xyz.mxue.lazycatapp.entity.SyncInfo;
 import xyz.mxue.lazycatapp.repository.CategoryRepository;
-import xyz.mxue.lazycatapp.service.SyncService;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -32,7 +30,6 @@ public class CategoryService {
     
     private static final String CATEGORY_URL_ZH = "https://dl.lazycatmicroserver.com/appstore/metarepo/zh/categories.json";
     private static final String CATEGORY_URL_EN = "https://dl.lazycatmicroserver.com/appstore/metarepo/en/categories.json";
-    private static final String CATEGORY_LIST_URL = "https://appstore.api.lazycat.cloud/api/category/list";
 
     @PostConstruct
     public void init() {
@@ -51,71 +48,62 @@ public class CategoryService {
 
         log.info("开始同步分类信息...");
         try {
-            Request request = new Request.Builder()
-                    .url(CATEGORY_URL_ZH)
-                    .get()
-                    .build();
+            // 同步中文分类
+            Category[] chineseCategories = getCategoriesFromUrl(CATEGORY_URL_ZH);
+            if (chineseCategories == null || chineseCategories.length == 0) {
+                log.info("没有需要更新的分类");
+                syncService.updateSyncInfo(SyncService.SYNC_TYPE_CATEGORY, true, null);
+                return;
+            }
 
-            try (Response response = httpClient.newCall(request).execute()) {
-                if (!response.isSuccessful()) {
-                    String error = "获取分类列表失败: " + response;
-                    log.error(error);
-                    syncService.updateSyncInfo(SyncService.SYNC_TYPE_CATEGORY, false, error);
-                    return;
-                }
+            // 更新总数量到 SyncInfo
+            SyncInfo syncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_CATEGORY);
+            if (syncInfo != null) {
+                syncInfo.setTotalCount((long) chineseCategories.length);
+                syncService.saveSyncInfo(syncInfo);
+            }
 
-                String responseBody = response.body().string();
-                CategoryListResponse categoryListResponse = objectMapper.readValue(responseBody, CategoryListResponse.class);
+            // 获取现有分类
+            List<Category> existingCategories = categoryRepository.findAll();
+            Map<Integer, Category> existingCategoryMap = existingCategories.stream()
+                    .collect(Collectors.toMap(Category::getId, category -> category));
 
-                if (categoryListResponse.errorCode == 0 && categoryListResponse.data != null) {
-                    // 更新总数量到 SyncInfo
-                    SyncInfo syncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_CATEGORY);
-                    if (syncInfo != null) {
-                        syncInfo.setTotalCount((long) categoryListResponse.data.length);
-                        syncService.saveSyncInfo(syncInfo);
-                    }
-
-                    // 获取现有分类
-                    List<Category> existingCategories = categoryRepository.findAll();
-                    Map<Integer, Category> existingCategoryMap = existingCategories.stream()
-                            .collect(Collectors.toMap(Category::getId, category -> category));
-
-                    // 同步中文分类
-                    Map<Integer, Category> chineseCategories = getCategoriesFromUrl(CATEGORY_URL_ZH);
-                    
-                    // 同步英文分类
-                    Map<Integer, Category> englishCategories = getCategoriesFromUrl(CATEGORY_URL_EN);
-
-                    // 合并中英文分类信息
-                    for (Map.Entry<Integer, Category> entry : chineseCategories.entrySet()) {
-                        Integer id = entry.getKey();
-                        Category chineseCategory = entry.getValue();
-                        Category englishCategory = englishCategories.get(id);
-
-                        Category existingCategory = existingCategoryMap.get(id);
-                        Category categoryToSave = existingCategory != null ? existingCategory : new Category();
-
-                        // 设置基本信息
-                        categoryToSave.setId(id);
-                        categoryToSave.setName(chineseCategory.getName()); // 中文名称
-                        categoryToSave.setIcon(chineseCategory.getIcon());
-
-                        // 设置英文名称
-                        if (englishCategory != null) {
-                            categoryToSave.setEnglishName(englishCategory.getName());
-                        }
-
-                        categoryRepository.save(categoryToSave);
-                        log.info("同步分类: {} (中文: {}, 英文: {})", 
-                            id, 
-                            chineseCategory.getName(),
-                            englishCategory != null ? englishCategory.getName() : "N/A");
-                    }
-
-                    log.info("分类信息同步完成");
-                    syncService.updateSyncInfo(SyncService.SYNC_TYPE_CATEGORY, true, null);
+            // 同步英文分类
+            Category[] englishCategories = getCategoriesFromUrl(CATEGORY_URL_EN);
+            Map<Integer, Category> englishCategoryMap = new HashMap<>();
+            if (englishCategories != null) {
+                for (Category category : englishCategories) {
+                    englishCategoryMap.put(category.getId(), category);
                 }
             }
+
+            // 合并中英文分类信息
+            for (Category chineseCategory : chineseCategories) {
+                Integer id = chineseCategory.getId();
+                Category englishCategory = englishCategoryMap.get(id);
+
+                Category existingCategory = existingCategoryMap.get(id);
+                Category categoryToSave = existingCategory != null ? existingCategory : new Category();
+
+                // 设置基本信息
+                categoryToSave.setId(id);
+                categoryToSave.setName(chineseCategory.getName()); // 中文名称
+                categoryToSave.setIcon(chineseCategory.getIcon());
+
+                // 设置英文名称
+                if (englishCategory != null) {
+                    categoryToSave.setEnglishName(englishCategory.getName());
+                }
+
+                categoryRepository.save(categoryToSave);
+                log.info("同步分类: {} (中文: {}, 英文: {})", 
+                    id, 
+                    chineseCategory.getName(),
+                    englishCategory != null ? englishCategory.getName() : "N/A");
+            }
+
+            log.info("分类信息同步完成");
+            syncService.updateSyncInfo(SyncService.SYNC_TYPE_CATEGORY, true, null);
         } catch (Exception e) {
             String error = "同步分类信息时发生错误: " + e.getMessage();
             log.error(error, e);
@@ -123,8 +111,7 @@ public class CategoryService {
         }
     }
     
-    private Map<Integer, Category> getCategoriesFromUrl(String url) {
-        Map<Integer, Category> categories = new HashMap<>();
+    private Category[] getCategoriesFromUrl(String url) {
         try {
             Request request = new Request.Builder()
                     .url(url)
@@ -139,18 +126,13 @@ public class CategoryService {
                 }
 
                 String responseBody = response.body().string();
-                Category[] categoryArray = objectMapper.readValue(responseBody, Category[].class);
-
-                for (Category category : categoryArray) {
-                    categories.put(category.getId(), category);
-                }
+                return objectMapper.readValue(responseBody, Category[].class);
             }
         } catch (Exception e) {
             String error = "获取分类时发生错误: " + e.getMessage();
             log.error(error, e);
             throw new RuntimeException(error);
         }
-        return categories;
     }
     
     public List<Category> getAllCategories() {
@@ -170,11 +152,4 @@ public class CategoryService {
         return categoryRepository.count();
     }
 
-    @lombok.Data
-    private static class CategoryListResponse {
-        private int errorCode;
-        private String message;
-        private Category[] data;
-        private boolean success;
-    }
 } 

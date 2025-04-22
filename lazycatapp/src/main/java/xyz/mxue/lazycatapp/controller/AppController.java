@@ -28,7 +28,6 @@ public class AppController {
     private final CategoryService categoryService;
     private final UserService userService;
     private final SyncService syncService;
-    private boolean isInitialSyncComplete = false;
 
     @GetMapping
     public ResponseEntity<Page<App>> getApps(
@@ -177,6 +176,9 @@ public class AppController {
         SyncInfo appSyncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_APP);
         SyncInfo categorySyncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_CATEGORY);
 
+        System.out.println("appSyncInfo: " + appSyncInfo);
+        System.out.println("categorySyncInfo: " + categorySyncInfo);
+
         // 计算是否初始同步已完成
         boolean isInitialSyncComplete = (appSyncInfo != null && appSyncInfo.isInitialSyncCompleted()) &&
                                       (categorySyncInfo != null && categorySyncInfo.isInitialSyncCompleted());
@@ -242,10 +244,6 @@ public class AppController {
         return userService.getUserGrowthStats();
     }
 
-    // 在数据同步完成后调用此方法
-    public void setInitialSyncComplete() {
-        this.isInitialSyncComplete = true;
-    }
 
     @GetMapping("/{pkgId}/comments")
     public List<AppComment> getAppComments(@PathVariable String pkgId) {
