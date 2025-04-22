@@ -4,15 +4,15 @@ server:
 spring:
   datasource:
     driver-class-name: org.sqlite.JDBC
-    url: jdbc:sqlite:/data/lazycatapp.db
+    url: jdbc:sqlite:data/lazycatapp.db
   jpa:
     show-sql: false
 
 logging:
   level:
-    root: INFO
-    xyz.mxue.lazycatapp: INFO
-    org.springframework.web: INFO
+    root: ERROR
+    xyz.mxue.lazycatapp: ERROR
+    org.springframework.web: ERROR
     okhttp3: ERROR
   file:
     name: /var/log/lazycatapp/lazycatapp.log
