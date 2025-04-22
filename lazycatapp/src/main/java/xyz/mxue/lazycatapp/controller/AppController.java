@@ -15,6 +15,7 @@ import xyz.mxue.lazycatapp.entity.AppComment;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/apps")
@@ -44,9 +45,15 @@ public class AppController {
 
     @GetMapping("/{pkgId}")
     public ResponseEntity<App> getApp(@PathVariable String pkgId) {
-        return appService.findByPkgId(pkgId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Optional<App> appOpt = appService.findByPkgId(pkgId);
+        
+        if (appOpt.isPresent()) {
+            App app = appOpt.get();
+            app.setCreator(appService.getCreatorNickname(app.getCreatorId()));
+            return ResponseEntity.ok(app);
+        }
+        
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/search")

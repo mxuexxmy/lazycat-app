@@ -970,4 +970,17 @@ private void updateDownloadCount(App app) throws IOException {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * 根据 creatorId 查询用户昵称
+     * @param creatorId 创建者ID
+     * @return 用户昵称，如果未找到则返回 null
+     */
+    public String getCreatorNickname(Long creatorId) {
+        if (creatorId == null) {
+            return null;
+        }
+        UserInfo userInfo = userInfoRepository.findById(creatorId).orElse(null);
+        return userInfo != null ? userInfo.getNickname() : null;
+    }
+
 }
