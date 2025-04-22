@@ -37,6 +37,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import xyz.mxue.lazycatapp.entity.SyncInfo;
 import xyz.mxue.lazycatapp.repository.CategoryRepository;
 import java.util.ArrayList;
+import java.time.format.DateTimeFormatter;
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -956,14 +957,15 @@ private void updateDownloadCount(App app) throws IOException {
             commentMap.put("content", comment.getContent());
             commentMap.put("liked", comment.getLiked());
             commentMap.put("likeCounts", comment.getLikeCounts());
-            commentMap.put("createdAt", comment.getCreatedAt());
-            commentMap.put("updatedAt", comment.getUpdatedAt());
+            commentMap.put("createdAt", comment.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            commentMap.put("updatedAt", comment.getUpdatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
             // 获取应用信息
             App app = appRepository.findById(comment.getPkgId()).orElse(null);
             if (app != null) {
                 commentMap.put("appName", app.getName());
                 commentMap.put("appIcon", app.getIconPath());
+                commentMap.put("brief", app.getBrief());
             }
 
             return commentMap;

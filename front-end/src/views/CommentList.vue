@@ -12,7 +12,7 @@
                   <n-avatar :src="getAppIcon(comment)" round />
                   <n-space vertical size="small">
                     <n-text strong>{{ comment.appName }}</n-text>
-                    <n-text depth="3">{{ comment.pkgId }}</n-text>
+                    <n-text depth="3">{{ comment.brief }}</n-text>
                   </n-space>
                 </n-space>
               </n-card>
@@ -73,6 +73,7 @@ interface Comment {
   updatedAt: string
   appName: string
   appIcon: string
+  brief: string
 }
 
 const comments = ref<Comment[]>([])
