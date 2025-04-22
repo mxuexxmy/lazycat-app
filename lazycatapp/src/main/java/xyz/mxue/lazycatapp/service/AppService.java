@@ -248,6 +248,13 @@ public class AppService {
                 AppListResponse appListResponse = objectMapper.readValue(responseBody, AppListResponse.class);
 
                 if (appListResponse.errorCode == 0 && appListResponse.data != null) {
+                    // 更新总数量到 SyncInfo
+                    SyncInfo appSyncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_APP);
+                    if (appSyncInfo != null) {
+                        appSyncInfo.setTotalCount((long) appListResponse.data.length);
+                        syncService.saveSyncInfo(appSyncInfo);
+                    }
+
                     // 获取现有应用
                     List<App> existingApps = appRepository.findAll();
                     Map<String, App> existingAppMap = existingApps.stream()
@@ -259,8 +266,7 @@ public class AppService {
                             .collect(Collectors.toMap(Category::getName, category -> category));
 
                     // 获取同步信息
-                    SyncInfo syncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_APP);
-                    boolean isInitialSync = !syncInfo.isInitialSyncCompleted();
+                    boolean isInitialSync = !appSyncInfo.isInitialSyncCompleted();
 
                     for (App app : appListResponse.data) {
                         try {
@@ -687,6 +693,13 @@ private void updateDownloadCount(App app) throws IOException {
             // 获取所有应用
             List<App> apps = appRepository.findAll();
             
+            // 更新总数量到 SyncInfo
+            SyncInfo syncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_SCORE);
+            if (syncInfo != null) {
+                syncInfo.setTotalCount((long) apps.size());
+                syncService.saveSyncInfo(syncInfo);
+            }
+
             // 获取现有评分信息
             List<AppScore> existingScores = appScoreRepository.findAll();
             Map<String, AppScore> existingScoreMap = existingScores.stream()
@@ -849,6 +862,13 @@ private void updateDownloadCount(App app) throws IOException {
             List<AppScore> scores = appScoreRepository.findAll().stream()
                     .filter(score -> score.getTotalReviews() != null && score.getTotalReviews() > 0)
                     .collect(Collectors.toList());
+
+            // 更新总数量到 SyncInfo
+            SyncInfo syncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_COMMENT);
+            if (syncInfo != null) {
+                syncInfo.setTotalCount((long) scores.size());
+                syncService.saveSyncInfo(syncInfo);
+            }
 
             // 获取现有评论信息
             List<AppComment> existingComments = appCommentRepository.findAll();

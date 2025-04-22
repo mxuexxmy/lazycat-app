@@ -33,7 +33,7 @@ const props = defineProps<{
 const showComplete = ref(false)
 
 watch(() => props.progress, (newProgress) => {
-  if (newProgress === 100) {
+  if (newProgress >= 100) {
     showComplete.value = true
     // 3秒后隐藏完成提示
     setTimeout(() => {

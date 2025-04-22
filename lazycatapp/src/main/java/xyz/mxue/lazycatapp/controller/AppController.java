@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Optional;
+import xyz.mxue.lazycatapp.service.SyncService;
+import xyz.mxue.lazycatapp.entity.SyncInfo;
 
 @RestController
 @RequestMapping("/api/apps")
@@ -25,6 +27,7 @@ public class AppController {
     private final AppService appService;
     private final CategoryService categoryService;
     private final UserService userService;
+    private final SyncService syncService;
     private boolean isInitialSyncComplete = false;
 
     @GetMapping
@@ -169,15 +172,26 @@ public class AppController {
     @GetMapping("/status")
     public Map<String, Object> getSyncStatus() {
         Map<String, Object> status = new HashMap<>();
+
+        // 获取应用和分类的同步信息
+        SyncInfo appSyncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_APP);
+        SyncInfo categorySyncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_CATEGORY);
+
+        // 计算是否初始同步已完成
+        boolean isInitialSyncComplete = (appSyncInfo != null && appSyncInfo.isInitialSyncCompleted()) &&
+                                      (categorySyncInfo != null && categorySyncInfo.isInitialSyncCompleted());
+
         status.put("isInitialSyncComplete", isInitialSyncComplete);
 
         // 获取当前完成的数量
         long appCount = appService.count();
         long categoryCount = categoryService.count();
 
-        // 从同步接口获取总数量
-        long totalApps = appService.getTotalAppsCount();
-        long totalCategories = categoryService.getTotalCategoriesCount();
+        // 安全地获取 totalCount，如果为 null 则使用 0
+        Long totalApps = appSyncInfo != null && appSyncInfo.getTotalCount() != null ? 
+            appSyncInfo.getTotalCount() : 0L;
+        Long totalCategories = categorySyncInfo != null && categorySyncInfo.getTotalCount() != null ? 
+            categorySyncInfo.getTotalCount() : 0L;
 
         status.put("appCount", appCount);
         status.put("categoryCount", categoryCount);

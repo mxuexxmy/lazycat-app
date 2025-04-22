@@ -39,10 +39,16 @@ public class SyncInfo {
     @Column(name = "enabled")
     private boolean enabled;
 
+    @Column(name = "total_count")
+    private Long totalCount;
+
     @PrePersist
-    protected void onCreate() {
-        if (lastSyncTime == null) {
-            lastSyncTime = LocalDateTime.now();
+    public void prePersist() {
+        if (this.lastSyncTime == null) {
+            this.lastSyncTime = LocalDateTime.now();
+        }
+        if (this.totalCount == null) {
+            this.totalCount = 0L;
         }
         if (retryCount == null) {
             retryCount = 0;

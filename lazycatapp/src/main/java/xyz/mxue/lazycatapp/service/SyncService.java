@@ -120,4 +120,8 @@ public class SyncService {
         syncInfo.setSyncInterval(interval);
         syncInfoRepository.save(syncInfo);
     }
+
+    public void saveSyncInfo(SyncInfo syncInfo) {
+        syncInfoRepository.save(syncInfo);
+    }
 } 
