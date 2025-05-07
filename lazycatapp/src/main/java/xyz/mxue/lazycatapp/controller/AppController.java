@@ -62,7 +62,7 @@ public class AppController {
     public ResponseEntity<Page<App>> searchApps(
             @RequestParam String keyword,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "50") int size) {
         PageRequest pageRequest = PageRequest.of(page, size);
         return ResponseEntity.ok(appService.search(keyword, pageRequest));
     }
@@ -97,13 +97,13 @@ public class AppController {
 
     @GetMapping("/latest")
     public ResponseEntity<List<App>> getLatestApps(
-            @RequestParam(defaultValue = "10") int limit) {
+            @RequestParam(defaultValue = "50") int limit) {
         return ResponseEntity.ok(appService.findLatestApps(limit));
     }
 
     @GetMapping("/popular")
     public ResponseEntity<List<App>> getPopularApps(
-            @RequestParam(defaultValue = "10") int limit) {
+            @RequestParam(defaultValue = "100") int limit) {
         List<App> apps = appService.findPopularApps(limit);
         apps.sort((a, b) -> {
             int aCount = a.getDownloadCount() != null ? a.getDownloadCount() : 0;

@@ -7,12 +7,13 @@ import * as ionicons5 from '@vicons/ionicons5'
 import { zhCN, dateZhCN } from 'naive-ui'
 
 const app = createApp(App)
+const pinia = createPinia()
 
 // Register icons
 app.component('Search', ionicons5.Search)
 
 // Use plugins
-app.use(createPinia())
+app.use(pinia)
 app.use(router)
 app.use(naive)
 

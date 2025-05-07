@@ -1,70 +1,72 @@
 <template>
   <n-config-provider :locale="zhCN" :date-locale="dateZhCN">
-    <LoadingOverlay v-if="isLoading" :progress="syncProgress" />
-    <n-layout>
-      <n-layout-header bordered class="header">
-        <div class="header-content">
-          <div class="left-section">
-            <router-link to="/" class="logo">
-              <n-h2>懒猫应用</n-h2>
-            </router-link>
-            <n-button 
-              text 
-              class="menu-toggle" 
-              @click="showDrawer = true"
-              size="large"
-            >
-              <template #icon>
-                <n-icon><menu-outline /></n-icon>
-              </template>
-              <span class="menu-text">菜单</span>
-            </n-button>
+    <n-message-provider>
+      <LoadingOverlay v-if="isLoading" :progress="syncProgress" />
+      <n-layout>
+        <n-layout-header bordered class="header">
+          <div class="header-content">
+            <div class="left-section">
+              <router-link to="/" class="logo">
+                <n-h2>懒猫应用</n-h2>
+              </router-link>
+              <n-button 
+                text 
+                class="menu-toggle" 
+                @click="showDrawer = true"
+                size="large"
+              >
+                <template #icon>
+                  <n-icon><menu-outline /></n-icon>
+                </template>
+                <span class="menu-text">菜单</span>
+              </n-button>
+            </div>
+            <div class="nav-section desktop-only">
+              <n-menu
+                v-model:value="activeKey"
+                mode="horizontal"
+                :options="menuOptions"
+                @update:value="handleMenuClick"
+              />
+            </div>
+            <div class="right-section">
+              <n-button text @click="handleSearch">
+                <template #icon>
+                  <n-icon><search /></n-icon>
+                </template>
+              </n-button>
+            </div>
           </div>
-          <div class="nav-section desktop-only">
+        </n-layout-header>
+        <n-drawer v-model:show="showDrawer" :width="280" placement="left">
+          <n-drawer-content title="菜单">
             <n-menu
               v-model:value="activeKey"
-              mode="horizontal"
+              :indent="12"
               :options="menuOptions"
-              @update:value="handleMenuClick"
+              @update:value="handleMobileMenuClick"
             />
-          </div>
-          <div class="right-section">
-            <n-button text @click="handleSearch">
+          </n-drawer-content>
+        </n-drawer>
+        <n-layout-content :style="{ background: '#f5f6fb', padding: '80px 24px 24px' }">
+          <div class="back-button" v-if="showBackButton" @click="handleBack">
+            <n-button circle>
               <template #icon>
-                <n-icon><search /></n-icon>
+                <n-icon><arrow-back /></n-icon>
               </template>
             </n-button>
           </div>
-        </div>
-      </n-layout-header>
-      <n-drawer v-model:show="showDrawer" :width="280" placement="left">
-        <n-drawer-content title="菜单">
-          <n-menu
-            v-model:value="activeKey"
-            :indent="12"
-            :options="menuOptions"
-            @update:value="handleMobileMenuClick"
-          />
-        </n-drawer-content>
-      </n-drawer>
-      <n-layout-content :style="{ background: '#f5f6fb', padding: '80px 24px 24px' }">
-        <div class="back-button" v-if="showBackButton" @click="handleBack">
-          <n-button circle>
-            <template #icon>
-              <n-icon><arrow-back /></n-icon>
-            </template>
-          </n-button>
-        </div>
-        <router-view v-slot="{ Component }">
-          <keep-alive :include="['Search', 'MostPopular', 'MonthlyNew', 'LatestRelease', 'RecentUpdates', 'DeveloperRanking']">
-            <component 
-              :is="Component" 
-              :key="shouldRefresh ? route.fullPath : undefined"
-            />
-          </keep-alive>
-        </router-view>
-      </n-layout-content>
-    </n-layout>
+          <router-view v-slot="{ Component }">
+            <keep-alive :include="['Search', 'MostPopular', 'MonthlyNew', 'LatestRelease', 'RecentUpdates', 'DeveloperRanking']">
+              <component 
+                :is="Component" 
+                :key="shouldRefresh ? route.fullPath : undefined"
+              />
+            </keep-alive>
+          </router-view>
+        </n-layout-content>
+      </n-layout>
+    </n-message-provider>
   </n-config-provider>
 </template>
 
@@ -83,7 +85,8 @@ import {
   NButton,
   NIcon,
   NDrawer,
-  NDrawerContent
+  NDrawerContent,
+  NMessageProvider
 } from 'naive-ui'
 import { zhCN, dateZhCN } from 'naive-ui'
 import { Search, ArrowBack, MenuOutline, HomeOutline, TrophyOutline, CodeSlashOutline, RocketOutline, BookOutline, BuildOutline, PeopleOutline } from '@vicons/ionicons5'
@@ -268,7 +271,8 @@ const showBackButton = computed(() => {
     // 其他
     'Search',
     'AppDetail',
-    'Comments'
+    'Comments',
+    'MyApps'
   ]
   return routesWithBack.includes(route.name as string)
 })

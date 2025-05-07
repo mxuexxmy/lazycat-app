@@ -2,12 +2,19 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import DeveloperCommunity from '@/views/developers/DeveloperCommunity.vue'
 import GitHubAchievements from '../views/GitHubAchievements.vue'
+import Home from '@/views/Home.vue'
+import MyApps from '@/views/MyApps.vue'
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Home',
-    component: () => import('@/views/Home.vue')
+    component: Home
+  },
+  {
+    path: '/my-apps',
+    name: 'MyApps',
+    component: MyApps
   },
   {
     path: '/rankings',

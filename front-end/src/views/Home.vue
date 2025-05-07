@@ -59,7 +59,7 @@
                   <n-avatar :src="getAppIcon(comment)" round />
                   <n-space vertical size="small">
                     <n-text strong>{{ comment.appName }}</n-text>
-                    <n-text depth="3">{{ comment.pkgId }}</n-text>
+                    <n-text depth="3">{{ comment.brief }}</n-text>
                   </n-space>
                 </n-space>
               </n-card>
@@ -132,7 +132,8 @@ import {
   ShieldCheckmarkOutline,
   PeopleOutline,
   LogoGithub,
-  TrendingUpOutline
+  TrendingUpOutline,
+  CloudOutline
 } from '@vicons/ionicons5'
 import StatisticsCard from '@/components/StatisticsCard.vue'
 import AppWordCloud from '@/components/AppWordCloud.vue'
@@ -172,6 +173,7 @@ interface Comment {
   updatedAt: string
   appName: string
   appIcon: string
+  brief: string
 }
 
 const router = useRouter()
@@ -182,6 +184,38 @@ const comments = ref<Comment[]>([])
 const loading = ref(true)
 
 const functions: Function[] = [
+  {
+    id: 'my-apps',
+    title: '我的应用',
+    icon: CloudOutline,
+    iconColor: '#1890ff',
+    children: [
+      {
+        id: 'installed-apps',
+        title: '已安装应用',
+        description: '查看和管理已安装的应用',
+        icon: AppsOutline,
+        iconColor: '#1890ff',
+        route: { name: 'MyApps' }
+      },
+      {
+        id: 'app-updates',
+        title: '应用更新',
+        description: '检查和管理应用更新',
+        icon: RefreshOutline,
+        iconColor: '#13c2c2',
+        route: { name: 'AppUpdates' }
+      },
+      {
+        id: 'app-backups',
+        title: '应用备份',
+        description: '备份和恢复应用数据',
+        icon: ShieldCheckmarkOutline,
+        iconColor: '#52c41a',
+        route: { name: 'AppBackups' }
+      }
+    ]
+  },
   {
     id: 'rankings',
     title: '排行榜',
