@@ -1,7 +1,16 @@
 <template>
-  <div class="most-popular">
-    <div class="header">
+  <div class="most-popular" ref="mostPopularRef">
+    <div class="header" ref="headerRef">
       <h1>最受欢迎</h1>
+      <div class="filter-section">
+        <n-select
+          v-model:value="selectedLimit"
+          :options="limitOptions"
+          size="small"
+          style="width: 120px;"
+          @update:value="handleLimitChange"
+        />
+      </div>
       <p class="header-desc">按下载量排序的热门应用</p>
     </div>
     <n-card class="content-card">
@@ -20,7 +29,7 @@
             <n-thing>
               <template #header>
                 <n-space align="center">
-                  <div class="rank-badge" v-if="index < 3">{{ index + 1 }}</div>
+                  <div class="rank-badge">{{ index + 1 }}</div>
                   <n-avatar
                     :src="getAppIcon(app)"
                     :fallback-src="defaultIcon"
@@ -93,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, nextTick, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import {
   NCard,
@@ -106,6 +115,7 @@ import {
   NSpace,
   NAvatar,
   NIcon,
+  NSelect,
 } from "naive-ui";
 import { DownloadOutline } from "@vicons/ionicons5";
 
@@ -129,6 +139,43 @@ const apps = ref<AppInfo[]>([]);
 const defaultIcon = "/path/to/default-icon.png";
 const router = useRouter();
 
+const selectedLimit = ref(100);
+const limitOptions = [
+  { label: '10', value: 10 },
+  { label: '20', value: 20 },
+  { label: '30', value: 30 },
+  { label: '50', value: 50 },
+  { label: '100', value: 100 },
+  { label: '200', value: 200 },
+  { label: '300', value: 300 },
+  { label: '400', value: 400 },
+  { label: '500', value: 500 },
+  { label: '600', value: 600 },
+  { label: '800', value: 800 },
+  { label: '999', value: 999 },
+];
+
+const headerRef = ref<HTMLElement | null>(null);
+const mostPopularRef = ref<HTMLElement | null>(null);
+
+function updatePaddingTop() {
+  if (headerRef.value && mostPopularRef.value) {
+    mostPopularRef.value.style.paddingTop = headerRef.value.offsetHeight + 24 + "px";
+  }
+}
+
+onMounted(() => {
+  nextTick(() => {
+    updatePaddingTop();
+    window.addEventListener("resize", updatePaddingTop);
+  });
+  fetchMostPopularApps();
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", updatePaddingTop);
+});
+
 const getAppIcon = (app: AppInfo) => {
   if (!app.iconPath) return defaultIcon;
   return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`;
@@ -144,7 +191,7 @@ const formatDownloads = (downloads: number) => {
 const fetchMostPopularApps = async () => {
   loading.value = true;
   try {
-    const response = await fetch("/api/apps/popular");
+    const response = await fetch(`/api/apps/popular?limit=${selectedLimit.value}`);
     const result = await response.json();
     if (Array.isArray(result)) {
       apps.value = result.map((app) => ({
@@ -174,9 +221,9 @@ const handleAppClick = (app: AppInfo) => {
   });
 };
 
-onMounted(() => {
+const handleLimitChange = () => {
   fetchMostPopularApps();
-});
+};
 </script>
 
 <style scoped>
@@ -211,6 +258,13 @@ onMounted(() => {
   font-size: 14px;
   color: #666;
   margin: 8px 0 0;
+}
+
+.filter-section {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .content-card {
@@ -255,17 +309,19 @@ onMounted(() => {
 }
 
 .rank-badge {
-  width: 24px;
+  min-width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 12px;
   color: #fff;
-  background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0 6px;
+  white-space: nowrap;
 }
 
 .app-item:nth-child(1) .rank-badge {
@@ -284,7 +340,7 @@ onMounted(() => {
 @media screen and (max-width: 768px) {
   .most-popular {
     padding: 16px;
-    padding-top: 100px; /* 移动端头部高度较小 */
+    padding-top: 140px; /* 增加头部空间，为选择器留出位置 */
   }
 
   .header {
@@ -296,7 +352,20 @@ onMounted(() => {
   }
 
   .header-desc {
-    font-size: 13px;
+    margin-top: 16px;
+    margin-bottom: 0;
+    text-align: center;
+    order: 3;
+  }
+
+  .filter-section {
+    order: 2;
+  }
+
+  .header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .app-name {
@@ -311,7 +380,7 @@ onMounted(() => {
 @media screen and (max-width: 480px) {
   .most-popular {
     padding: 8px;
-    padding-top: 90px;
+    padding-top: 130px; /* 小屏幕也需要增加头部空间 */
   }
 
   .header {
@@ -327,9 +396,11 @@ onMounted(() => {
   }
 
   .rank-badge {
-    width: 20px;
+    min-width: 20px;
     height: 20px;
-    font-size: 12px;
+    font-size: 10px;
+    border-radius: 10px;
+    padding: 0 4px;
   }
 }
 </style>
