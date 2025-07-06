@@ -12,11 +12,23 @@
 4. 评论查看
 5. 应用搜索支持应用名称、包名、关键词、源码地址、应用描述、简介、分类
 
-## 运行
-### 后端运行
-```
+# 运行
+## 后端
+### 运行
+```shell
 ./mvnw spring-boot:run
 ```
+### 打包
+```shell
+mvn clean package -DskipTests
+```
 
-
-### 前端运行
+## 前端
+### 运行
+```shell
+npm run dev
+```
+## 打包
+```shell
+npm run build
+```

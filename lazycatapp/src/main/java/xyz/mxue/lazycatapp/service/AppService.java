@@ -54,7 +54,7 @@ public class AppService {
     private final SyncService syncService;
     private final CategoryRepository categoryRepository;
 
-    private static final String APP_LIST_URL = "https://appstore.api.lazycat.cloud/api/app/list";
+    private static final String APP_LIST_URL = "https://appstore.api.lazycat.cloud/api/v3/user/app/list";
     private static final String DOWNLOAD_COUNT_URL = "https://appstore.api.lazycat.cloud/api/counting";
 
     private final AppScoreRepository appScoreRepository;
@@ -62,6 +62,102 @@ public class AppService {
 
     private final AppCommentRepository appCommentRepository;
     private static final String COMMENT_LIST_URL = "https://appstore.api.lazycat.cloud/api/comment/list/";
+
+    // 新的v3接口响应类
+    @lombok.Data
+    private static class AppListV3Response {
+        private List<AppV3Item> items;
+        private int page;
+        private int size;
+        private int total;
+    }
+
+    @lombok.Data
+    private static class AppV3Item {
+        private Long id;
+        @JsonProperty("package")
+        private String packageName;
+        private int status;
+        private String created_at;
+        private String updated_at;
+        private String version_updated_at;
+        private CreateUser create_user;
+        private Information information;
+        private Version version;
+        private Rating rating;
+        private Count count;
+    }
+
+    @lombok.Data
+    private static class CreateUser {
+        private Long developer_id;
+        private Long id;
+        private String username;
+        private String nickname;
+        private String description;
+        private String avatar;
+        private String github_username;
+        private int continuous_submission_day_count;
+        private int app_total_count;
+    }
+
+    @lombok.Data
+    private static class Information {
+        private Long id;
+        private Long create_user_id;
+        private Long app_id;
+        private String language;
+        private String name;
+        private String brief;
+        private String description;
+        private String keywords;
+        private String source;
+        private String source_author;
+        private boolean support_pc;
+        private boolean support_mobile;
+        private List<String> screenshot_pc_paths;
+        private List<String> screenshot_mobile_paths;
+    }
+
+    @lombok.Data
+    private static class Version {
+        private Long id;
+        private Long create_user_id;
+        private Long app_id;
+        private String name;
+        @JsonProperty("package")
+        private String packageName;
+        private String pkg_hash;
+        private String pkg_path;
+        private String icon_path;
+        private List<String> unsupported_platforms;
+        private String min_os_version;
+        private List<String> changelog_list;
+        private String changelog_language;
+    }
+
+    @lombok.Data
+    private static class Rating {
+        private double score;
+        private Statistics statistics;
+    }
+
+    @lombok.Data
+    private static class Statistics {
+        private int total;
+        private int one;
+        private int two;
+        private int three;
+        private int four;
+        private int five;
+    }
+
+    @lombok.Data
+    private static class Count {
+        private int downloads;
+        private int likes;
+        private int comments;
+    }
 
     @lombok.Data
     private static class ScoreResponse {
@@ -233,57 +329,87 @@ public class AppService {
 
         log.info("开始更新应用信息...");
         try {
-            Request request = new Request.Builder()
-                    .url(APP_LIST_URL)
-                    .get()
-                    .build();
+            // 使用新的v3接口，分页获取所有应用
+            int page = 0;
+            int size = 100;
+            boolean hasMore = true;
+            int totalProcessed = 0;
 
-            try (Response response = httpClient.newCall(request).execute()) {
-                if (!response.isSuccessful()) {
-                    String error = "获取应用列表失败: " + response;
-                    log.error(error);
-                    syncService.updateSyncInfo(SyncService.SYNC_TYPE_APP, false, error);
-                    return;
-                }
+            while (hasMore) {
+                String url = APP_LIST_URL + "?category_ids=0&sort=version_updated_at.desc&page=" + page + "&size=" + size;
+                Request request = new Request.Builder()
+                        .url(url)
+                        .get()
+                        .build();
 
-                String responseBody = response.body().string();
-                AppListResponse appListResponse = objectMapper.readValue(responseBody, AppListResponse.class);
-
-                if (appListResponse.errorCode == 0 && appListResponse.data != null) {
-                    // 更新总数量到 SyncInfo
-                    SyncInfo appSyncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_APP);
-                    if (appSyncInfo != null) {
-                        appSyncInfo.setTotalCount((long) appListResponse.data.length);
-                        syncService.saveSyncInfo(appSyncInfo);
+                try (Response response = httpClient.newCall(request).execute()) {
+                    if (!response.isSuccessful()) {
+                        String error = "获取应用列表失败: " + response;
+                        log.error(error);
+                        syncService.updateSyncInfo(SyncService.SYNC_TYPE_APP, false, error);
+                        return;
                     }
 
-                    // 获取现有应用
-                    List<App> existingApps = appRepository.findAll();
-                    Map<String, App> existingAppMap = existingApps.stream()
-                            .collect(Collectors.toMap(App::getPkgId, app -> app));
+                    String responseBody = response.body().string();
+                    AppListV3Response appListResponse = objectMapper.readValue(responseBody, AppListV3Response.class);
 
-                    // 获取所有分类
-                    List<Category> allCategories = categoryRepository.findAll();
-                    Map<String, Category> categoryMap = allCategories.stream()
-                            .collect(Collectors.toMap(Category::getName, category -> category));
+                    if (appListResponse.items != null && !appListResponse.items.isEmpty()) {
+                        // 更新总数量到 SyncInfo
+                        SyncInfo appSyncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_APP);
+                        if (appSyncInfo != null) {
+                            appSyncInfo.setTotalCount((long) appListResponse.total);
+                            syncService.saveSyncInfo(appSyncInfo);
+                        }
 
-                    // 获取同步信息
-                    boolean isInitialSync = !appSyncInfo.isInitialSyncCompleted();
+                        // 获取现有应用
+                        List<App> existingApps = appRepository.findAll();
+                        Map<String, App> existingAppMap = existingApps.stream()
+                                .collect(Collectors.toMap(App::getPkgId, app -> app));
 
-                    for (App app : appListResponse.data) {
-                        try {
-                            App existingApp = existingAppMap.get(app.getPkgId());
-                            LocalDateTime lastUpdateTime = existingApp != null ? existingApp.getUpdateTime() : null;
+                        // 获取所有分类
+                        List<Category> allCategories = categoryRepository.findAll();
+                        Map<String, Category> categoryMap = allCategories.stream()
+                                .collect(Collectors.toMap(Category::getName, category -> category));
 
-                            if (existingApp != null) {
-                                // 如果是已存在的应用，检查是否需要更新
-                                LocalDateTime appUpdateTime = LocalDateTime.parse(app.getLastUpdated());
-                                if (appUpdateTime.isAfter(lastUpdateTime)) {
-                                    // 保留原有的下载量
-                                    app.setDownloadCount(existingApp.getDownloadCount());
-                                    // 设置包名
-                                    app.setPackageName(app.getPkgId());
+                        // 获取同步信息
+                        boolean isInitialSync = !appSyncInfo.isInitialSyncCompleted();
 
+                        for (AppV3Item appV3Item : appListResponse.items) {
+                            try {
+                                // 转换AppV3Item为App实体
+                                App app = convertAppV3ToApp(appV3Item);
+                                
+                                App existingApp = existingAppMap.get(app.getPkgId());
+                                LocalDateTime lastUpdateTime = existingApp != null ? existingApp.getUpdateTime() : null;
+
+                                if (existingApp != null) {
+                                    // 如果是已存在的应用，检查是否需要更新
+                                    LocalDateTime appUpdateTime = LocalDateTime.parse(appV3Item.version_updated_at.replace("Z", ""));
+                                    if (appUpdateTime.isAfter(lastUpdateTime)) {
+                                        // 保留原有的下载量
+                                        app.setDownloadCount(existingApp.getDownloadCount());
+                                        
+                                        // 设置分类关联
+                                        Set<Category> categories = new HashSet<>();
+                                        if (app.getCategory() != null) {
+                                            for (String categoryName : app.getCategory()) {
+                                                Category category = categoryMap.get(categoryName);
+                                                if (category != null) {
+                                                    categories.add(category);
+                                                }
+                                            }
+                                        }
+                                        app.setCategories(categories);
+
+                                        appRepository.save(app);
+                                        log.info("更新应用: {}", app.getPkgId());
+                                    }
+                                } else {
+                                    // 如果是新应用，设置下载量（从新接口的count中获取）
+                                    if (appV3Item.count != null) {
+                                        app.setDownloadCount(appV3Item.count.downloads);
+                                    }
+                                    
                                     // 设置分类关联
                                     Set<Category> categories = new HashSet<>();
                                     if (app.getCategory() != null) {
@@ -297,60 +423,53 @@ public class AppService {
                                     app.setCategories(categories);
 
                                     appRepository.save(app);
-                                    log.info("更新应用: {}", app.getPkgId());
+                                    log.info("新增应用: {}", app.getPkgId());
                                 }
-                            } else {
-                                // 如果是新应用，获取下载量
-                                //updateDownloadCount(app);
-                                // 设置包名
-                                app.setPackageName(app.getPkgId());
 
-                                // 设置分类关联
-                                Set<Category> categories = new HashSet<>();
-                                if (app.getCategory() != null) {
-                                    for (String categoryName : app.getCategory()) {
-                                        Category category = categoryMap.get(categoryName);
-                                        if (category != null) {
-                                            categories.add(category);
-                                        }
+                                // 同步评分信息（从新接口的rating中获取）
+                                if (appV3Item.rating != null) {
+                                    syncAppScoreFromV3(app.getPkgId(), appV3Item.rating);
+                                }
+
+                                // 如果是首次同步，同步相关数据
+                                if (isInitialSync) {
+                                    // 同步用户信息
+                                    if (appV3Item.create_user != null) {
+                                        userService.updateUserInfo(appV3Item.create_user.developer_id);
                                     }
-                                }
-                                app.setCategories(categories);
 
-                                appRepository.save(app);
-                                log.info("新增应用: {}", app.getPkgId());
+                                    // 同步 GitHub 信息
+                                    if (appV3Item.create_user != null) {
+                                        gitHubInfoService.publicSyncGitHubInfoForUser(appV3Item.create_user.developer_id);
+                                    }
+
+                                    // 同步评论信息
+                                    syncAppComments(app.getPkgId());
+
+                                    // 添加延迟，避免频繁调用
+                                    Thread.sleep(1000);
+                                }
+                            } catch (Exception e) {
+                                log.error("处理应用 {} 时发生错误: {}", appV3Item.packageName, e.getMessage());
                             }
-
-                            // 如果是首次同步，同步相关数据
-                            if (isInitialSync) {
-                                // 同步用户信息
-                                if (app.getCreatorId() != null) {
-                                    userService.updateUserInfo(app.getCreatorId());
-                                }
-
-                                // 同步 GitHub 信息
-                                if (app.getCreatorId() != null) {
-                                    gitHubInfoService.publicSyncGitHubInfoForUser(app.getCreatorId());
-                                }
-
-                                // 同步评分信息
-                                syncAppScore(app.getPkgId());
-
-                                // 同步评论信息
-                                syncAppComments(app.getPkgId());
-
-                                // 添加延迟，避免频繁调用
-                                Thread.sleep(3000);
-                            }
-                        } catch (Exception e) {
-                            log.error("处理应用 {} 时发生错误: {}", app.getPkgId(), e.getMessage());
                         }
-                    }
 
-                    log.info("应用信息更新完成");
-                    syncService.updateSyncInfo(SyncService.SYNC_TYPE_APP, true, null);
+                        totalProcessed += appListResponse.items.size();
+                        page++;
+                        
+                        // 检查是否还有更多数据
+                        hasMore = totalProcessed < appListResponse.total;
+                        
+                        // 添加延迟，避免请求过于频繁
+                        Thread.sleep(2000);
+                    } else {
+                        hasMore = false;
+                    }
                 }
             }
+
+            log.info("应用信息更新完成，共处理 {} 个应用", totalProcessed);
+            syncService.updateSyncInfo(SyncService.SYNC_TYPE_APP, true, null);
         } catch (Exception e) {
             String error = "更新应用信息时发生错误: " + e.getMessage();
             log.error(error, e);
@@ -558,8 +677,9 @@ public class AppService {
 
     public long getTotalAppsCount() {
         try {
+            String url = APP_LIST_URL + "?category_ids=0&sort=version_updated_at.desc&page=0&size=1";
             Request request = new Request.Builder()
-                    .url(APP_LIST_URL)
+                    .url(url)
                     .get()
                     .build();
 
@@ -570,12 +690,12 @@ public class AppService {
                 }
 
                 String responseBody = response.body().string();
-                AppListResponse appListResponse = objectMapper.readValue(responseBody, AppListResponse.class);
+                AppListV3Response appListResponse = objectMapper.readValue(responseBody, AppListV3Response.class);
 
-                if (appListResponse.errorCode == 0 && appListResponse.data != null) {
-                    return appListResponse.data.length;
+                if (appListResponse.items != null) {
+                    return appListResponse.total;
                 } else {
-                    log.error("获取应用总数失败: {}", appListResponse.message);
+                    log.error("获取应用总数失败: 响应数据为空");
                     return 0;
                 }
             }
@@ -1006,6 +1126,92 @@ public class AppService {
         }
         UserInfo userInfo = userInfoRepository.findById(creatorId).orElse(null);
         return userInfo != null ? userInfo.getNickname() : null;
+    }
+
+    /**
+     * 将AppV3Item转换为App实体
+     */
+    private App convertAppV3ToApp(AppV3Item appV3Item) {
+        App app = new App();
+        
+        // 基本信息
+        app.setPkgId(appV3Item.packageName);
+        app.setPackageName(appV3Item.packageName);
+        
+        if (appV3Item.information != null) {
+            app.setName(appV3Item.information.name);
+            app.setBrief(appV3Item.information.brief);
+            app.setDescription(appV3Item.information.description);
+            app.setKeywords(appV3Item.information.keywords);
+            app.setSource(appV3Item.information.source);
+            app.setSupportPC(appV3Item.information.support_pc);
+            app.setSupportMobile(appV3Item.information.support_mobile);
+            app.setPcScreenshotPaths(appV3Item.information.screenshot_pc_paths);
+            app.setMobileScreenshotPaths(appV3Item.information.screenshot_mobile_paths);
+        }
+        
+        if (appV3Item.version != null) {
+            app.setVersion(appV3Item.version.name);
+            app.setPkgPath(appV3Item.version.pkg_path);
+            app.setPkgHash(appV3Item.version.pkg_hash);
+            app.setIconPath(appV3Item.version.icon_path);
+            app.setUnsupportedPlatforms(appV3Item.version.unsupported_platforms);
+            app.setOsDependence(appV3Item.version.min_os_version);
+            if (appV3Item.version.changelog_list != null && !appV3Item.version.changelog_list.isEmpty()) {
+                app.setChangelog(String.join("\n", appV3Item.version.changelog_list));
+            }
+        }
+        
+        if (appV3Item.create_user != null) {
+            app.setCreator(appV3Item.create_user.nickname);
+            app.setCreatorId(appV3Item.create_user.developer_id);
+        }
+        
+        // 时间信息
+        if (appV3Item.created_at != null) {
+            app.setCreateTime(LocalDateTime.parse(appV3Item.created_at.replace("Z", "")));
+        }
+        if (appV3Item.updated_at != null) {
+            app.setUpdateTime(LocalDateTime.parse(appV3Item.updated_at.replace("Z", "")));
+        }
+        if (appV3Item.version_updated_at != null) {
+            app.setLastUpdated(appV3Item.version_updated_at);
+        }
+        
+        // 统计信息
+        if (appV3Item.count != null) {
+            app.setDownloadCount(appV3Item.count.downloads);
+        }
+        
+        return app;
+    }
+
+    /**
+     * 从v3接口的rating信息同步评分数据
+     */
+    private void syncAppScoreFromV3(String pkgId, Rating rating) {
+        try {
+            AppScore appScore = appScoreRepository.findById(pkgId)
+                    .orElse(new AppScore());
+
+            appScore.setPkgId(pkgId);
+            appScore.setScore(rating.score);
+            appScore.setTotalReviews(rating.statistics.total);
+
+            // 设置各分数段的评论数
+            appScore.setOneStarCount(rating.statistics.one);
+            appScore.setTwoStarCount(rating.statistics.two);
+            appScore.setThreeStarCount(rating.statistics.three);
+            appScore.setFourStarCount(rating.statistics.four);
+            appScore.setFiveStarCount(rating.statistics.five);
+
+            appScore.setLastSyncTime(LocalDateTime.now());
+
+            appScoreRepository.save(appScore);
+            log.info("成功同步应用 {} 的评分信息", pkgId);
+        } catch (Exception e) {
+            log.error("同步应用 {} 评分时发生错误", pkgId, e);
+        }
     }
 
 }
