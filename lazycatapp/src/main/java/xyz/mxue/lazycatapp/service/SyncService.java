@@ -33,7 +33,7 @@ public class SyncService {
         syncInfo.setSyncType(syncType);
         syncInfo.setInitialSyncCompleted(false);
         syncInfo.setSyncStrategy(SYNC_STRATEGY_FULL);
-        
+
         // 设置默认同步间隔
         switch (syncType) {
             case SYNC_TYPE_APP:
@@ -60,13 +60,13 @@ public class SyncService {
 
     public void updateSyncInfo(String syncType, boolean success, String error) {
         SyncInfo syncInfo = getSyncInfo(syncType);
-        
+
         if (success) {
             syncInfo.setLastSyncTime(LocalDateTime.now());
             syncInfo.setNextSyncTime(LocalDateTime.now().plusNanos(syncInfo.getSyncInterval() * 1000000)); // 转换为纳秒
             syncInfo.setRetryCount(0);
             syncInfo.setLastError(null);
-            
+
             // 如果是全量同步且成功，则标记为已完成初始同步
             if (SYNC_STRATEGY_FULL.equals(syncInfo.getSyncStrategy())) {
                 syncInfo.setInitialSyncCompleted(true);
@@ -75,26 +75,26 @@ public class SyncService {
         } else {
             syncInfo.setLastError(error);
             syncInfo.setRetryCount(syncInfo.getRetryCount() + 1);
-            
+
             // 如果重试次数过多，可以选择禁用同步或增加同步间隔
             if (syncInfo.getRetryCount() >= 3) {
                 syncInfo.setSyncInterval(syncInfo.getSyncInterval() * 2); // 加倍同步间隔
                 log.warn("同步 {} 失败次数过多，增加同步间隔至 {} 毫秒", syncType, syncInfo.getSyncInterval());
             }
         }
-        
+
         syncInfoRepository.save(syncInfo);
     }
 
     public boolean shouldSync(String syncType) {
         SyncInfo syncInfo = getSyncInfo(syncType);
-        
+
         if (!syncInfo.isEnabled()) {
             return false;
         }
 
         LocalDateTime now = LocalDateTime.now();
-        
+
         // 如果从未同步过，或者未完成初始同步，应该进行同步
         if (syncInfo.getLastSyncTime() == null || !syncInfo.isInitialSyncCompleted()) {
             return true;

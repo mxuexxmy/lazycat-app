@@ -2,6 +2,7 @@ package xyz.mxue.lazycatapp.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 @Data

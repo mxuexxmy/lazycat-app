@@ -24,17 +24,17 @@ public class RecommendationService {
 
         App app = targetApp.get();
         List<App> allApps = appRepository.findAll();
-        
+
         return allApps.stream()
-            .filter(a -> !a.getPkgId().equals(pkgId))
-            .map(a -> {
-                int score = calculateSimilarityScore(app, a);
-                return new AbstractMap.SimpleEntry<>(a, score);
-            })
-            .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
-            .limit(limit)
-            .map(AbstractMap.SimpleEntry::getKey)
-            .collect(Collectors.toList());
+                .filter(a -> !a.getPkgId().equals(pkgId))
+                .map(a -> {
+                    int score = calculateSimilarityScore(app, a);
+                    return new AbstractMap.SimpleEntry<>(a, score);
+                })
+                .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+                .limit(limit)
+                .map(AbstractMap.SimpleEntry::getKey)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -42,13 +42,13 @@ public class RecommendationService {
      */
     public List<App> getPopularAppsByCategory(String category, int limit) {
         return appRepository.findByCategoryContaining(category).stream()
-            .sorted((a, b) -> {
-                int aCount = a.getDownloadCount() != null ? a.getDownloadCount() : 0;
-                int bCount = b.getDownloadCount() != null ? b.getDownloadCount() : 0;
-                return Integer.compare(bCount, aCount);
-            })
-            .limit(limit)
-            .collect(Collectors.toList());
+                .sorted((a, b) -> {
+                    int aCount = a.getDownloadCount() != null ? a.getDownloadCount() : 0;
+                    int bCount = b.getDownloadCount() != null ? b.getDownloadCount() : 0;
+                    return Integer.compare(bCount, aCount);
+                })
+                .limit(limit)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -56,9 +56,9 @@ public class RecommendationService {
      */
     public List<Map<String, Object>> getEmergingCategories() {
         List<App> recentApps = appRepository.findAll().stream()
-            .filter(app -> app.getCreateTime() != null && 
-                app.getCreateTime().isAfter(java.time.LocalDateTime.now().minusMonths(3)))
-            .collect(Collectors.toList());
+                .filter(app -> app.getCreateTime() != null &&
+                        app.getCreateTime().isAfter(java.time.LocalDateTime.now().minusMonths(3)))
+                .toList();
 
         Map<String, Long> categoryGrowth = new HashMap<>();
         for (App app : recentApps) {
@@ -70,15 +70,15 @@ public class RecommendationService {
         }
 
         return categoryGrowth.entrySet().stream()
-            .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
-            .limit(10)
-            .map(entry -> {
-                Map<String, Object> result = new HashMap<>();
-                result.put("category", entry.getKey());
-                result.put("growth", entry.getValue());
-                return result;
-            })
-            .collect(Collectors.toList());
+                .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+                .limit(10)
+                .map(entry -> {
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("category", entry.getKey());
+                    result.put("growth", entry.getValue());
+                    return result;
+                })
+                .collect(Collectors.toList());
     }
 
     /**
@@ -86,25 +86,25 @@ public class RecommendationService {
      */
     private int calculateSimilarityScore(App app1, App app2) {
         int score = 0;
-        
+
         // 分类相似度
         if (app1.getCategory() != null && app2.getCategory() != null) {
             Set<String> categories1 = new HashSet<>(app1.getCategory());
             Set<String> categories2 = new HashSet<>(app2.getCategory());
-            score += 3 * categories1.stream().filter(categories2::contains).count();
+            score += (int) (3 * categories1.stream().filter(categories2::contains).count());
         }
-        
+
         // 关键词相似度
         if (app1.getKeywords() != null && app2.getKeywords() != null) {
             Set<String> keywords1 = new HashSet<>(Arrays.asList(app1.getKeywords().split(",")));
             Set<String> keywords2 = new HashSet<>(Arrays.asList(app2.getKeywords().split(",")));
-            score += 2 * keywords1.stream().filter(keywords2::contains).count();
+            score += (int) (2 * keywords1.stream().filter(keywords2::contains).count());
         }
-        
+
         // 平台支持相似度
         if (Objects.equals(app1.getSupportPC(), app2.getSupportPC())) score++;
         if (Objects.equals(app1.getSupportMobile(), app2.getSupportMobile())) score++;
-        
+
         return score;
     }
 } 

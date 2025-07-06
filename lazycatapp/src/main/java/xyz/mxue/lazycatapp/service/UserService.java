@@ -26,15 +26,15 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    
+
     private final UserInfoRepository userInfoRepository;
     private final CommunityUserRepository communityUserRepository;
     private final AppRepository appRepository;
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
-    
+
     private static final String USER_INFO_URL = "https://playground.api.lazycat.cloud/api/user/info/";
-    
+
     public void updateUserInfo(Long userId) {
         log.info("开始更新用户信息: {}", userId);
         try {
@@ -42,16 +42,16 @@ public class UserService {
                     .url(USER_INFO_URL + userId)
                     .get()
                     .build();
-            
+
             try (Response response = httpClient.newCall(request).execute()) {
                 if (!response.isSuccessful()) {
                     log.error("获取用户信息失败: {}", response);
                     return;
                 }
-                
+
                 String responseBody = response.body().string();
                 UserResponse userResponse = objectMapper.readValue(responseBody, UserResponse.class);
-                
+
                 if (userResponse != null) {
                     // 更新社区用户信息
                     CommunityUser communityUser = communityUserRepository.findById(userResponse.uid)
@@ -68,7 +68,7 @@ public class UserService {
                     communityUser.setOnlyFollowedAtMe(userResponse.onlyFollowedAtMe);
                     communityUser.setOnlyFollowedCommentMe(userResponse.onlyFollowedCommentMe);
                     communityUserRepository.save(communityUser);
-                    
+
                     // 更新用户个人信息
                     UserInfo userInfo = userInfoRepository.findById(userResponse.user.id)
                             .orElse(new UserInfo());
@@ -81,14 +81,14 @@ public class UserService {
                     userInfo.setStatus(userResponse.user.status);
                     userInfo.setGithubUsername(userResponse.user.githubUsername);
                     userInfo.setIsCurrentLoginUser(userResponse.user.isCurrentLoginUser);
-                    
+
                     // 设置时间戳
                     String now = Instant.now().toString();
                     if (userInfo.getCreatedAt() == null) {
                         userInfo.setCreatedAt(now);
                     }
                     userInfo.setUpdatedAt(now);
-                    
+
                     userInfoRepository.save(userInfo);
                     log.info("成功更新用户信息: {}", userId);
                 }
@@ -97,35 +97,37 @@ public class UserService {
             log.error("更新用户信息时发生错误", e);
         }
     }
-    
+
     public UserInfo getUserInfo(Long userId) {
         return userInfoRepository.findById(userId).orElse(null);
     }
-    
+
     public CommunityUser getCommunityUser(Long userId) {
         return communityUserRepository.findById(userId).orElse(null);
     }
-    
+
     /**
      * 获取所有用户个人信息
+     *
      * @return 用户个人信息列表
      */
     public List<UserInfo> getAllUserInfos() {
         return userInfoRepository.findAll();
     }
-    
+
     /**
      * 获取所有用户社区信息
+     *
      * @return 用户社区信息列表
      */
     public List<CommunityUser> getAllCommunityUsers() {
         return communityUserRepository.findAll();
     }
-    
+
     public long count() {
         return userInfoRepository.count();
     }
-    
+
     public List<Map<String, Object>> getActiveUsers(int limit) {
         List<UserInfo> users = userInfoRepository.findActiveUsers(PageRequest.of(0, limit));
         return users.stream().map(user -> {
@@ -139,14 +141,14 @@ public class UserService {
             // 获取该用户的所有应用并计算总下载量
             List<App> userApps = appRepository.findByCreatorId(user.getId());
             int totalDownloads = userApps.stream()
-                .mapToInt(app -> app.getDownloadCount() != null ? app.getDownloadCount() : 0)
-                .sum();
-            
+                    .mapToInt(app -> app.getDownloadCount() != null ? app.getDownloadCount() : 0)
+                    .sum();
+
             userMap.put("downloads", totalDownloads);
             return userMap;
         }).collect(Collectors.toList());
     }
-    
+
     public Map<String, Object> getUserGrowthStats() {
         Map<String, Object> stats = new HashMap<>();
         stats.put("daily", userInfoRepository.countNewUsersToday());
@@ -154,7 +156,7 @@ public class UserService {
         stats.put("monthly", userInfoRepository.countNewUsersThisMonth());
         return stats;
     }
-    
+
     @lombok.Data
     private static class UserResponse {
         private Long uid;
@@ -170,7 +172,7 @@ public class UserService {
         private Boolean onlyFollowedAtMe;
         private Boolean onlyFollowedCommentMe;
     }
-    
+
     @lombok.Data
     private static class UserData {
         private Long id;

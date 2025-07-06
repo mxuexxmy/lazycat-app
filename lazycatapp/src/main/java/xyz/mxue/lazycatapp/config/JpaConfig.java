@@ -1,5 +1,6 @@
 package xyz.mxue.lazycatapp.config;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -19,6 +20,7 @@ public class JpaConfig implements TransactionManagementConfigurer {
         this.transactionManager = transactionManager;
     }
 
+    @NotNull
     @Override
     public PlatformTransactionManager annotationDrivenTransactionManager() {
         return transactionManager;

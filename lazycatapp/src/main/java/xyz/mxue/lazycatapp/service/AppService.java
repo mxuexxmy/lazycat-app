@@ -19,6 +19,7 @@ import xyz.mxue.lazycatapp.repository.AppCommentRepository;
 import xyz.mxue.lazycatapp.entity.Category;
 import xyz.mxue.lazycatapp.entity.AppScore;
 import xyz.mxue.lazycatapp.entity.AppComment;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -31,11 +32,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import xyz.mxue.lazycatapp.entity.SyncInfo;
 import xyz.mxue.lazycatapp.repository.CategoryRepository;
+
 import java.util.ArrayList;
 import java.time.format.DateTimeFormatter;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -279,7 +283,7 @@ public class AppService {
                                     app.setDownloadCount(existingApp.getDownloadCount());
                                     // 设置包名
                                     app.setPackageName(app.getPkgId());
-                                    
+
                                     // 设置分类关联
                                     Set<Category> categories = new HashSet<>();
                                     if (app.getCategory() != null) {
@@ -291,16 +295,16 @@ public class AppService {
                                         }
                                     }
                                     app.setCategories(categories);
-                                    
+
                                     appRepository.save(app);
                                     log.info("更新应用: {}", app.getPkgId());
                                 }
                             } else {
                                 // 如果是新应用，获取下载量
-                                updateDownloadCount(app);
+                                //updateDownloadCount(app);
                                 // 设置包名
                                 app.setPackageName(app.getPkgId());
-                                
+
                                 // 设置分类关联
                                 Set<Category> categories = new HashSet<>();
                                 if (app.getCategory() != null) {
@@ -312,7 +316,7 @@ public class AppService {
                                     }
                                 }
                                 app.setCategories(categories);
-                                
+
                                 appRepository.save(app);
                                 log.info("新增应用: {}", app.getPkgId());
                             }
@@ -354,91 +358,91 @@ public class AppService {
         }
     }
 
-    @Scheduled(cron = "0 0 */1 * * *") // 每1小时执行一次，从0点开始
-public void updateDownloadCounts() {
-    log.info("开始更新应用下载量...");
-    List<App> apps = appRepository.findAll();
-    int batchSize = 10; // 每批处理的应用数量
-    int totalApps = apps.size();
-    int processedApps = 0;
-    int successCount = 0;
-    int failureCount = 0;
+    // @Scheduled(cron = "0 0 */1 * * *") // 每1小时执行一次，从0点开始
+    public void updateDownloadCounts() {
+        log.info("开始更新应用下载量...");
+        List<App> apps = appRepository.findAll();
+        int batchSize = 10; // 每批处理的应用数量
+        int totalApps = apps.size();
+        int processedApps = 0;
+        int successCount = 0;
+        int failureCount = 0;
 
-    for (int i = 0; i < totalApps; i += batchSize) {
-        List<App> batch = apps.subList(i, Math.min(i + batchSize, totalApps));
-        List<App> updatedApps = new ArrayList<>();
-        
-        for (App app : batch) {
-            try {
-                updateDownloadCount(app);
-                updatedApps.add(app);
-                successCount++;
-                log.info("应用 {} 下载量更新完成", app.getPkgId());
-            } catch (IOException e) {
-                log.error("网络错误: 更新应用 {} 下载量失败", app.getPkgId(), e);
-                failureCount++;
-            } catch (Exception e) {
-                log.error("更新应用 {} 下载量时发生错误", app.getPkgId(), e);
-                failureCount++;
+        for (int i = 0; i < totalApps; i += batchSize) {
+            List<App> batch = apps.subList(i, Math.min(i + batchSize, totalApps));
+            List<App> updatedApps = new ArrayList<>();
+
+            for (App app : batch) {
+                try {
+                    updateDownloadCount(app);
+                    updatedApps.add(app);
+                    successCount++;
+                    log.info("应用 {} 下载量更新完成", app.getPkgId());
+                } catch (IOException e) {
+                    log.error("网络错误: 更新应用 {} 下载量失败", app.getPkgId(), e);
+                    failureCount++;
+                } catch (Exception e) {
+                    log.error("更新应用 {} 下载量时发生错误", app.getPkgId(), e);
+                    failureCount++;
+                }
+                processedApps++;
             }
-            processedApps++;
+
+            // 批量保存更新后的应用
+            if (!updatedApps.isEmpty()) {
+                try {
+                    appRepository.saveAll(updatedApps);
+                    log.info("批量保存 {} 个应用的更新", updatedApps.size());
+                } catch (Exception e) {
+                    log.error("批量保存应用更新失败", e);
+                }
+            }
+
+            // 每批处理完后等待5秒
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                log.error("更新下载量时被中断", e);
+                Thread.currentThread().interrupt();
+                break;
+            }
         }
 
-        // 批量保存更新后的应用
-        if (!updatedApps.isEmpty()) {
-            try {
-                appRepository.saveAll(updatedApps);
-                log.info("批量保存 {} 个应用的更新", updatedApps.size());
-            } catch (Exception e) {
-                log.error("批量保存应用更新失败", e);
-            }
-        }
+        log.info("应用下载量更新完成。总计: {} 个应用, 成功: {} 个, 失败: {} 个",
+                totalApps, successCount, failureCount);
+    }
 
-        // 每批处理完后等待5秒
+    private void updateDownloadCount(App app) throws IOException {
         try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            log.error("更新下载量时被中断", e);
-            Thread.currentThread().interrupt();
-            break;
+            Request request = new Request.Builder()
+                    .url(DOWNLOAD_COUNT_URL + "?pkgId=" + app.getPkgId())
+                    .get()
+                    .build();
+
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    throw new IOException("HTTP请求失败: " + response.code() + " " + response.message());
+                }
+
+                String responseBody = response.body().string();
+                DownloadCountResponse downloadCountResponse = objectMapper.readValue(responseBody,
+                        DownloadCountResponse.class);
+
+                if (downloadCountResponse.errorCode == 0 && downloadCountResponse.data != null) {
+                    app.setDownloadCount(downloadCountResponse.data);
+                    log.info("成功更新应用 {} 的下载量: {}", app.getPkgId(), downloadCountResponse.data);
+                } else {
+                    throw new IOException("API返回错误: " + downloadCountResponse.message);
+                }
+            }
+        } catch (IOException e) {
+            log.error("网络错误: 更新应用 {} 下载量失败", app.getPkgId(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("更新应用 {} 下载量时发生未知错误", app.getPkgId(), e);
+            throw new IOException("更新下载量失败: " + e.getMessage(), e);
         }
     }
-
-    log.info("应用下载量更新完成。总计: {} 个应用, 成功: {} 个, 失败: {} 个", 
-        totalApps, successCount, failureCount);
-}
-
-private void updateDownloadCount(App app) throws IOException {
-    try {
-        Request request = new Request.Builder()
-                .url(DOWNLOAD_COUNT_URL + "?pkgId=" + app.getPkgId())
-                .get()
-                .build();
-
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new IOException("HTTP请求失败: " + response.code() + " " + response.message());
-            }
-
-            String responseBody = response.body().string();
-            DownloadCountResponse downloadCountResponse = objectMapper.readValue(responseBody,
-                    DownloadCountResponse.class);
-
-            if (downloadCountResponse.errorCode == 0 && downloadCountResponse.data != null) {
-                app.setDownloadCount(downloadCountResponse.data);
-                log.info("成功更新应用 {} 的下载量: {}", app.getPkgId(), downloadCountResponse.data);
-            } else {
-                throw new IOException("API返回错误: " + downloadCountResponse.message);
-            }
-        }
-    } catch (IOException e) {
-        log.error("网络错误: 更新应用 {} 下载量失败", app.getPkgId(), e);
-        throw e;
-    } catch (Exception e) {
-        log.error("更新应用 {} 下载量时发生未知错误", app.getPkgId(), e);
-        throw new IOException("更新下载量失败: " + e.getMessage(), e);
-    }
-}
 
     @lombok.Data
     private static class AppListResponse {
@@ -458,7 +462,7 @@ private void updateDownloadCount(App app) throws IOException {
 
     /**
      * 获取所有不重复的开发者ID
-     * 
+     *
      * @return 开发者ID列表
      */
     public List<Long> getDistinctCreatorIds() {
@@ -690,7 +694,7 @@ private void updateDownloadCount(App app) throws IOException {
         try {
             // 获取所有应用
             List<App> apps = appRepository.findAll();
-            
+
             // 更新总数量到 SyncInfo
             SyncInfo syncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_SCORE);
             if (syncInfo != null) {
@@ -708,9 +712,9 @@ private void updateDownloadCount(App app) throws IOException {
                     .map(App::getPkgId)
                     .filter(pkgId -> {
                         AppScore existingScore = existingScoreMap.get(pkgId);
-                        return existingScore == null || 
-                               existingScore.getLastSyncTime() == null ||
-                               existingScore.getLastSyncTime().isBefore(LocalDateTime.now().minusHours(24));
+                        return existingScore == null ||
+                                existingScore.getLastSyncTime() == null ||
+                                existingScore.getLastSyncTime().isBefore(LocalDateTime.now().minusHours(24));
                     })
                     .collect(Collectors.toList());
 
@@ -924,40 +928,40 @@ private void updateDownloadCount(App app) throws IOException {
 
     public List<Map<String, Object>> getFiveStarAppsRanking(int limit) {
         return appScoreRepository.findAll().stream()
-            .filter(score -> score.getScore() != null && score.getScore() >= 4.5) // 筛选评分大于等于4.5的应用
-            .sorted((a, b) -> {
-                // 首先按评分排序
-                int scoreCompare = Double.compare(b.getScore(), a.getScore());
-                if (scoreCompare != 0) {
-                    return scoreCompare;
-                }
-                // 如果评分相同，则按评论数排序
-                return Integer.compare(b.getTotalReviews(), a.getTotalReviews());
-            })
-            .limit(limit)
-            .map(score -> {
-                Map<String, Object> appMap = new HashMap<>();
-                // 获取应用信息
-                App app = appRepository.findById(score.getPkgId()).orElse(null);
-                if (app != null) {
-                    appMap.put("pkgId", app.getPkgId());
-                    appMap.put("name", app.getName());
-                    appMap.put("iconPath", app.getIconPath());
-                    appMap.put("description", app.getDescription());
-                    appMap.put("downloadCount", app.getDownloadCount());
-                    appMap.put("score", score.getScore());
-                    appMap.put("totalReviews", score.getTotalReviews());
-                    appMap.put("category", app.getCategory());
-                    appMap.put("creator", app.getCreator());
-                }
-                return appMap;
-            })
-            .collect(Collectors.toList());
+                .filter(score -> score.getScore() != null && score.getScore() >= 4.5) // 筛选评分大于等于4.5的应用
+                .sorted((a, b) -> {
+                    // 首先按评分排序
+                    int scoreCompare = Double.compare(b.getScore(), a.getScore());
+                    if (scoreCompare != 0) {
+                        return scoreCompare;
+                    }
+                    // 如果评分相同，则按评论数排序
+                    return Integer.compare(b.getTotalReviews(), a.getTotalReviews());
+                })
+                .limit(limit)
+                .map(score -> {
+                    Map<String, Object> appMap = new HashMap<>();
+                    // 获取应用信息
+                    App app = appRepository.findById(score.getPkgId()).orElse(null);
+                    if (app != null) {
+                        appMap.put("pkgId", app.getPkgId());
+                        appMap.put("name", app.getName());
+                        appMap.put("iconPath", app.getIconPath());
+                        appMap.put("description", app.getDescription());
+                        appMap.put("downloadCount", app.getDownloadCount());
+                        appMap.put("score", score.getScore());
+                        appMap.put("totalReviews", score.getTotalReviews());
+                        appMap.put("category", app.getCategory());
+                        appMap.put("creator", app.getCreator());
+                    }
+                    return appMap;
+                })
+                .collect(Collectors.toList());
     }
 
     public void likeComment(Long commentId) {
         AppComment comment = appCommentRepository.findById(commentId)
-            .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new RuntimeException("Comment not found"));
         comment.setLikeCounts(comment.getLikeCounts() + 1);
         appCommentRepository.save(comment);
     }
@@ -992,6 +996,7 @@ private void updateDownloadCount(App app) throws IOException {
 
     /**
      * 根据 creatorId 查询用户昵称
+     *
      * @param creatorId 创建者ID
      * @return 用户昵称，如果未找到则返回 null
      */

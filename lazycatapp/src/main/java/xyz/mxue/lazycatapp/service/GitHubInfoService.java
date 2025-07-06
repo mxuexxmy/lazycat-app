@@ -104,11 +104,11 @@ public class GitHubInfoService {
             List<Long> usersToUpdate = userIds.stream()
                     .filter(userId -> {
                         GitHubInfo existingInfo = existingInfoMap.get(userId);
-                        return existingInfo == null || 
-                               existingInfo.getLastSyncTime() == null ||
-                               existingInfo.getLastSyncTime().isBefore(LocalDateTime.now().minusHours(24));
+                        return existingInfo == null ||
+                                existingInfo.getLastSyncTime() == null ||
+                                existingInfo.getLastSyncTime().isBefore(LocalDateTime.now().minusHours(24));
                     })
-                    .collect(Collectors.toList());
+                    .toList();
 
             if (usersToUpdate.isEmpty()) {
                 log.info("没有需要更新的 GitHub 信息");
@@ -134,7 +134,6 @@ public class GitHubInfoService {
         }
     }
 
-    
 
     public void syncGitHubInfoForUser(Long userId) throws IOException {
         String url = GITHUB_INFO_URL + userId;
@@ -203,6 +202,7 @@ public class GitHubInfoService {
 
     /**
      * 获取指定用户的 GitHub 信息
+     *
      * @param userId 用户ID
      * @return GitHub 信息，如果不存在则返回 null
      */
@@ -213,8 +213,8 @@ public class GitHubInfoService {
             if (existingInfo.isPresent()) {
                 GitHubInfo info = existingInfo.get();
                 // 如果信息在24小时内更新过，直接返回
-                if (info.getLastSyncTime() != null && 
-                    info.getLastSyncTime().isAfter(LocalDateTime.now().minusHours(24))) {
+                if (info.getLastSyncTime() != null &&
+                        info.getLastSyncTime().isAfter(LocalDateTime.now().minusHours(24))) {
                     return info;
                 }
             }
@@ -230,6 +230,7 @@ public class GitHubInfoService {
 
     /**
      * 获取多个用户的 GitHub 信息
+     *
      * @param userIds 用户ID列表
      * @return 用户ID到GitHub信息的映射
      */
@@ -244,8 +245,9 @@ public class GitHubInfoService {
         return result;
     }
 
-     /**
+    /**
      * 同步用户的 GitHub 信息
+     *
      * @param userId 用户ID
      */
     public void publicSyncGitHubInfoForUser(Long userId) {
@@ -253,7 +255,7 @@ public class GitHubInfoService {
             syncGitHubInfoForUser(userId);
         } catch (Exception e) {
             log.error("获取用户 {} 的 GitHub 信息时发生错误: {}", userId, e.getMessage());
-        
+
         }
     }
 }

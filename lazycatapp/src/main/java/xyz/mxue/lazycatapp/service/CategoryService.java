@@ -22,12 +22,12 @@ import java.util.HashMap;
 @Service
 @RequiredArgsConstructor
 public class CategoryService {
-    
+
     private final CategoryRepository categoryRepository;
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final SyncService syncService;
-    
+
     private static final String CATEGORY_URL_ZH = "https://dl.lazycatmicroserver.com/appstore/metarepo/zh/categories.json";
     private static final String CATEGORY_URL_EN = "https://dl.lazycatmicroserver.com/appstore/metarepo/en/categories.json";
 
@@ -39,7 +39,7 @@ public class CategoryService {
             syncCategories();
         }
     }
-    
+
     @Scheduled(fixedRate = 3600000) // 每1小时执行一次
     public void syncCategories() {
         if (!syncService.shouldSync(SyncService.SYNC_TYPE_CATEGORY)) {
@@ -96,10 +96,10 @@ public class CategoryService {
                 }
 
                 categoryRepository.save(categoryToSave);
-                log.info("同步分类: {} (中文: {}, 英文: {})", 
-                    id, 
-                    chineseCategory.getName(),
-                    englishCategory != null ? englishCategory.getName() : "N/A");
+                log.info("同步分类: {} (中文: {}, 英文: {})",
+                        id,
+                        chineseCategory.getName(),
+                        englishCategory != null ? englishCategory.getName() : "N/A");
             }
 
             log.info("分类信息同步完成");
@@ -110,7 +110,7 @@ public class CategoryService {
             syncService.updateSyncInfo(SyncService.SYNC_TYPE_CATEGORY, false, error);
         }
     }
-    
+
     private Category[] getCategoriesFromUrl(String url) {
         try {
             Request request = new Request.Builder()
@@ -134,20 +134,20 @@ public class CategoryService {
             throw new RuntimeException(error);
         }
     }
-    
+
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
     }
-    
+
     public Category getCategoryById(Integer id) {
         return categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
     }
-    
+
     public long count() {
         return categoryRepository.count();
     }
-    
+
     public long getTotalCategoriesCount() {
         return categoryRepository.count();
     }

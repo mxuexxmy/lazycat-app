@@ -37,7 +37,7 @@ public class KeywordService {
                 })
                 .map(String::trim)
                 .filter(keyword -> !keyword.isEmpty())
-                .collect(Collectors.toList());
+                .toList();
 
         // 统计关键词频率
         Map<String, Long> keywordCount = allKeywords.stream()

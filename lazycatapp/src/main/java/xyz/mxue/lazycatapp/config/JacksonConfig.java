@@ -8,14 +8,14 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 
 @Configuration
 public class JacksonConfig {
-    
+
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         return mapper;
     }
-    
+
     @Bean
     public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter(ObjectMapper objectMapper) {
         MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
