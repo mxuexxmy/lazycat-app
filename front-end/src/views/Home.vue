@@ -429,6 +429,14 @@ const functions: Function[] = [
         icon: BulbOutline,
         iconColor: '#faad14',
         route: { name: 'Category', params: { id: 24 } }
+      },
+      {
+        id: 'ai-podcast',
+        title: 'AI 算力舱',
+        description: 'AI 算力舱，微服算力加强',
+        icon: CloudOutline,
+        iconColor: '#faad14',
+        route: { name: 'Category', params: { id: 27 } }
       }
     ]
   }

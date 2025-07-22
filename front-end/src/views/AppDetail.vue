@@ -133,13 +133,11 @@ interface AppDetail {
 }
 
 const route = useRoute()
-const router = useRouter()
 const app = ref<AppDetail | null>(null)
 const defaultIcon = 'https://dl.lazycatmicroserver.com/appstore/metarepo/default-icon.png'
 
 const getAppIcon = (app: AppDetail) => {
   if (!app.iconPath) return defaultIcon
-  const iconPath = app.iconPath.startsWith('/') ? app.iconPath.slice(1) : app.iconPath
   return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`
 }
 
