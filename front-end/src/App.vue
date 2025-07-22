@@ -71,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { h, ref, computed, watch, nextTick, onMounted } from 'vue'
+import { h, ref, computed, watch, nextTick } from 'vue'
 import { useAppStore } from './stores/app'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
@@ -89,8 +89,7 @@ import {
   NMessageProvider
 } from 'naive-ui'
 import { zhCN, dateZhCN } from 'naive-ui'
-import { Search, ArrowBack, MenuOutline, HomeOutline, TrophyOutline, CodeSlashOutline, RocketOutline, BookOutline, BuildOutline, PeopleOutline } from '@vicons/ionicons5'
-import LoadingOverlay from './components/LoadingOverlay.vue'
+import { Search, ArrowBack, MenuOutline, HomeOutline, TrophyOutline, CodeSlashOutline, RocketOutline, BookOutline, BuildOutline, RefreshOutline } from '@vicons/ionicons5'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
@@ -172,6 +171,11 @@ const menuOptions = [
     label: '开发者中心',
     key: 'DeveloperCenter',
     icon: () => h(NIcon, null, { default: () => h(BuildOutline) })
+  },
+  {
+    label: '同步信息',
+    key: 'SyncStatus',
+    icon: () => h(NIcon, null, { default: () => h(RefreshOutline) })
   }
 ]
 
@@ -288,33 +292,6 @@ const handleMobileMenuClick = (key: string) => {
   showDrawer.value = false
 }
 
-const checkSyncStatus = async () => {
-  try {
-    const response = await fetch('/api/apps/status')
-    const status = await response.json()
-    
-    // 计算同步进度（只计算应用和分类）
-    const totalItems = status.totalApps + status.totalCategories
-    const completedItems = status.appCount + status.categoryCount
-    syncProgress.value = Math.round((completedItems / totalItems) * 100)
-
-    // 如果同步未完成，继续检查状态
-    if (!status.isInitialSyncComplete) {
-      setTimeout(checkSyncStatus, 5000)
-    } else {
-      // 同步完成后，等待一段时间后再次检查
-      setTimeout(checkSyncStatus, 60000)
-    }
-  } catch (error) {
-    console.error('检查同步状态失败:', error)
-    // 如果检查失败，等待一段时间后重试
-    setTimeout(checkSyncStatus, 5000)
-  }
-}
-
-onMounted(() => {
-  checkSyncStatus()
-})
 </script>
 
 <style>

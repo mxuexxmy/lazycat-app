@@ -14,6 +14,7 @@ import xyz.mxue.lazycatapp.repository.CommunityUserRepository;
 import xyz.mxue.lazycatapp.repository.UserInfoRepository;
 import xyz.mxue.lazycatapp.repository.AppRepository;
 import xyz.mxue.lazycatapp.entity.App;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -155,6 +156,71 @@ public class UserService {
         stats.put("weekly", userInfoRepository.countNewUsersThisWeek());
         stats.put("monthly", userInfoRepository.countNewUsersThisMonth());
         return stats;
+    }
+
+    /**
+     * 同步所有开发者信息（人员信息）
+     * 每天凌晨2点自动同步
+     */
+    @Scheduled(cron = "0 2 * * * *")
+    public void syncAllDevelopers() {
+        log.info("开始同步所有开发者信息...");
+        int page = 0;
+        int size = 100;
+        boolean hasMore = true;
+        String apiUrl = "https://appstore.api.lazycat.cloud/api/v3/user/developer/list";
+        try {
+            while (hasMore) {
+                String url = apiUrl + "?page=" + page + "&size=" + size;
+                Request request = new Request.Builder()
+                        .url(url)
+                        .get()
+                        .build();
+                try (Response response = httpClient.newCall(request).execute()) {
+                    if (!response.isSuccessful()) {
+                        log.error("获取开发者列表失败: {}", response);
+                        break;
+                    }
+                    String responseBody = response.body().string();
+                    DeveloperListResponse devList = objectMapper.readValue(responseBody, DeveloperListResponse.class);
+                    if (devList != null && devList.items != null) {
+                        for (DeveloperItem dev : devList.items) {
+                            if (dev.developer_id != null) {
+                                updateUserInfo(dev.developer_id);
+                            }
+                        }
+                        hasMore = (devList.page + 1) * devList.size < devList.total;
+                        page++;
+                    } else {
+                        hasMore = false;
+                    }
+                }
+            }
+            log.info("同步所有开发者信息完成");
+        } catch (Exception e) {
+            log.error("同步所有开发者信息时发生错误", e);
+        }
+    }
+
+    // 用于解析开发者列表API响应
+    @lombok.Data
+    private static class DeveloperListResponse {
+        private List<DeveloperItem> items;
+        private int page;
+        private int size;
+        private int total;
+    }
+    @lombok.Data
+    private static class DeveloperItem {
+        private Long developer_id;
+        private Long id;
+        private String username;
+        private String nickname;
+        private String description;
+        private String avatar;
+        private String github_username;
+        private int continuous_submission_day_count;
+        private int app_total_count;
     }
 
     @lombok.Data

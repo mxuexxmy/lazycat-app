@@ -47,10 +47,8 @@ public class AppService {
 
     private final AppRepository appRepository;
     private final UserInfoRepository userInfoRepository;
-    private final UserService userService;
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
-    private final GitHubInfoService gitHubInfoService;
     private final SyncService syncService;
     private final CategoryRepository categoryRepository;
 
@@ -433,16 +431,7 @@ public class AppService {
 
                                 // 如果是首次同步，同步相关数据
                                 if (isInitialSync) {
-                                    // 同步用户信息
-                                    if (appV3Item.create_user != null) {
-                                        userService.updateUserInfo(appV3Item.create_user.developer_id);
-                                    }
-
-                                    // 同步 GitHub 信息
-                                    if (appV3Item.create_user != null) {
-                                        gitHubInfoService.publicSyncGitHubInfoForUser(appV3Item.create_user.developer_id);
-                                    }
-
+                                    // 不再同步用户信息和GitHub信息
                                     // 同步评论信息
                                     syncAppComments(app.getPkgId());
 

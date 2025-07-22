@@ -160,6 +160,11 @@ const routes: RouteRecordRaw[] = [
     meta: {
       title: '评论列表'
     }
+  },
+  {
+    path: '/sync-status',
+    name: 'SyncStatus',
+    component: () => import('../views/SyncStatus.vue')
   }
 ]
 
