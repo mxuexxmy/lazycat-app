@@ -2,20 +2,42 @@ server:
   port: 8080
 
 spring:
+  application:
+    name: lazycatapp
+  main:
+    allow-bean-definition-overriding: true
   datasource:
     driver-class-name: org.sqlite.JDBC
     url: jdbc:sqlite:data/lazycatapp.db
   jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: update
     show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=600s
 
 logging:
   level:
-    root: ERROR
-    xyz.mxue.lazycatapp: ERROR
-    org.springframework.web: ERROR
-    okhttp3: ERROR
+    root: error
+    xyz.mxue.lazycatapp: error
+    org.springframework.web: error
+    org.hibernate.SQL: error
+    org.hibernate.type.descriptor.sql.BasicBinder: error
+    org.springframework.web.filter.CommonsRequestLoggingFilter: error
+    org.springframework.web.servlet.DispatcherServlet: error
+    org.springframework.web.client.RestTemplate: error
+    okhttp3: error
   file:
-    name: /var/log/lazycatapp/lazycatapp.log
+    name: logs/lazycatapp-prod.log
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+knife4j:
+  enable: true

@@ -13,6 +13,7 @@ import java.util.Map;
 
 @Repository
 public interface AppRepository extends JpaRepository<App, String> {
+
     Page<App> findByNameContainingOrDescriptionContaining(String name, String description, Pageable pageable);
 
     @Query(value = "SELECT * FROM apps WHERE category LIKE %:category%", nativeQuery = true)

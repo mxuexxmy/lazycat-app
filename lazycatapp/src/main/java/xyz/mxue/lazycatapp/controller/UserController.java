@@ -1,19 +1,23 @@
 package xyz.mxue.lazycatapp.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import xyz.mxue.lazycatapp.entity.CommunityUser;
 import xyz.mxue.lazycatapp.entity.UserInfo;
+import xyz.mxue.lazycatapp.model.vo.UserVO;
 import xyz.mxue.lazycatapp.service.UserService;
 import xyz.mxue.lazycatapp.service.AppService;
-import xyz.mxue.lazycatapp.model.Result;
+import xyz.mxue.lazycatapp.model.R;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.HashMap;
 
+@Tag(name = "用户管理", description = "用户管理")
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -28,6 +32,7 @@ public class UserController {
      * @param userId 用户ID
      * @return 用户社区信息
      */
+    @Operation(summary = "获取用户社区信息", description = "获取用户社区信息")
     @GetMapping("/{userId}/community")
     public ResponseEntity<CommunityUser> getCommunityUserInfo(@PathVariable Long userId) {
         userService.updateUserInfo(userId);
@@ -40,6 +45,7 @@ public class UserController {
      * @param userId 用户ID
      * @return 用户个人信息
      */
+    @Operation(summary = "获取用户个人信息", description = "获取用户个人信息")
     @GetMapping("/{userId}/info")
     public ResponseEntity<UserInfo> getUserInfo(@PathVariable Long userId) {
         userService.updateUserInfo(userId);
@@ -52,13 +58,14 @@ public class UserController {
      * @param userId 用户ID
      * @return 完整的用户信息
      */
+    @Operation(summary = "获取完整的用户信息", description = "获取完整的用户信息")
     @GetMapping("/{userId}")
-    public ResponseEntity<UserResponse> getUser(@PathVariable Long userId) {
+    public ResponseEntity<UserVO> getUser(@PathVariable Long userId) {
         userService.updateUserInfo(userId);
         UserInfo userInfo = userService.getUserInfo(userId);
         CommunityUser communityUser = userService.getCommunityUser(userId);
 
-        UserResponse response = new UserResponse();
+        UserVO response = new UserVO();
         response.setUserInfo(userInfo);
         response.setCommunityUser(communityUser);
 
@@ -70,6 +77,7 @@ public class UserController {
      *
      * @return 所有用户信息列表
      */
+    @Operation(summary = "获取所有用户信息", description = "获取所有用户信息")
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllUsers() {
         List<UserInfo> userInfos = userService.getAllUserInfos();
@@ -101,6 +109,7 @@ public class UserController {
      *
      * @return 更新结果
      */
+    @Operation(summary = "根据应用更新用户信息", description = "根据应用更新用户信息")
     @PostMapping("/update-from-apps")
     public ResponseEntity<Map<String, Object>> updateUsersFromApps() {
         // 获取所有不重复的开发者ID
@@ -113,10 +122,12 @@ public class UserController {
                 "success", true,
                 "message", "已更新 " + creatorIds.size() + " 个用户的信息"
         ));
+
     }
 
+    @Operation(summary = "获取开发者社区信息", description = "获取开发者社区信息")
     @GetMapping("/developers")
-    public Result getDeveloperCommunityInfo() {
+    public R getDeveloperCommunityInfo() {
         try {
             List<UserInfo> userInfos = userService.getAllUserInfos();
             List<CommunityUser> communityUsers = userService.getAllCommunityUsers();
@@ -163,15 +174,10 @@ public class UserController {
                     })
                     .collect(Collectors.toList());
 
-            return Result.success(developers);
+            return R.success(developers);
         } catch (Exception e) {
-            return Result.error("获取开发者社区信息失败: " + e.getMessage());
+            return R.error("获取开发者社区信息失败: " + e.getMessage());
         }
     }
 
-    @lombok.Data
-    private static class UserResponse {
-        private UserInfo userInfo;
-        private CommunityUser communityUser;
-    }
 } 

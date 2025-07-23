@@ -1,5 +1,7 @@
 package xyz.mxue.lazycatapp.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 import java.util.HashMap;
 
+@Tag(name = "GitHub信息管理", description = "GitHub信息管理")
 @Slf4j
 @RestController
 @RequestMapping("/api/github")
@@ -32,6 +35,7 @@ public class GitHubInfoController {
      * @param userId 用户ID
      * @return GitHub 信息
      */
+    @Operation(summary = "获取单个用户的 GitHub 信息", description = "获取单个用户的 GitHub 信息")
     @GetMapping("/info/{userId}")
     public ResponseEntity<?> getGitHubInfo(@PathVariable Long userId) {
         try {
@@ -54,6 +58,7 @@ public class GitHubInfoController {
      * @param userIds 用户ID列表
      * @return 用户ID到GitHub信息的映射
      */
+    @Operation(summary = "批量获取用户的 GitHub 信息", description = "批量获取用户的 GitHub 信息")
     @PostMapping("/info/batch")
     public ResponseEntity<?> getGitHubInfos(@RequestBody List<Long> userIds) {
         try {
@@ -73,6 +78,7 @@ public class GitHubInfoController {
      * @param userId 用户ID
      * @return 同步结果
      */
+    @Operation(summary = "手动触发 GitHub 信息同步", description = "手动触发 GitHub 信息同步")
     @PostMapping("/sync/{userId}")
     public ResponseEntity<?> syncGitHubInfo(@PathVariable Long userId) {
         try {
@@ -95,6 +101,7 @@ public class GitHubInfoController {
      * @param userId 用户ID
      * @return GitHub 成就信息
      */
+    @Operation(summary = "获取用户的 GitHub 成就信息", description = "获取用户的 GitHub 成就信息")
     @GetMapping("/achievements/{userId}")
     public ResponseEntity<?> getGitHubAchievements(@PathVariable Long userId) {
         try {
@@ -123,6 +130,7 @@ public class GitHubInfoController {
      * 获取所有用户的 GitHub 成就信息
      * @return 所有用户的 GitHub 成就信息列表
      */
+    @Operation(summary = "获取所有用户的 GitHub 成就信息", description = "获取所有用户的 GitHub 成就信息")
     @GetMapping("/achievements")
     public ResponseEntity<?> getAllGitHubAchievements() {
         try {

@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface UserInfoRepository extends JpaRepository<UserInfo, Long> {
+
     @Query("SELECT u FROM UserInfo u ORDER BY u.updatedAt DESC")
     List<UserInfo> findActiveUsers(Pageable pageable);
 

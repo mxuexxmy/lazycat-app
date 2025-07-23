@@ -2,25 +2,42 @@ server:
   port: 8080
 
 spring:
+  application:
+    name: lazycatapp
+  main:
+    allow-bean-definition-overriding: true
   datasource:
     driver-class-name: org.sqlite.JDBC
     url: jdbc:sqlite:data/lazycatapp.db
   jpa:
-    show-sql: true
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=600s
 
 logging:
   level:
-    root: DEBUG
-    xyz.mxue.lazycatapp: DEBUG
-    org.springframework.web: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: DEBUG
-    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
-    org.springframework.web.servlet.DispatcherServlet: DEBUG
-    org.springframework.web.client.RestTemplate: DEBUG
-    okhttp3: ERROR
+    root: info
+    xyz.mxue.lazycatapp: info
+    org.springframework.web: info
+    org.hibernate.SQL: info
+    org.hibernate.type.descriptor.sql.BasicBinder: info
+    org.springframework.web.filter.CommonsRequestLoggingFilter: info
+    org.springframework.web.servlet.DispatcherServlet: info
+    org.springframework.web.client.RestTemplate: info
+    okhttp3: info
   file:
     name: logs/lazycatapp-dev.log
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+knife4j:
+  enable: true

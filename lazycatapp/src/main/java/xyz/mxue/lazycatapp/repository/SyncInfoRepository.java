@@ -6,5 +6,7 @@ import xyz.mxue.lazycatapp.entity.SyncInfo;
 import java.util.Optional;
 
 public interface SyncInfoRepository extends JpaRepository<SyncInfo, Long> {
+
     Optional<SyncInfo> findBySyncType(String syncType);
+
 } 

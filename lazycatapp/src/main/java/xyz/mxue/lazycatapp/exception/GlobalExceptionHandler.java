@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import xyz.mxue.lazycatapp.model.ErrorResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -27,15 +28,4 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
-    @Getter
-    private static class ErrorResponse {
-        private int status;
-        private String message;
-
-        public ErrorResponse(int status, String message) {
-            this.status = status;
-            this.message = message;
-        }
-
-    }
 } 
