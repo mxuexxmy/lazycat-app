@@ -11,8 +11,9 @@ import java.util.HashSet;
 
 @Data
 @Entity
-@Table(name = "apps")
+@Table(name = "t_app")
 public class App {
+
     @Id
     private String pkgId;
 

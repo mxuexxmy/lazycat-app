@@ -162,7 +162,7 @@ public class UserService {
      * 同步所有开发者信息（人员信息）
      * 每天凌晨2点自动同步
      */
-    @Scheduled(cron = "0 2 * * * *")
+   // @Scheduled(cron = "0 2 * * * *")
     public void syncAllDevelopers() {
         log.info("开始同步所有开发者信息...");
         int page = 0;

@@ -80,7 +80,7 @@ public class GitHubInfoService {
         private double score;
     }
 
-    @Scheduled(fixedRate = 6 * 60 * 60 * 1000) // 每6小时执行一次
+    //@Scheduled(fixedRate = 6 * 60 * 60 * 1000) // 每6小时执行一次
     public void syncGitHubInfo() {
         if (!syncService.shouldSync(SyncService.SYNC_TYPE_GITHUB)) {
             return;

@@ -41,3 +41,6 @@ logging:
 
 knife4j:
   enable: true
+
+custom:
+  job: false

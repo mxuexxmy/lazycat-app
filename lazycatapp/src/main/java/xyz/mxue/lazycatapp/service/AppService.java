@@ -319,7 +319,7 @@ public class AppService {
                 .collect(Collectors.toList());
     }
 
-    @Scheduled(fixedRate = 1800000) // 每30分钟执行一次
+    //@Scheduled(fixedRate = 1800000) // 每30分钟执行一次
     public void updateApps() {
         if (!syncService.shouldSync(SyncService.SYNC_TYPE_APP)) {
             return;
@@ -678,6 +678,7 @@ public class AppService {
                     return 0;
                 }
 
+                assert response.body() != null;
                 String responseBody = response.body().string();
                 AppListV3Response appListResponse = objectMapper.readValue(responseBody, AppListV3Response.class);
 
@@ -793,7 +794,7 @@ public class AppService {
         }
     }
 
-    @Scheduled(cron = "0 0 */2 * * *") // 每2小时执行一次，从0点开始
+    //@Scheduled(cron = "0 0 */2 * * *") // 每2小时执行一次，从0点开始
     public void syncAllAppScores() {
         if (!syncService.shouldSync(SyncService.SYNC_TYPE_SCORE)) {
             return;
@@ -961,7 +962,7 @@ public class AppService {
         }
     }
 
-    @Scheduled(cron = "0 0 */2 * * *") // 每2小时执行一次，从0点开始
+    //@Scheduled(cron = "0 0 */2 * * *") // 每2小时执行一次，从0点开始
     public void syncAllAppComments() {
         if (!syncService.shouldSync(SyncService.SYNC_TYPE_COMMENT)) {
             return;

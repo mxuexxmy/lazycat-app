@@ -40,7 +40,7 @@ public class CategoryService {
         }
     }
 
-    @Scheduled(fixedRate = 3600000) // 每1小时执行一次
+    // @Scheduled(fixedRate = 3600000) // 每1小时执行一次
     public void syncCategories() {
         if (!syncService.shouldSync(SyncService.SYNC_TYPE_CATEGORY)) {
             return;
