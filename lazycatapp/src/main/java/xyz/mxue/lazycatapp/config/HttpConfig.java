@@ -13,9 +13,4 @@ public class HttpConfig {
         return new OkHttpClient.Builder()
                 .build();
     }
-
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
 } 

@@ -1,7 +1,6 @@
 package xyz.mxue.lazycatapp.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Optional;
-import xyz.mxue.lazycatapp.service.SyncService;
+import xyz.mxue.lazycatapp.sync.SyncService;
 import xyz.mxue.lazycatapp.entity.SyncInfo;
 
 @Tag(name = "应用管理", description = "应用管理")
@@ -58,7 +57,7 @@ public class AppController {
         
         if (appOpt.isPresent()) {
             App app = appOpt.get();
-            app.setCreator(appService.getCreatorNickname(app.getCreatorId()));
+            //app.setCreator(appService.getCreatorNickname(app.getCreatorId()));
             return ResponseEntity.ok(app);
         }
         

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "app_scores")
+@Table(name = "t_app_score")
 public class AppScore {
     @Id
     private String pkgId;

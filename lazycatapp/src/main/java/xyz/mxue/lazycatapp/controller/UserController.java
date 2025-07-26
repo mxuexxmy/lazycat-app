@@ -6,11 +6,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import xyz.mxue.lazycatapp.entity.CommunityUser;
-import xyz.mxue.lazycatapp.entity.UserInfo;
+import xyz.mxue.lazycatapp.entity.User;
 import xyz.mxue.lazycatapp.model.vo.UserVO;
 import xyz.mxue.lazycatapp.service.UserService;
 import xyz.mxue.lazycatapp.service.AppService;
 import xyz.mxue.lazycatapp.model.R;
+import xyz.mxue.lazycatapp.sync.CommunitySyncUserService;
+import xyz.mxue.lazycatapp.sync.UserSyncService;
 
 import java.util.List;
 import java.util.Map;
@@ -24,6 +26,7 @@ import java.util.HashMap;
 public class UserController {
 
     private final UserService userService;
+    private final CommunitySyncUserService communitySyncUserService;
     private final AppService appService;
 
     /**
@@ -35,7 +38,7 @@ public class UserController {
     @Operation(summary = "获取用户社区信息", description = "获取用户社区信息")
     @GetMapping("/{userId}/community")
     public ResponseEntity<CommunityUser> getCommunityUserInfo(@PathVariable Long userId) {
-        userService.updateUserInfo(userId);
+        communitySyncUserService.syncAllCommunityUsers(userId, true);
         return ResponseEntity.ok(userService.getCommunityUser(userId));
     }
 
@@ -47,8 +50,8 @@ public class UserController {
      */
     @Operation(summary = "获取用户个人信息", description = "获取用户个人信息")
     @GetMapping("/{userId}/info")
-    public ResponseEntity<UserInfo> getUserInfo(@PathVariable Long userId) {
-        userService.updateUserInfo(userId);
+    public ResponseEntity<User> getUserInfo(@PathVariable Long userId) {
+        communitySyncUserService.syncAllCommunityUsers(userId, true);
         return ResponseEntity.ok(userService.getUserInfo(userId));
     }
 
@@ -61,8 +64,8 @@ public class UserController {
     @Operation(summary = "获取完整的用户信息", description = "获取完整的用户信息")
     @GetMapping("/{userId}")
     public ResponseEntity<UserVO> getUser(@PathVariable Long userId) {
-        userService.updateUserInfo(userId);
-        UserInfo userInfo = userService.getUserInfo(userId);
+        communitySyncUserService.syncAllCommunityUsers(userId, true);
+        User userInfo = userService.getUserInfo(userId);
         CommunityUser communityUser = userService.getCommunityUser(userId);
 
         UserVO response = new UserVO();
@@ -80,7 +83,7 @@ public class UserController {
     @Operation(summary = "获取所有用户信息", description = "获取所有用户信息")
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllUsers() {
-        List<UserInfo> userInfos = userService.getAllUserInfos();
+        List<User> userInfos = userService.getAllUserInfos();
         List<CommunityUser> communityUsers = userService.getAllCommunityUsers();
 
         // 将用户信息和社区信息合并
@@ -116,7 +119,9 @@ public class UserController {
         List<Long> creatorIds = appService.getDistinctCreatorIds();
 
         // 更新每个开发者的信息
-        creatorIds.forEach(userService::updateUserInfo);
+        creatorIds.forEach( creatorId -> {
+                communitySyncUserService.syncAllCommunityUsers(creatorId, true);
+        });
 
         return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -129,7 +134,7 @@ public class UserController {
     @GetMapping("/developers")
     public R getDeveloperCommunityInfo() {
         try {
-            List<UserInfo> userInfos = userService.getAllUserInfos();
+            List<User> userInfos = userService.getAllUserInfos();
             List<CommunityUser> communityUsers = userService.getAllCommunityUsers();
 
             // 将用户信息和社区信息合并成开发者列表
@@ -145,15 +150,15 @@ public class UserController {
                         // 添加 user_infos 表的所有字段
                         developer.put("id", userInfo.getId());
                         developer.put("username", userInfo.getUsername());
-                        developer.put("isUsernameSet", userInfo.getIsUsernameSet());
+                        //developer.put("isUsernameSet", userInfo.getIsUsernameSet());
                         developer.put("nickname", userInfo.getNickname());
                         developer.put("avatar", userInfo.getAvatar());
                         developer.put("description", userInfo.getDescription());
-                        developer.put("status", userInfo.getStatus());
+                        //developer.put("status", userInfo.getStatus());
                         developer.put("githubUsername", userInfo.getGithubUsername());
-                        developer.put("isCurrentLoginUser", userInfo.getIsCurrentLoginUser());
-                        developer.put("createdAt", userInfo.getCreatedAt());
-                        developer.put("updatedAt", userInfo.getUpdatedAt());
+                        // developer.put("isCurrentLoginUser", userInfo.getIsCurrentLoginUser());
+                        // developer.put("createdAt", userInfo.getCreatedAt());
+                        // developer.put("updatedAt", userInfo.getUpdatedAt());
 
                         // 添加 community_users 表的所有字段
                         developer.put("uid", communityUser.getUid());

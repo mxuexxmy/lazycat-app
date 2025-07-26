@@ -7,8 +7,10 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "github_info")
+@Table(name = "t_github")
 public class GitHubInfo {
+
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

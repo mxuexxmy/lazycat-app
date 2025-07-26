@@ -1,63 +1,87 @@
 package xyz.mxue.lazycatapp.sync;
 
+import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
+import cn.hutool.json.JSONUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.springframework.stereotype.Service;
-import xyz.mxue.lazycatapp.service.SyncService;
+import xyz.mxue.lazycatapp.converter.AppConvert;
+import xyz.mxue.lazycatapp.entity.App;
+import xyz.mxue.lazycatapp.model.response.app.AppInfoApiResponse;
+import xyz.mxue.lazycatapp.model.response.app.AppItemInfo;
+import xyz.mxue.lazycatapp.repository.AppRepository;
+import xyz.mxue.lazycatapp.sync.api.LazyCatInterfaceInfo;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AppSyncService {
 
-    private static final String APP_LIST_URL = "https://appstore.api.lazycat.cloud/api/v3/user/app/list";
-
-    private final OkHttpClient httpClient;
+    private final ObjectMapper objectMapper;
 
     private final SyncService syncService;
+
+    private final AppRepository appRepository;
 
     /**
      * 同步 APP 列表
      */
     public void syncApps() {
-        if (!syncService.shouldSync(SyncService.SYNC_TYPE_APP)) {
+        if (syncService.shouldSync(SyncService.SYNC_TYPE_APP)) {
             return;
         }
         log.info("开始更新应用信息...");
         try {
             // 使用新的v3接口，分页获取所有应用
             int page = 0;
-            int size = 1;
+            int size = 100;
             boolean hasMore = true;
             int totalProcessed = 0;
 
             while (hasMore) {
-                String url = APP_LIST_URL + "?category_ids=0&sort=version_updated_at.desc&page=" + page + "&size=" + size;
-                Request request = new Request.Builder()
-                        .url(url)
-                        .get()
-                        .build();
+                Map<String, Object> queryParams = new HashMap<>();
+                queryParams.put("category_ids", "0");
+                queryParams.put("sort", "version_updated_at.desc");
+                queryParams.put("page", page);
+                queryParams.put("size", size);
 
-                Response response = httpClient.newCall(request).execute();
+                HttpResponse execute = HttpRequest.get(LazyCatInterfaceInfo.APP_LIST_URL)
+                        .header("Accept-language", "zh-CN,zh")//头信息，多个头信息多次调用此方法即可
+                        .form(queryParams)//表单内容
+                        .timeout(20000)//超时，毫秒
+                        .execute();
 
-                if (!response.isSuccessful()) {
-                    String error = "获取应用列表失败: " + response;
-                    log.error(error);
+                if (execute.getStatus() != 200) {
                     return;
                 }
-
-                if (response.body() == null) {
-                    log.error("获取应用列表失败: 响应体为空");
-                    return;
-                }
-                String responseBody = response.body().toString();
 
                 hasMore = false;
-                log.info("---返回应用信息-----");
-                log.info("{}", responseBody);
+
+                log.info("----execute-----");
+                log.info(JSONUtil.toJsonPrettyStr(execute.body()));
+                AppInfoApiResponse appInfoApiResponse = objectMapper.readValue(execute.body(), AppInfoApiResponse.class);
+                log.info("----appInfoApiResponse-----");
+                log.info(JSONUtil.toJsonPrettyStr(appInfoApiResponse));
+                List<AppItemInfo> items = appInfoApiResponse.getItems();
+                for (AppItemInfo item : items) {
+                    App app = AppConvert.convert(item);
+                    appRepository.save(app);
+                }
+                totalProcessed += appInfoApiResponse.getItems().size();
+                page++;
+
+                // 检查是否还有更多数据
+                hasMore = totalProcessed < appInfoApiResponse.getTotal();
+
+                // 添加延迟，避免请求过于频繁
+                Thread.sleep(2000);
+
             }
             log.info("应用信息更新完成，共处理 {} 个应用", totalProcessed);
         } catch (Exception e) {

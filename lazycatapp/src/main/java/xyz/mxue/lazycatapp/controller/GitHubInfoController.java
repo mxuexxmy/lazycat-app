@@ -11,6 +11,7 @@ import xyz.mxue.lazycatapp.service.GitHubInfoService;
 import xyz.mxue.lazycatapp.entity.App;
 import xyz.mxue.lazycatapp.repository.AppRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import xyz.mxue.lazycatapp.sync.GitHubSyncService;
 
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ import java.util.HashMap;
 public class GitHubInfoController {
 
     private final GitHubInfoService githubInfoService;
+    private final GitHubSyncService gitHubSyncService;
     private final AppRepository appRepository;
 
     /**
@@ -82,7 +84,7 @@ public class GitHubInfoController {
     @PostMapping("/sync/{userId}")
     public ResponseEntity<?> syncGitHubInfo(@PathVariable Long userId) {
         try {
-            githubInfoService.syncGitHubInfoForUser(userId);
+            gitHubSyncService.syncGitHubInfoForUser(userId);
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "GitHub 信息同步成功"

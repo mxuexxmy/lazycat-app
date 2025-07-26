@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 
 @Data
 @Entity
-@Table(name = "community_users")
+@Table(name = "t_community_user")
 public class CommunityUser {
 
     @Id

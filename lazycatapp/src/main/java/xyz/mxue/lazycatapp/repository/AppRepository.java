@@ -47,6 +47,4 @@ public interface AppRepository extends JpaRepository<App, String> {
     @Query("SELECT a FROM App a ORDER BY a.downloadCount DESC")
     List<App> findPopularApps(Pageable pageable);
 
-    @Query("SELECT c.name as category, COUNT(a) as count FROM App a JOIN a.categories c GROUP BY c.name")
-    List<Map<String, Object>> getCategoryStats();
 } 

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "app_comments")
+@Table(name = "t_app_comment")
 public class AppComment {
     @Id
     private Long commentId;

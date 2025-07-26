@@ -6,44 +6,79 @@ import xyz.mxue.lazycatapp.converter.StringListConverter;
 
 import java.util.List;
 import java.time.LocalDateTime;
-import java.util.Set;
-import java.util.HashSet;
 
 @Data
 @Entity
 @Table(name = "t_app")
 public class App {
 
+    /**
+     * 应用ID
+     */
     @Id
-    private String pkgId;
+    private Long id;
 
-    @Column(name = "package_name", nullable = false)
+    /**
+     * 应用包名
+     */
     private String packageName;
 
+    /**
+     * 应用名称
+     */
     private String name;
+
+    /**
+     * 应用路径
+     */
     private String pkgPath;
+
+    /**
+     * 应用 hash
+     */
     private String pkgHash;
 
+    /**
+     * 应用描述
+     */
     @Column(length = 4000)
     private String description;
+
+    /**
+     * 应用简称
+     */
     private String brief;
 
-    @Convert(converter = StringListConverter.class)
-    @Column(columnDefinition = "TEXT")
-    private List<String> category;
+    /**
+     * 应用分类
+     */
+    private String kindIds;
 
+    /**
+     * 图标路径
+     */
     private String iconPath;
+
+    /**
+     * 关键字
+     */
     private String keywords;
+
     @Column(nullable = false)
     private String version;
-    private String creator;
+
+    private Long creator;
+
     private Long creatorId;
+
     private String author;
-    private Integer updateId;
-    private Double price;
+
+    private Long updateId;
+
+    private String price;
+
     private String updateContent;
 
-    @Column(name = "update_date")
     private String updateDate;
 
     private Boolean supportPC;
@@ -80,13 +115,6 @@ public class App {
     @Column(name = "tags")
     private String tags;
 
-    @ManyToMany
-    @JoinTable(
-            name = "app_category",
-            joinColumns = @JoinColumn(name = "app_id"),
-            inverseJoinColumns = @JoinColumn(name = "category_id")
-    )
-    private Set<Category> categories = new HashSet<>();
 
     @PrePersist
     protected void onCreate() {
@@ -115,11 +143,4 @@ public class App {
         this.downloadCount = (int) downloads;
     }
 
-    public Set<Category> getCategories() {
-        return categories;
-    }
-
-    public void setCategories(Set<Category> categories) {
-        this.categories = categories;
-    }
 } 

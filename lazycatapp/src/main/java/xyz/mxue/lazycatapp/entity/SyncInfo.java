@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "sync_info")
+@Table(name = "t_sync_info")
 public class SyncInfo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

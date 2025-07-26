@@ -1,4 +1,4 @@
-package xyz.mxue.lazycatapp.service;
+package xyz.mxue.lazycatapp.sync;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -86,27 +86,33 @@ public class SyncService {
         syncInfoRepository.save(syncInfo);
     }
 
+    /**
+     * 检查是否需要同步
+     *
+     * @param syncType 同步类型
+     * @return 是否需要同步
+     */
     public boolean shouldSync(String syncType) {
         SyncInfo syncInfo = getSyncInfo(syncType);
 
         if (!syncInfo.isEnabled()) {
-            return false;
+            return true;
         }
 
         LocalDateTime now = LocalDateTime.now();
 
         // 如果从未同步过，或者未完成初始同步，应该进行同步
         if (syncInfo.getLastSyncTime() == null || !syncInfo.isInitialSyncCompleted()) {
-            return true;
+            return false;
         }
 
         // 如果设置了下次同步时间，检查是否到达
         if (syncInfo.getNextSyncTime() != null) {
-            return now.isAfter(syncInfo.getNextSyncTime());
+            return !now.isAfter(syncInfo.getNextSyncTime());
         }
 
         // 根据同步间隔检查是否应该同步
-        return now.isAfter(syncInfo.getLastSyncTime().plusNanos(syncInfo.getSyncInterval() * 1000000));
+        return !now.isAfter(syncInfo.getLastSyncTime().plusNanos(syncInfo.getSyncInterval() * 1000000));
     }
 
     public void enableSync(String syncType, boolean enabled) {
