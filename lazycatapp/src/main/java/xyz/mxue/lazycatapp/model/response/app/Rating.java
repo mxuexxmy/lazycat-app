@@ -11,7 +11,7 @@ public class Rating {
     /**
      * 分数
      */
-    private int score;
+    private Double score;
 
     /**
      * 评分统计

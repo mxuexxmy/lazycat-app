@@ -316,46 +316,12 @@ public class AppController {
             ));
         }
     }
-    
-    @Operation(summary = "同步所有应用评分", description = "同步所有应用评分")
-    @PostMapping("/scores/sync/all")
-    public ResponseEntity<Map<String, Object>> syncAllAppScores() {
-        try {
-            appService.syncAllAppScores();
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "所有应用评分同步成功"
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "评分同步失败: " + e.getMessage()
-            ));
-        }
-    }
 
     @Operation(summary = "获取五星应用排名", description = "获取五星应用排名")
     @GetMapping("/statistics/apps/five-star")
     public ResponseEntity<List<Map<String, Object>>> getFiveStarAppsRanking(
             @RequestParam(defaultValue = "10") int limit) {
         return ResponseEntity.ok(appService.getFiveStarAppsRanking(limit));
-    }
-
-    @Operation(summary = "修复应用包名", description = "修复应用包名")
-    @PostMapping("/fix-package-names")
-    public ResponseEntity<Map<String, Object>> fixPackageNames() {
-        try {
-            appService.fixPackageNames();
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "应用包名修复完成"
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "修复应用包名失败: " + e.getMessage()
-            ));
-        }
     }
 
     @Operation(summary = "获取所有评论", description = "获取所有评论")

@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "t_app_score")
 public class AppScore {
+
     @Id
     private String pkgId;
 

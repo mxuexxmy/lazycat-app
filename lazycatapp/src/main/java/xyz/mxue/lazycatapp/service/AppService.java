@@ -89,23 +89,12 @@ public interface AppService {
 
     long count();
 
-    long getTotalAppsCount();
-
     long getTotalDownloads();
 
     List<Map<String, Object>> getPopularApps(int limit);
 
     Map<String, Object> getStatisticsOverview();
 
-    /**
-     * 修复现有应用的 packageName 字段
-     */
-    void fixPackageNames();
-
-    void syncAppScore(String pkgId);
-
-    //@Scheduled(cron = "0 0 */2 * * *") // 每2小时执行一次，从0点开始
-    void syncAllAppScores();
 
     List<Map<String, Object>> getFiveStarApps();
 

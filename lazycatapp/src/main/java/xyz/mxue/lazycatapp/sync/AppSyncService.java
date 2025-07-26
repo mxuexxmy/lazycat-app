@@ -3,6 +3,7 @@ package xyz.mxue.lazycatapp.sync;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.json.JSONUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,8 @@ public class AppSyncService {
     private final SyncService syncService;
 
     private final AppRepository appRepository;
+
+    private final AppScoreSyncService appScoreSyncService;
 
     /**
      * 同步 APP 列表
@@ -72,6 +75,9 @@ public class AppSyncService {
                 for (AppItemInfo item : items) {
                     App app = AppConvert.convert(item);
                     appRepository.save(app);
+                    // 同步得分
+                    appScoreSyncService.syncAppScore(item);
+                    // TODO 同步评论
                 }
                 totalProcessed += appInfoApiResponse.getItems().size();
                 page++;
@@ -89,6 +95,41 @@ public class AppSyncService {
             log.error(error, e);
         }
 
+    }
+
+    /**
+     * 查询懒猫应用商店中应用数量
+     *
+     * @return 应用数量
+     */
+    public long getTotalAppsCount() {
+        // 使用新的v3接口，分页获取所有应用
+        int page = 0;
+        int size = 100;
+        Map<String, Object> queryParams = new HashMap<>();
+        queryParams.put("category_ids", "0");
+        queryParams.put("sort", "version_updated_at.desc");
+        queryParams.put("page", page);
+        queryParams.put("size", size);
+        HttpResponse execute = HttpRequest.get(LazyCatInterfaceInfo.APP_LIST_URL)
+                .header("Accept-language", "zh-CN,zh")//头信息，多个头信息多次调用此方法即可
+                .form(queryParams)//表单内容
+                .timeout(20000)//超时，毫秒
+                .execute();
+
+        if (execute.getStatus() != 200) {
+            return 0;
+        }
+        long total = 0;
+        try {
+            AppInfoApiResponse appInfoApiResponse = objectMapper.readValue(execute.body(), AppInfoApiResponse.class);
+            total = appInfoApiResponse.getTotal();
+        } catch (Exception e) {
+            log.info("获取分类时发生错误: {}", e.getMessage());
+        }
+
+
+        return total;
     }
 
 }
