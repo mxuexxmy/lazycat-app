@@ -14,12 +14,15 @@ import java.time.LocalDateTime;
 public class SyncService {
     private final SyncInfoRepository syncInfoRepository;
 
+    // 同步类型
     public static final String SYNC_TYPE_APP = "APP";
     public static final String SYNC_TYPE_CATEGORY = "CATEGORY";
     public static final String SYNC_TYPE_GITHUB = "GITHUB";
     public static final String SYNC_TYPE_SCORE = "SCORE";
     public static final String SYNC_TYPE_COMMENT = "COMMENT";
+    public static final String SYNC_TYPE_USER = "USER";
 
+    // 执行策略
     public static final String SYNC_STRATEGY_FULL = "FULL";
     public static final String SYNC_STRATEGY_INCREMENTAL = "INCREMENTAL";
 
@@ -49,8 +52,12 @@ public class SyncService {
             case SYNC_TYPE_COMMENT:
                 syncInfo.setSyncInterval(7200000L); // 2小时
                 break;
+            case SYNC_TYPE_USER:
+                syncInfo.setSyncInterval(21600000L); // 默认 30 分钟
+                break;
             default:
                 syncInfo.setSyncInterval(3600000L); // 默认1小时
+                break;
         }
 
         syncInfo.setEnabled(true);

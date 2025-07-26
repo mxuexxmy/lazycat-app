@@ -8,7 +8,7 @@ import xyz.mxue.lazycatapp.model.response.github.GitHubUser;
 import xyz.mxue.lazycatapp.model.response.github.GitHubUserResponse;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.OffsetDateTime;
 
 public class GitHubConvert {
 
@@ -20,9 +20,8 @@ public class GitHubConvert {
         githubInfo.setUserId(userId);
         githubInfo.setUid(githubResponse.getUid());
 
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        githubInfo.setCreatedAt(LocalDateTime.parse(githubResponse.getCreatedAt(), timeFormatter));
-        githubInfo.setUpdatedAt(LocalDateTime.parse(githubResponse.getUpdatedAt(), timeFormatter));
+        githubInfo.setCreatedAt(OffsetDateTime.parse(githubResponse.getCreatedAt()).toLocalDateTime());
+        githubInfo.setUpdatedAt(OffsetDateTime.parse(githubResponse.getUpdatedAt()).toLocalDateTime());
 
         // 设置用户信息
         GitHubUser user = githubResponse.getUser();

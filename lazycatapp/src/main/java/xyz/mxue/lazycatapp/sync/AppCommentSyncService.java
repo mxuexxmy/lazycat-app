@@ -2,8 +2,6 @@ package xyz.mxue.lazycatapp.sync;
 
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +13,6 @@ import xyz.mxue.lazycatapp.model.response.comment.CommentApiResponse;
 import xyz.mxue.lazycatapp.repository.AppCommentRepository;
 import xyz.mxue.lazycatapp.sync.api.LazyCatInterfaceInfo;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -66,7 +63,7 @@ public class AppCommentSyncService {
                     }
                 }
             } catch (Exception e) {
-                log.info("");
+                log.info("处理应用评论失败：{}", e.getMessage());
             }
         }
     }

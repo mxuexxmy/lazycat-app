@@ -10,7 +10,7 @@ import lombok.Data;
 @Table(name = "t_categor")
 public class Category {
     @Id
-    private Integer id;
+    private Long id;
     private String name;
     private String icon;
     private String englishName;

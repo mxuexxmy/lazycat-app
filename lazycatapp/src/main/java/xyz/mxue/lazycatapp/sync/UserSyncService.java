@@ -7,6 +7,7 @@ import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.converter.UserConvert;
 import xyz.mxue.lazycatapp.entity.User;
@@ -30,7 +31,15 @@ public class UserSyncService {
 
     private final CommunitySyncUserService communitySyncUserService;
 
+    private final TutorialSyncService tutorialSyncService;
+
+    private final SyncService syncService;
+
+    @Async("taskExecutor")
     public void syncDevelopers() {
+        if (syncService.shouldSync(SyncService.SYNC_TYPE_USER)) {
+            return;
+        }
         try {
             int page = 0;
             int size = 100;
@@ -54,6 +63,7 @@ public class UserSyncService {
                         log.info(JSONUtil.toJsonPrettyStr(entity));
                         User user = UserConvert.convert(entity);
                         userRepository.save(user);
+                        // 更新 GitHub 用户信息
                         if (StrUtil.isNotBlank(entity.getGithubUsername())) {
                             try {
                                 gitHubSyncService.syncGitHubInfoForUser(entity.getId());
@@ -66,6 +76,12 @@ public class UserSyncService {
                             communitySyncUserService.syncAllCommunityUsers(entity.getId(), false);
                         } catch (Exception e) {
                             log.error("同步社区信息失败: {}", e.getMessage());
+                        }
+                        // 更新用户的教程
+                        try {
+                            tutorialSyncService.syncTutorials(entity.getId());
+                        } catch (Exception e) {
+                            log.error("同步教程失败: {}", e.getMessage());
                         }
 
                     });
@@ -85,7 +101,6 @@ public class UserSyncService {
         } catch (Exception e) {
             log.info("获取开发者列表时发生错误: {}", e.getMessage());
         }
-
     }
 
 }

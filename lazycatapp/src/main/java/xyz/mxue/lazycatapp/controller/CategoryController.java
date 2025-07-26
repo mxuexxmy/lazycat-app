@@ -26,7 +26,7 @@ public class CategoryController {
 
     @Operation(summary = "获取分类", description = "获取分类")
     @GetMapping("/{id}")
-    public ResponseEntity<Category> getCategoryById(@PathVariable Integer id) {
+    public ResponseEntity<Category> getCategoryById(@PathVariable Long id) {
         try {
             Category category = categoryService.getCategoryById(id);
             return ResponseEntity.ok(category);

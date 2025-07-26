@@ -32,7 +32,6 @@ logging:
     org.springframework.web.filter.CommonsRequestLoggingFilter: info
     org.springframework.web.servlet.DispatcherServlet: info
     org.springframework.web.client.RestTemplate: info
-    okhttp3: info
   file:
     name: logs/lazycatapp-dev.log
   pattern:

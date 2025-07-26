@@ -4,6 +4,7 @@ import xyz.mxue.lazycatapp.entity.AppComment;
 import xyz.mxue.lazycatapp.model.response.comment.Comment;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class AppCommentConvert {
@@ -19,9 +20,8 @@ public class AppCommentConvert {
         appComment.setContent(comment.getContent());
         appComment.setLiked(comment.getLiked());
         appComment.setLikeCounts(comment.getLikeCounts());
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        appComment.setCreatedAt(LocalDateTime.parse(comment.getCreatedAt(), timeFormatter));
-        appComment.setUpdatedAt(LocalDateTime.parse(comment.getUpdatedAt(), timeFormatter));
+        appComment.setCreatedAt(OffsetDateTime.parse(comment.getCreatedAt()).toLocalDateTime());
+        appComment.setUpdatedAt(OffsetDateTime.parse(comment.getUpdatedAt()).toLocalDateTime());
         return appComment;
     }
 }

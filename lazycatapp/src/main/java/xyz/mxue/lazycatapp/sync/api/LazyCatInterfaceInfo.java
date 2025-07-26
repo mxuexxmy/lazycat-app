@@ -47,5 +47,12 @@ public interface LazyCatInterfaceInfo {
      */
     String COMMENT_LIST_URL = "https://appstore.api.lazycat.cloud/api/comment/list/";
 
+    /**
+     * 动态接口
+     * 例子：https://playground.api.lazycat.cloud/api/user/dynamic/332?size=5&sort=-createdAt&page=1
+     */
+    String DYNAMIC_URL = "https://playground.api.lazycat.cloud/api/user/dynamic/";
+
+
 
 }

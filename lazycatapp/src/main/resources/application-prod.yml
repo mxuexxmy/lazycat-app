@@ -32,7 +32,6 @@ logging:
     org.springframework.web.filter.CommonsRequestLoggingFilter: error
     org.springframework.web.servlet.DispatcherServlet: error
     org.springframework.web.client.RestTemplate: error
-    okhttp3: error
   file:
     name: logs/lazycatapp-prod.log
   pattern:
@@ -43,4 +42,4 @@ knife4j:
   enable: true
 
 custom:
-  job: false
+  job: true

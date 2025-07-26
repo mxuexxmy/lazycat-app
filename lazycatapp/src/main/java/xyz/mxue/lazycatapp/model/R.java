@@ -15,15 +15,15 @@ public class R<T> {
         this.data = data;
     }
 
-    public  static <T> R<T> success(T data) {
+    public static <T> R<T> success(T data) {
         return new R<>(true, "success", data);
     }
 
-    public static<T> R<T> error(String message) {
+    public static <T> R<T> error(String message) {
         return new R<>(false, message, null);
     }
 
-    public static<T> R<T> error(String message, Throwable t) {
+    public static <T> R<T> error(String message, Throwable t) {
         return new R<>(false, message, null);
     }
 } 

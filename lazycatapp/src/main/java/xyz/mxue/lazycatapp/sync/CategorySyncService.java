@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.converter.CategoryConvert;
 import xyz.mxue.lazycatapp.entity.Category;
@@ -37,6 +38,7 @@ public class CategorySyncService {
         }
     }
 
+    @Async("taskExecutor")
     public void syncCategories() {
         if (syncService.shouldSync(SyncService.SYNC_TYPE_CATEGORY)) {
             return;
@@ -61,7 +63,7 @@ public class CategorySyncService {
 
             // 同步英文分类
             List<Category> englishCategories = getCategoriesFromUrl(LazyCatInterfaceInfo.CATEGORY_URL_EN);
-            Map<Integer, Category> englishCategoryMap = new HashMap<>();
+            Map<Long, Category> englishCategoryMap = new HashMap<>();
             if (englishCategories != null) {
                 for (Category category : englishCategories) {
                     englishCategoryMap.put(category.getId(), category);

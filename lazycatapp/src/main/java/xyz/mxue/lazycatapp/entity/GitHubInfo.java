@@ -10,12 +10,10 @@ import java.time.LocalDateTime;
 @Table(name = "t_github")
 public class GitHubInfo {
 
-
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", unique = true)
+    @Column(name = "user_id")
     private Long userId;
 
     @Column(name = "created_at")

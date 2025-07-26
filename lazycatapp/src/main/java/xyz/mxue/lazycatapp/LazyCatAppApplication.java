@@ -3,6 +3,7 @@ package xyz.mxue.lazycatapp;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.io.File;
@@ -13,6 +14,7 @@ import java.io.File;
 @Slf4j
 @SpringBootApplication
 @EnableScheduling
+@EnableAsync
 public class LazyCatAppApplication {
 
     public static void main(String[] args) {

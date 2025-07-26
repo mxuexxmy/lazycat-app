@@ -6,6 +6,7 @@ import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.converter.AppConvert;
 import xyz.mxue.lazycatapp.entity.App;
@@ -36,6 +37,7 @@ public class AppSyncService {
     /**
      * 同步 APP 列表
      */
+    @Async("taskExecutor")
     public void syncApps() {
         if (syncService.shouldSync(SyncService.SYNC_TYPE_APP)) {
             return;
@@ -133,7 +135,6 @@ public class AppSyncService {
         } catch (Exception e) {
             log.info("获取分类时发生错误: {}", e.getMessage());
         }
-
 
         return total;
     }
