@@ -1,23 +1,14 @@
 package xyz.mxue.lazycatapp.service.impl;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.entity.*;
 import xyz.mxue.lazycatapp.repository.*;
 import xyz.mxue.lazycatapp.service.AppService;
-import xyz.mxue.lazycatapp.sync.SyncService;
-import xyz.mxue.lazycatapp.sync.api.LazyCatInterfaceInfo;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -31,43 +22,10 @@ public class AppServiceImpl implements AppService {
 
     private final AppRepository appRepository;
     private final UserRepository userRepository;
-    private final OkHttpClient httpClient;
-    private final ObjectMapper objectMapper;
-    private final SyncService syncService;
 
     private final AppScoreRepository appScoreRepository;
 
     private final AppCommentRepository appCommentRepository;
-
-    @lombok.Data
-    private static class CommentListResponse {
-        private int errorCode;
-        private String message;
-        private AppServiceImpl.CommentListData data;
-        private boolean success;
-    }
-
-    @lombok.Data
-    private static class CommentListData {
-        private List<AppServiceImpl.Comment> list;
-        @JsonProperty("isNext")
-        private boolean isNext;
-    }
-
-    @lombok.Data
-    private static class Comment {
-        private Long commentId;
-        private String appId;
-        private Long userid;
-        private String nickname;
-        private String avatar;
-        private int score;
-        private String content;
-        private boolean liked;
-        private int likeCounts;
-        private String createdAt;
-        private String updatedAt;
-    }
 
     @Override
     public Page<App> findAll(Pageable pageable) {
@@ -92,11 +50,6 @@ public class AppServiceImpl implements AppService {
     @Override
     public List<App> findByCategory(String category) {
         return appRepository.findByCategoryContaining(category);
-    }
-
-    @Override
-    public Page<App> findByCategory(String category, Pageable pageable) {
-        return appRepository.findByCategoryContaining(category, pageable);
     }
 
     @Override
@@ -333,118 +286,6 @@ public class AppServiceImpl implements AppService {
             }
             return result;
         }).filter(map -> !map.isEmpty()).collect(Collectors.toList());
-    }
-
-    @Override
-    public void syncAppComments(String pkgId) {
-        AppScore appScore = appScoreRepository.findById(pkgId).orElse(null);
-        if (appScore == null || appScore.getTotalReviews() == 0) {
-            return;
-        }
-
-        int page = 1;
-        int limit = 500;
-        boolean hasNext = true;
-
-        while (hasNext) {
-            try {
-                Request request = new Request.Builder().url(LazyCatInterfaceInfo.COMMENT_LIST_URL + pkgId + "?page=" + page + "&limit=" + limit).get().build();
-
-                try (Response response = httpClient.newCall(request).execute()) {
-                    if (!response.isSuccessful()) {
-                        log.error("获取应用评论失败: {}", response);
-                        return;
-                    }
-
-                    String responseBody = response.body().string();
-                    AppServiceImpl.CommentListResponse commentResponse = objectMapper.readValue(responseBody, AppServiceImpl.CommentListResponse.class);
-
-                    if (commentResponse.errorCode == 0 && commentResponse.data != null) {
-                        // 保存或更新评论
-                        for (AppServiceImpl.Comment comment : commentResponse.data.list) {
-                            AppComment appComment = appCommentRepository.findById(comment.commentId).orElse(new AppComment());
-                            appComment.setCommentId(comment.commentId);
-                            appComment.setPkgId(comment.appId);
-                            appComment.setUserId(comment.userid);
-                            appComment.setNickname(comment.nickname);
-                            appComment.setAvatar(comment.avatar);
-                            appComment.setScore(comment.score);
-                            appComment.setContent(comment.content);
-                            appComment.setLiked(comment.liked);
-                            appComment.setLikeCounts(comment.likeCounts);
-                            appComment.setCreatedAt(LocalDateTime.parse(comment.createdAt.replace("Z", "")));
-                            appComment.setUpdatedAt(LocalDateTime.parse(comment.updatedAt.replace("Z", "")));
-
-                            appCommentRepository.save(appComment);
-                        }
-
-                        hasNext = commentResponse.data.isNext;
-                        page++;
-
-                        if (!hasNext) {
-                            log.info("成功同步应用 {} 的所有评论信息", pkgId);
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                log.error("同步应用 {} 评论时发生错误", pkgId, e);
-                break;
-            }
-        }
-    }
-
-    @Override
-    //@Scheduled(cron = "0 0 */2 * * *") // 每2小时执行一次，从0点开始
-    public void syncAllAppComments() {
-        if (syncService.shouldSync(SyncService.SYNC_TYPE_COMMENT)) {
-            return;
-        }
-
-        log.info("开始同步应用评论...");
-        try {
-            // 获取所有有评论的应用
-            List<AppScore> scores = appScoreRepository.findAll().stream().filter(score -> score.getTotalReviews() != null && score.getTotalReviews() > 0).collect(Collectors.toList());
-
-            // 更新总数量到 SyncInfo
-            SyncInfo syncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_COMMENT);
-            if (syncInfo != null) {
-                syncInfo.setTotalCount((long) scores.size());
-                syncService.saveSyncInfo(syncInfo);
-            }
-
-            // 获取现有评论信息
-            List<AppComment> existingComments = appCommentRepository.findAll();
-            Map<String, LocalDateTime> lastCommentTimeMap = existingComments.stream().collect(Collectors.groupingBy(AppComment::getPkgId, Collectors.mapping(AppComment::getCreatedAt, Collectors.maxBy(LocalDateTime::compareTo)))).entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().orElse(LocalDateTime.MIN)));
-
-            // 获取需要更新的应用列表
-            List<String> appsToUpdate = scores.stream().map(AppScore::getPkgId).filter(pkgId -> {
-                LocalDateTime lastCommentTime = lastCommentTimeMap.getOrDefault(pkgId, LocalDateTime.MIN);
-                return lastCommentTime.isBefore(LocalDateTime.now().minusHours(24));
-            }).collect(Collectors.toList());
-
-            if (appsToUpdate.isEmpty()) {
-                log.info("没有需要更新的应用评论");
-                return;
-            }
-
-            log.info("需要更新 {} 个应用的评论", appsToUpdate.size());
-
-            for (String pkgId : appsToUpdate) {
-                try {
-                    syncAppComments(pkgId);
-                    Thread.sleep(5000); // 添加5秒延迟，避免请求过于频繁
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
-            log.info("应用评论同步完成");
-            syncService.updateSyncInfo(SyncService.SYNC_TYPE_COMMENT, true, null);
-        } catch (Exception e) {
-            String error = "同步应用评论时发生错误: " + e.getMessage();
-            log.error(error, e);
-            syncService.updateSyncInfo(SyncService.SYNC_TYPE_COMMENT, false, error);
-        }
     }
 
     @Override

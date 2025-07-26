@@ -1,10 +1,8 @@
 package xyz.mxue.lazycatapp.service;
 
 import xyz.mxue.lazycatapp.entity.App;
-import xyz.mxue.lazycatapp.repository.AppRepository;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public interface RecommendationService {
 

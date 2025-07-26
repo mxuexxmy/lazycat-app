@@ -32,6 +32,8 @@ public class AppSyncService {
 
     private final AppScoreSyncService appScoreSyncService;
 
+    private final AppCommentSyncService appCommentSyncService;
+
     /**
      * 同步 APP 列表
      */
@@ -77,7 +79,8 @@ public class AppSyncService {
                     appRepository.save(app);
                     // 同步得分
                     appScoreSyncService.syncAppScore(item);
-                    // TODO 同步评论
+                    // 同步评论
+                    appCommentSyncService.syncAppComments(item.getPackageName());
                 }
                 totalProcessed += appInfoApiResponse.getItems().size();
                 page++;

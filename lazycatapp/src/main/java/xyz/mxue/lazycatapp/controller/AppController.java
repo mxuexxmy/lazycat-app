@@ -283,40 +283,6 @@ public class AppController {
         return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "同步应用评论", description = "同步应用评论")
-    @PostMapping("/comments/sync/{pkgId}")
-    public ResponseEntity<Map<String, Object>> syncAppComments(@PathVariable String pkgId) {
-        try {
-            appService.syncAppComments(pkgId);
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "评论同步成功"
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "评论同步失败: " + e.getMessage()
-            ));
-        }
-    }
-
-    @Operation(summary = "同步所有应用评论", description = "同步所有应用评论")
-    @PostMapping("/comments/sync/all")
-    public ResponseEntity<Map<String, Object>> syncAllAppComments() {
-        try {
-            appService.syncAllAppComments();
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "所有应用评论同步成功"
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "评论同步失败: " + e.getMessage()
-            ));
-        }
-    }
-
     @Operation(summary = "获取五星应用排名", description = "获取五星应用排名")
     @GetMapping("/statistics/apps/five-star")
     public ResponseEntity<List<Map<String, Object>>> getFiveStarAppsRanking(

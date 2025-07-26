@@ -10,6 +10,7 @@ import xyz.mxue.lazycatapp.entity.User;
 public class UserVO {
 
     private User userInfo;
+
     private CommunityUser communityUser;
 
 }
