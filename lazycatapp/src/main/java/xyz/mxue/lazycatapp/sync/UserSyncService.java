@@ -80,9 +80,7 @@ public class UserSyncService {
                 } else {
                     hasMore = false;
                 }
-
             }
-
 
         } catch (Exception e) {
             log.info("获取开发者列表时发生错误: {}", e.getMessage());

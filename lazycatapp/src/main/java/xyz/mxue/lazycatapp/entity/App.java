@@ -100,6 +100,16 @@ public class App {
     private String source;
     private String osDependence;
 
+    /**
+     * 应用创建时间
+     */
+    private LocalDateTime appCreateTime;
+
+    /**
+     * 应用更新时间
+     */
+    private LocalDateTime appUpdateTime;
+
     @Column(name = "last_updated")
     private String lastUpdated;
 

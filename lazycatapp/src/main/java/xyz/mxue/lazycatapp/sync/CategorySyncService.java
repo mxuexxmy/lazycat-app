@@ -1,5 +1,6 @@
 package xyz.mxue.lazycatapp.sync;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,16 +8,16 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import xyz.mxue.lazycatapp.converter.CategoryConvert;
 import xyz.mxue.lazycatapp.entity.Category;
 import xyz.mxue.lazycatapp.entity.SyncInfo;
-import xyz.mxue.lazycatapp.model.response.app.AppInfoApiResponse;
 import xyz.mxue.lazycatapp.repository.CategoryRepository;
 import xyz.mxue.lazycatapp.sync.api.LazyCatInterfaceInfo;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -36,7 +37,6 @@ public class CategorySyncService {
         }
     }
 
-    // @Scheduled(fixedRate = 3600000) // 每1小时执行一次
     public void syncCategories() {
         if (syncService.shouldSync(SyncService.SYNC_TYPE_CATEGORY)) {
             return;
@@ -45,8 +45,8 @@ public class CategorySyncService {
         log.info("开始同步分类信息...");
         try {
             // 同步中文分类
-            Category[] chineseCategories = getCategoriesFromUrl(LazyCatInterfaceInfo.CATEGORY_URL_ZH);
-            if (chineseCategories == null || chineseCategories.length == 0) {
+            List<Category> chineseCategories = getCategoriesFromUrl(LazyCatInterfaceInfo.CATEGORY_URL_ZH);
+            if (CollectionUtil.isEmpty(chineseCategories)) {
                 log.info("没有需要更新的分类");
                 syncService.updateSyncInfo(SyncService.SYNC_TYPE_CATEGORY, true, null);
                 return;
@@ -55,17 +55,12 @@ public class CategorySyncService {
             // 更新总数量到 SyncInfo
             SyncInfo syncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_CATEGORY);
             if (syncInfo != null) {
-                syncInfo.setTotalCount((long) chineseCategories.length);
+                syncInfo.setTotalCount((long) chineseCategories.size());
                 syncService.saveSyncInfo(syncInfo);
             }
 
-            // 获取现有分类
-            List<Category> existingCategories = categoryRepository.findAll();
-            Map<Integer, Category> existingCategoryMap = existingCategories.stream()
-                    .collect(Collectors.toMap(Category::getId, category -> category));
-
             // 同步英文分类
-            Category[] englishCategories = getCategoriesFromUrl(LazyCatInterfaceInfo.CATEGORY_URL_EN);
+            List<Category> englishCategories = getCategoriesFromUrl(LazyCatInterfaceInfo.CATEGORY_URL_EN);
             Map<Integer, Category> englishCategoryMap = new HashMap<>();
             if (englishCategories != null) {
                 for (Category category : englishCategories) {
@@ -74,30 +69,12 @@ public class CategorySyncService {
             }
 
             // 合并中英文分类信息
+            List<Category> mergedCategories = new ArrayList<>();
             for (Category chineseCategory : chineseCategories) {
-                Integer id = chineseCategory.getId();
-                Category englishCategory = englishCategoryMap.get(id);
-
-                Category existingCategory = existingCategoryMap.get(id);
-                Category categoryToSave = existingCategory != null ? existingCategory : new Category();
-
-                // 设置基本信息
-                categoryToSave.setId(id);
-                categoryToSave.setName(chineseCategory.getName()); // 中文名称
-                categoryToSave.setIcon(chineseCategory.getIcon());
-
-                // 设置英文名称
-                if (englishCategory != null) {
-                    categoryToSave.setEnglishName(englishCategory.getName());
-                }
-
-                categoryRepository.save(categoryToSave);
-                log.info("同步分类: {} (中文: {}, 英文: {})",
-                        id,
-                        chineseCategory.getName(),
-                        englishCategory != null ? englishCategory.getName() : "N/A");
+                Category saveCategory = CategoryConvert.convert(chineseCategory, englishCategoryMap.get(chineseCategory.getId()));
+                mergedCategories.add(saveCategory);
             }
-
+            categoryRepository.saveAll(mergedCategories);
             log.info("分类信息同步完成");
             syncService.updateSyncInfo(SyncService.SYNC_TYPE_CATEGORY, true, null);
         } catch (Exception e) {
@@ -107,11 +84,11 @@ public class CategorySyncService {
         }
     }
 
-    private Category[] getCategoriesFromUrl(String url) {
+    private List<Category> getCategoriesFromUrl(String url) {
         try {
             HttpResponse execute = HttpRequest.get(url).execute();
             if (execute.getStatus() == 200) {
-                return objectMapper.readValue(execute.body(), Category[].class);
+                return objectMapper.readValue(execute.body(), objectMapper.getTypeFactory().constructCollectionType(List.class, Category.class));
             } else {
                 String error = "获取分类失败: " + execute.body();
                 log.error(error);
@@ -131,9 +108,9 @@ public class CategorySyncService {
      */
     public long getTotalAppsCount() {
         long total = 0;
-        Category[] chineseCategories = getCategoriesFromUrl(LazyCatInterfaceInfo.CATEGORY_URL_ZH);
+        List<Category> chineseCategories = getCategoriesFromUrl(LazyCatInterfaceInfo.CATEGORY_URL_ZH);
         if (chineseCategories != null) {
-            total = chineseCategories.length;
+            total = chineseCategories.size();
         }
         return total;
     }

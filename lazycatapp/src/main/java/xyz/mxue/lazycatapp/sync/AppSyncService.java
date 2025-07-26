@@ -3,7 +3,6 @@ package xyz.mxue.lazycatapp.sync;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.json.JSONUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +49,7 @@ public class AppSyncService {
             int totalProcessed = 0;
 
             while (hasMore) {
+
                 Map<String, Object> queryParams = new HashMap<>();
                 queryParams.put("category_ids", "0");
                 queryParams.put("sort", "version_updated_at.desc");
@@ -65,8 +65,6 @@ public class AppSyncService {
                 if (execute.getStatus() != 200) {
                     return;
                 }
-
-                hasMore = false;
 
                 log.info("----execute-----");
                 log.info(JSONUtil.toJsonPrettyStr(execute.body()));
@@ -113,7 +111,7 @@ public class AppSyncService {
     public long getTotalAppsCount() {
         // 使用新的v3接口，分页获取所有应用
         int page = 0;
-        int size = 100;
+        int size = 1;
         Map<String, Object> queryParams = new HashMap<>();
         queryParams.put("category_ids", "0");
         queryParams.put("sort", "version_updated_at.desc");

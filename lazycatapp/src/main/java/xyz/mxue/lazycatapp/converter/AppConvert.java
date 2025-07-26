@@ -3,6 +3,9 @@ package xyz.mxue.lazycatapp.converter;
 import xyz.mxue.lazycatapp.entity.App;
 import xyz.mxue.lazycatapp.model.response.app.AppItemInfo;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 public class AppConvert {
 
     public static App convert(AppItemInfo appItemInfo) {
@@ -26,6 +29,11 @@ public class AppConvert {
         app.setPrice("0");
         app.setSource(appItemInfo.getInformation().getSource());
         app.setDownloadCount(appItemInfo.getCount().getDownloads());
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        // 应用创建时间
+        app.setAppCreateTime(LocalDateTime.parse(appItemInfo.getCreatedAt(), timeFormatter));
+        // 应用更新时间
+        app.setAppUpdateTime(LocalDateTime.parse(appItemInfo.getUpdatedAt(), timeFormatter));
 
         return app;
     }

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import xyz.mxue.lazycatapp.converter.AppCommentConvert;
 import xyz.mxue.lazycatapp.entity.AppComment;
 import xyz.mxue.lazycatapp.model.response.comment.Comment;
 import xyz.mxue.lazycatapp.model.response.comment.CommentApiResponse;
@@ -52,19 +53,7 @@ public class AppCommentSyncService {
                 if (commentResponse.getErrorCode() == 0 && commentResponse.getData() != null) {
                     // 保存或更新评论
                     for (Comment comment : commentResponse.getData().getList()) {
-                        AppComment appComment = appCommentRepository.findById(comment.getCommentId()).orElse(new AppComment());
-                        appComment.setCommentId(comment.getCommentId());
-                        appComment.setPkgId(comment.getAppId());
-                        appComment.setUserId(comment.getUserid());
-                        appComment.setNickname(comment.getNickname());
-                        appComment.setAvatar(comment.getAvatar());
-                        appComment.setScore(comment.getScore());
-                        appComment.setContent(comment.getContent());
-                        appComment.setLiked(comment.getLiked());
-                        appComment.setLikeCounts(comment.getLikeCounts());
-                        appComment.setCreatedAt(LocalDateTime.parse(comment.getCreatedAt().replace("Z", "")));
-                        appComment.setUpdatedAt(LocalDateTime.parse(comment.getUpdatedAt().replace("Z", "")));
-
+                        AppComment appComment = AppCommentConvert.convert(comment);
                         appCommentRepository.save(appComment);
                     }
 
