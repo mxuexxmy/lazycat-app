@@ -15,7 +15,7 @@ public class AppConvert {
         app.setPkgHash(appItemInfo.getVersion().getPkgHash());
         app.setDescription(appItemInfo.getInformation().getDescription());
         app.setBrief(appItemInfo.getInformation().getBrief());
-        app.setKindIds(app.getKindIds());
+        app.setKindIds(appItemInfo.getKindIds());
         app.setIconPath(appItemInfo.getVersion().getIconPath());
         app.setKeywords(appItemInfo.getInformation().getKeywords());
         app.setVersion(appItemInfo.getVersion().getName());
@@ -25,6 +25,7 @@ public class AppConvert {
         app.setAuthor(appItemInfo.getInformation().getSourceAuthor());
         app.setPrice("0");
         app.setSource(appItemInfo.getInformation().getSource());
+        app.setDownloadCount(appItemInfo.getCount().getDownloads());
 
         return app;
     }

@@ -1,7 +1,9 @@
 package xyz.mxue.lazycatapp.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -91,34 +93,36 @@ public class AppServiceImpl implements AppService {
 
     @Override
     public List<Map<String, Object>> getDeveloperRanking() {
-        List<Long> creatorIds = appRepository.findDistinctCreatorIds();
+        List<User> userList = userRepository.findAll();
 
-        return creatorIds.stream().map(creatorId -> {
-            User userInfo = userRepository.findById(creatorId).orElse(new User());
-
-            List<App> apps = appRepository.findByCreatorId(creatorId);
-
-            // 按下载量排序并取前三
-            List<Map<String, Object>> topApps = apps.stream().sorted((a, b) -> {
-                int aCount = a.getDownloadCount() != null ? a.getDownloadCount() : 0;
-                int bCount = b.getDownloadCount() != null ? b.getDownloadCount() : 0;
-                return Integer.compare(bCount, aCount);
-            }).limit(3).<Map<String, Object>>map(app -> {
-                Map<String, Object> appMap = new HashMap<>();
-                appMap.put("pkgId", app.getPackageName());
-                appMap.put("name", app.getName());
-                appMap.put("updateDate", app.getUpdateDate() != null ? app.getUpdateDate() : "");
-                return appMap;
-            }).collect(Collectors.toList());
-
-            int totalDownloads = apps.stream().mapToInt(app -> app.getDownloadCount() != null ? app.getDownloadCount() : 0).sum();
-
-            String lastUpdateDate = apps.stream().map(App::getUpdateDate).max(String::compareTo).orElse("");
-
+        return userList.stream().map(user -> {
+            List<App> apps = appRepository.findByCreatorId(user.getId());
             Map<String, Object> result = new HashMap<>();
-            result.put("id", creatorId);
-            result.put("nickName", userInfo.getNickname() != null ? userInfo.getNickname() : "未知开发者");
-            result.put("avatar", userInfo.getAvatar() != null ? userInfo.getAvatar() : "");
+            int totalDownloads = 0;
+            String lastUpdateDate = "";
+            List<Map<String, Object>> topApps = new ArrayList<>();
+            if (CollectionUtil.isEmpty(apps)) {
+                // 按下载量排序并取前三
+                topApps = apps.stream().sorted((a, b) -> {
+                    int aCount = a.getDownloadCount() != null ? a.getDownloadCount() : 0;
+                    int bCount = b.getDownloadCount() != null ? b.getDownloadCount() : 0;
+                    return Integer.compare(bCount, aCount);
+                }).limit(3).map(app -> {
+                    Map<String, Object> appMap = new HashMap<>();
+                    appMap.put("pkgId", app.getPackageName());
+                    appMap.put("name", app.getName());
+                    appMap.put("updateDate", app.getUpdateDate() != null ? app.getUpdateDate() : "");
+                    return appMap;
+                }).collect(Collectors.toList());
+
+                totalDownloads = apps.stream().mapToInt(app -> app.getDownloadCount() != null ? app.getDownloadCount() : 0).sum();
+
+                lastUpdateDate = apps.stream().map(App::getUpdateDate).max(String::compareTo).orElse("");
+            }
+
+            result.put("id", user.getId());
+            result.put("nickName", user.getNickname() != null ? user.getNickname() : "未知开发者");
+            result.put("avatar", user.getAvatar() != null ? user.getAvatar() : "");
             result.put("appCount", apps.size());
             result.put("totalDownloads", totalDownloads);
             result.put("apps", topApps);
@@ -307,7 +311,10 @@ public class AppServiceImpl implements AppService {
                 }).limit(limit).map(score -> {
                     Map<String, Object> appMap = new HashMap<>();
                     // 获取应用信息
-                    App app = appRepository.findById(score.getPkgId()).orElse(null);
+                    App queryApp = new App();
+                    queryApp.setPackageName(score.getPkgId());
+                    Example<App> example = Example.of(queryApp);
+                    App app = appRepository.findOne(example).orElse(null);
                     if (app != null) {
                         appMap.put("pkgId", app.getPackageName());
                         appMap.put("name", app.getName());
@@ -316,7 +323,6 @@ public class AppServiceImpl implements AppService {
                         appMap.put("downloadCount", app.getDownloadCount());
                         appMap.put("score", score.getScore());
                         appMap.put("totalReviews", score.getTotalReviews());
-                        //  appMap.put("category", app.getCategory());
                         appMap.put("creator", app.getCreator());
                     }
                     return appMap;
@@ -328,35 +334,6 @@ public class AppServiceImpl implements AppService {
         AppComment comment = appCommentRepository.findById(commentId).orElseThrow(() -> new RuntimeException("Comment not found"));
         comment.setLikeCounts(comment.getLikeCounts() + 1);
         appCommentRepository.save(comment);
-    }
-
-    @Override
-    public List<Map<String, Object>> getAllComments() {
-        List<AppComment> comments = appCommentRepository.findAll();
-        return comments.stream().map(comment -> {
-            Map<String, Object> commentMap = new HashMap<>();
-            commentMap.put("commentId", comment.getCommentId());
-            commentMap.put("pkgId", comment.getPkgId());
-            commentMap.put("userId", comment.getUserId());
-            commentMap.put("nickname", comment.getNickname());
-            commentMap.put("avatar", comment.getAvatar());
-            commentMap.put("score", comment.getScore());
-            commentMap.put("content", comment.getContent());
-            commentMap.put("liked", comment.getLiked());
-            commentMap.put("likeCounts", comment.getLikeCounts());
-            commentMap.put("createdAt", comment.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-            commentMap.put("updatedAt", comment.getUpdatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-
-            // 获取应用信息
-            App app = appRepository.findById(comment.getPkgId()).orElse(null);
-            if (app != null) {
-                commentMap.put("appName", app.getName());
-                commentMap.put("appIcon", app.getIconPath());
-                commentMap.put("brief", app.getBrief());
-            }
-
-            return commentMap;
-        }).collect(Collectors.toList());
     }
 
     /**

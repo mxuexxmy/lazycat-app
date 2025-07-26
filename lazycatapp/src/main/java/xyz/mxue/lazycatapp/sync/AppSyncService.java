@@ -81,6 +81,8 @@ public class AppSyncService {
                     appScoreSyncService.syncAppScore(item);
                     // 同步评论
                     appCommentSyncService.syncAppComments(item.getPackageName());
+                    // 更新同步数量
+
                 }
                 totalProcessed += appInfoApiResponse.getItems().size();
                 page++;
@@ -92,7 +94,10 @@ public class AppSyncService {
                 Thread.sleep(2000);
 
             }
+            log.info("分类信息同步完成");
+            syncService.updateSyncInfo(SyncService.SYNC_TYPE_APP, true, null);
             log.info("应用信息更新完成，共处理 {} 个应用", totalProcessed);
+            syncService.updateTotalCount(SyncService.SYNC_TYPE_APP, totalProcessed);
         } catch (Exception e) {
             String error = "更新应用信息时发生错误: " + e.getMessage();
             log.error(error, e);

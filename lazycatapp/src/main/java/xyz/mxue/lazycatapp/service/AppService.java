@@ -78,8 +78,6 @@ public interface AppService {
 
     void likeComment(Long commentId);
 
-    List<Map<String, Object>> getAllComments();
-
     /**
      * 根据 creatorId 查询用户昵称
      *

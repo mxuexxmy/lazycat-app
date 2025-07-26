@@ -18,9 +18,8 @@ public interface GitHubInfoService {
     /**
      * 获取多个用户的 GitHub 信息
      *
-     * @param userIds 用户ID列表
      * @return 用户ID到GitHub信息的映射
      */
-    Map<Long, GitHubInfo> getGitHubInfos(List<Long> userIds);
+    Map<Long, GitHubInfo> getGitHubInfos();
 
 }

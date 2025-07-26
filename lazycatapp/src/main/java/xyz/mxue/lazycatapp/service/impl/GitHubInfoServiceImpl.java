@@ -54,17 +54,14 @@ public class GitHubInfoServiceImpl implements GitHubInfoService {
     /**
      * 获取多个用户的 GitHub 信息
      *
-     * @param userIds 用户ID列表
      * @return 用户ID到GitHub信息的映射
      */
     @Override
-    public Map<Long, GitHubInfo> getGitHubInfos(List<Long> userIds) {
+    public Map<Long, GitHubInfo> getGitHubInfos() {
         Map<Long, GitHubInfo> result = new HashMap<>();
-        for (Long userId : userIds) {
-            GitHubInfo info = getGitHubInfo(userId);
-            if (info != null) {
-                result.put(userId, info);
-            }
+        List<GitHubInfo> gitHubInfoList = githubInfoRepository.findAll();
+        for (GitHubInfo gitHubInfo : gitHubInfoList) {
+            result.put(gitHubInfo.getUid(), gitHubInfo);
         }
         return result;
     }

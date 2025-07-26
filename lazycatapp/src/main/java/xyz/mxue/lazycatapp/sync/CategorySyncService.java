@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.entity.Category;
 import xyz.mxue.lazycatapp.entity.SyncInfo;
+import xyz.mxue.lazycatapp.model.response.app.AppInfoApiResponse;
 import xyz.mxue.lazycatapp.repository.CategoryRepository;
 import xyz.mxue.lazycatapp.sync.api.LazyCatInterfaceInfo;
 
@@ -121,6 +122,20 @@ public class CategorySyncService {
             log.error(error, e);
             throw new RuntimeException(error);
         }
+    }
+
+    /**
+     * 查询懒猫应用商店中应用数量
+     *
+     * @return 应用数量
+     */
+    public long getTotalAppsCount() {
+        long total = 0;
+        Category[] chineseCategories = getCategoriesFromUrl(LazyCatInterfaceInfo.CATEGORY_URL_ZH);
+        if (chineseCategories != null) {
+            total = chineseCategories.length;
+        }
+        return total;
     }
 
 }

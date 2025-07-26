@@ -18,12 +18,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Optional;
+
+import xyz.mxue.lazycatapp.sync.AppSyncService;
+import xyz.mxue.lazycatapp.sync.CategorySyncService;
 import xyz.mxue.lazycatapp.sync.SyncService;
 import xyz.mxue.lazycatapp.entity.SyncInfo;
 
 @Tag(name = "应用管理", description = "应用管理")
 @RestController
-@RequestMapping("/api/apps")
+@RequestMapping("/api/app")
 @RequiredArgsConstructor
 public class AppController {
 
@@ -31,6 +34,8 @@ public class AppController {
     private final CategoryService categoryService;
     private final UserService userService;
     private final SyncService syncService;
+    private final AppSyncService appSyncService;
+    private final CategorySyncService categorySyncService;
 
     @Operation(summary = "获取应用", description = "获取应用")
     @GetMapping
@@ -90,14 +95,7 @@ public class AppController {
 
         // 先查询分类信息
         try {
-            Category category = categoryService.getCategoryById(categoryId);
-            // 先尝试用中文名称查询
-            List<App> apps = appService.findByCategory(category.getName());
-            if (apps.isEmpty() && category.getEnglishName() != null) {
-                // 如果中文名称查询不到结果，且存在英文名称，则尝试用英文名称查询
-                apps = appService.findByCategory(category.getEnglishName());
-            }
-
+            List<App> apps = appService.findByCategory(categoryId.toString());
             return ResponseEntity.ok(apps);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
@@ -196,9 +194,6 @@ public class AppController {
         SyncInfo appSyncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_APP);
         SyncInfo categorySyncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_CATEGORY);
 
-        System.out.println("appSyncInfo: " + appSyncInfo);
-        System.out.println("categorySyncInfo: " + categorySyncInfo);
-
         // 计算是否初始同步已完成
         boolean isInitialSyncComplete = (appSyncInfo != null && appSyncInfo.isInitialSyncCompleted()) &&
                                       (categorySyncInfo != null && categorySyncInfo.isInitialSyncCompleted());
@@ -210,10 +205,8 @@ public class AppController {
         long categoryCount = categoryService.count();
 
         // 安全地获取 totalCount，如果为 null 则使用 0
-        Long totalApps = appSyncInfo != null && appSyncInfo.getTotalCount() != null ? 
-            appSyncInfo.getTotalCount() : 0L;
-        Long totalCategories = categorySyncInfo != null && categorySyncInfo.getTotalCount() != null ? 
-            categorySyncInfo.getTotalCount() : 0L;
+        Long totalApps =  appSyncService.getTotalAppsCount();
+        Long totalCategories = categorySyncService.getTotalAppsCount();
 
         status.put("appCount", appCount);
         status.put("categoryCount", categoryCount);
@@ -232,7 +225,7 @@ public class AppController {
         long totalApps = appService.count();
 
         // 获取开发者总数
-        long totalDevelopers = appService.getDistinctCreatorIds().size();
+        long totalDevelopers = userService.count();
 
         statistics.put("totalApps", totalApps);
         statistics.put("totalDevelopers", totalDevelopers);
@@ -284,15 +277,9 @@ public class AppController {
     }
 
     @Operation(summary = "获取五星应用排名", description = "获取五星应用排名")
-    @GetMapping("/statistics/apps/five-star")
+    @GetMapping("/statistics/app/five-star")
     public ResponseEntity<List<Map<String, Object>>> getFiveStarAppsRanking(
             @RequestParam(defaultValue = "10") int limit) {
         return ResponseEntity.ok(appService.getFiveStarAppsRanking(limit));
-    }
-
-    @Operation(summary = "获取所有评论", description = "获取所有评论")
-    @GetMapping("/comments/all")
-    public List<Map<String, Object>> getAllComments() {
-        return appService.getAllComments();
     }
 }

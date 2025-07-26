@@ -50,7 +50,7 @@ public class App {
     private String brief;
 
     /**
-     * 应用分类
+     * 应用分类，空的指的是移植应用，1指的是原创应用，2指的是官方应用
      */
     private String kindIds;
 

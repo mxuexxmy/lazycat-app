@@ -30,7 +30,6 @@ public class GitHubInfoController {
 
     private final GitHubInfoService githubInfoService;
     private final GitHubSyncService gitHubSyncService;
-    private final AppRepository appRepository;
 
     /**
      * 获取单个用户的 GitHub 信息
@@ -51,26 +50,6 @@ public class GitHubInfoController {
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
                 "message", "获取 GitHub 信息失败: " + e.getMessage()
-            ));
-        }
-    }
-
-    /**
-     * 批量获取用户的 GitHub 信息
-     * @param userIds 用户ID列表
-     * @return 用户ID到GitHub信息的映射
-     */
-    @Operation(summary = "批量获取用户的 GitHub 信息", description = "批量获取用户的 GitHub 信息")
-    @PostMapping("/info/batch")
-    public ResponseEntity<?> getGitHubInfos(@RequestBody List<Long> userIds) {
-        try {
-            Map<Long, GitHubInfo> infos = githubInfoService.getGitHubInfos(userIds);
-            return ResponseEntity.ok(infos);
-        } catch (Exception e) {
-            log.error("批量获取 GitHub 信息失败: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "批量获取 GitHub 信息失败: " + e.getMessage()
             ));
         }
     }
@@ -136,13 +115,8 @@ public class GitHubInfoController {
     @GetMapping("/achievements")
     public ResponseEntity<?> getAllGitHubAchievements() {
         try {
-            List<App> apps = appRepository.findAll();
-            Set<Long> userIds = apps.stream()
-                    .map(App::getCreatorId)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toSet());
 
-            Map<Long, GitHubInfo> infos = githubInfoService.getGitHubInfos(new ArrayList<>(userIds));
+            Map<Long, GitHubInfo> infos = githubInfoService.getGitHubInfos();
             
             List<Map<String, Object>> achievements = infos.entrySet().stream()
                     .map(entry -> {

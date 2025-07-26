@@ -58,6 +58,12 @@ public class SyncService {
         return syncInfoRepository.save(syncInfo);
     }
 
+    public void updateTotalCount(String syncType, long totalCount) {
+        SyncInfo syncInfo = getSyncInfo(syncType);
+        syncInfo.setTotalCount(totalCount);
+        syncInfoRepository.save(syncInfo);
+    }
+
     public void updateSyncInfo(String syncType, boolean success, String error) {
         SyncInfo syncInfo = getSyncInfo(syncType);
 
