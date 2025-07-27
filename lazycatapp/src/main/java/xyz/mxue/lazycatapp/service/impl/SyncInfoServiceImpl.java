@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.entity.SyncInfo;
 import xyz.mxue.lazycatapp.enums.SyncStatusEnum;
+import xyz.mxue.lazycatapp.enums.SyncStrategyEnum;
 import xyz.mxue.lazycatapp.enums.SyncTypeEnum;
 import xyz.mxue.lazycatapp.model.vo.SyncDataSourceVO;
 import xyz.mxue.lazycatapp.model.vo.SyncInfoVO;
@@ -17,8 +18,6 @@ import xyz.mxue.lazycatapp.sync.UserSyncService;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static xyz.mxue.lazycatapp.sync.SyncService.*;
 
 @Slf4j
 @Service
@@ -73,6 +72,7 @@ public class SyncInfoServiceImpl implements SyncInfoService {
                 vo.setTotalCount(entity.getTotalCount());
                 vo.setSyncTypeName(SyncTypeEnum.getNameByCode(entity.getSyncType()));
                 vo.setInitialSyncCompletedName(SyncStatusEnum.getNameByCode(entity.isInitialSyncCompleted() ? 1 : 0));
+                vo.setSyncStrategyName(SyncStrategyEnum.getNameByCode(entity.getSyncStrategy()));
                 res.add(vo);
             });
         }
@@ -140,7 +140,7 @@ public class SyncInfoServiceImpl implements SyncInfoService {
 
         // 教程
         long tutorialTotal = tutorialRepository.count();
-        res.add(buildInfo("教程", tutorialTotal, tutorialTotal));
+        res.add(buildInfo("攻略", tutorialTotal, tutorialTotal));
 
         return res;
     }

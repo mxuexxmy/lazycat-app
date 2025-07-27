@@ -1,5 +1,6 @@
 package xyz.mxue.lazycatapp.model.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ public class SyncInfoVO {
 
     private String syncTypeName;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastSyncTime;
 
     private boolean initialSyncCompleted;
@@ -27,10 +29,13 @@ public class SyncInfoVO {
 
     private String syncStrategy;  // FULL, INCREMENTAL
 
+    private String syncStrategyName;
+
     private Long syncInterval;  // 同步间隔（毫秒）
 
     private String lastError;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime nextSyncTime;
 
     private Integer retryCount;
