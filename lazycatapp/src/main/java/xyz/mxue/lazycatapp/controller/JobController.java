@@ -26,22 +26,22 @@ public class JobController {
     @Operation(summary = "同步应用", description = "同步应用")
     @GetMapping("/syncApps")
     public R<String> syncApps() {
-        appSyncService.syncApps();
-        return R.success("同步完成");
+        appSyncService.syncApps(true);
+        return R.success("在后台进行同步，请 30 分钟后进行查看");
     }
 
     @Operation(summary = "同步分类", description = "同步分类")
     @GetMapping("/syncCategories")
     public R<String> syncCategories() {
-        categorySyncService.syncCategories();
-        return R.success("同步完成");
+        categorySyncService.syncCategories(true);
+        return R.success("在后台进行同步，请 1 分钟后进行查看");
     }
 
     @Operation(summary = "同步用户", description = "同步用户")
     @GetMapping("/syncUsers")
     public R<String> syncUsers() {
-        userSyncService.syncDevelopers();
-        return R.success("同步完成");
+        userSyncService.syncDevelopers(true);
+        return R.success("在后台进行同步，请 10 分钟后进行查看");
     }
 
 }

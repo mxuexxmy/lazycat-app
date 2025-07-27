@@ -68,13 +68,6 @@ public class RecommendationServiceImpl implements RecommendationService {
                 .toList();
 
         Map<String, Long> categoryGrowth = new HashMap<>();
-//        for (App app : recentApps) {
-//            if (app.getCategory() != null) {
-//                for (String cat : app.getCategory()) {
-//                    categoryGrowth.merge(cat, 1L, Long::sum);
-//                }
-//            }
-//        }
 
         return categoryGrowth.entrySet().stream()
                 .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))

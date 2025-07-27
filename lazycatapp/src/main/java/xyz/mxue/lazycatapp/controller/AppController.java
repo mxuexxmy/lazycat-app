@@ -9,11 +9,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import xyz.mxue.lazycatapp.entity.App;
-import xyz.mxue.lazycatapp.entity.Category;
 import xyz.mxue.lazycatapp.service.AppService;
 import xyz.mxue.lazycatapp.service.CategoryService;
 import xyz.mxue.lazycatapp.service.UserService;
 import xyz.mxue.lazycatapp.entity.AppComment;
+
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -59,13 +59,13 @@ public class AppController {
     @GetMapping("/{pkgId}")
     public ResponseEntity<App> getApp(@PathVariable String pkgId) {
         Optional<App> appOpt = appService.findByPkgId(pkgId);
-        
+
         if (appOpt.isPresent()) {
             App app = appOpt.get();
             //app.setCreator(appService.getCreatorNickname(app.getCreatorId()));
             return ResponseEntity.ok(app);
         }
-        
+
         return ResponseEntity.notFound().build();
     }
 
@@ -196,7 +196,7 @@ public class AppController {
 
         // 计算是否初始同步已完成
         boolean isInitialSyncComplete = (appSyncInfo != null && appSyncInfo.isInitialSyncCompleted()) &&
-                                      (categorySyncInfo != null && categorySyncInfo.isInitialSyncCompleted());
+                (categorySyncInfo != null && categorySyncInfo.isInitialSyncCompleted());
 
         status.put("isInitialSyncComplete", isInitialSyncComplete);
 
@@ -205,7 +205,7 @@ public class AppController {
         long categoryCount = categoryService.count();
 
         // 安全地获取 totalCount，如果为 null 则使用 0
-        Long totalApps =  appSyncService.getTotalAppsCount();
+        Long totalApps = appSyncService.getTotalAppsCount();
         Long totalCategories = categorySyncService.getTotalAppsCount();
 
         status.put("appCount", appCount);

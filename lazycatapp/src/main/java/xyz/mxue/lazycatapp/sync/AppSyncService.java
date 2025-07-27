@@ -10,11 +10,15 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.converter.AppConvert;
 import xyz.mxue.lazycatapp.entity.App;
+import xyz.mxue.lazycatapp.entity.SyncInfo;
+import xyz.mxue.lazycatapp.enums.SyncStatusEnum;
 import xyz.mxue.lazycatapp.model.response.app.AppInfoApiResponse;
 import xyz.mxue.lazycatapp.model.response.app.AppItemInfo;
 import xyz.mxue.lazycatapp.repository.AppRepository;
 import xyz.mxue.lazycatapp.sync.api.LazyCatInterfaceInfo;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,71 +42,67 @@ public class AppSyncService {
      * 同步 APP 列表
      */
     @Async("taskExecutor")
-    public void syncApps() {
-        if (syncService.shouldSync(SyncService.SYNC_TYPE_APP)) {
-            return;
-        }
-        log.info("开始更新应用信息...");
-        try {
-            // 使用新的v3接口，分页获取所有应用
-            int page = 0;
-            int size = 100;
-            boolean hasMore = true;
-            int totalProcessed = 0;
+    public void syncApps(boolean forceSync) {
+        log.error("开始同步 APP 列表-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        if (syncService.isSync(SyncService.SYNC_TYPE_APP, forceSync)) {
+            log.error("进行同步 APP 列表-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            try {
+                // 更改同步状态- 同步中
+                syncService.updateSyncStatus(SyncService.SYNC_TYPE_APP, SyncStatusEnum.SYNCING);
+                int page = 0;
+                int size = 100;
+                boolean hasMore = true;
+                int totalProcessed = 0;
 
-            while (hasMore) {
+                while (hasMore) {
+                    HttpResponse execute = queryAppInfo(page, size);
 
-                Map<String, Object> queryParams = new HashMap<>();
-                queryParams.put("category_ids", "0");
-                queryParams.put("sort", "version_updated_at.desc");
-                queryParams.put("page", page);
-                queryParams.put("size", size);
+                    if (execute.getStatus() != 200) {
+                        return;
+                    }
 
-                HttpResponse execute = HttpRequest.get(LazyCatInterfaceInfo.APP_LIST_URL)
-                        .header("Accept-language", "zh-CN,zh")//头信息，多个头信息多次调用此方法即可
-                        .form(queryParams)//表单内容
-                        .timeout(20000)//超时，毫秒
-                        .execute();
+                    log.info("----execute-----");
+                    log.info(JSONUtil.toJsonPrettyStr(execute.body()));
+                    AppInfoApiResponse appInfoApiResponse = objectMapper.readValue(execute.body(), AppInfoApiResponse.class);
+                    log.info("----appInfoApiResponse-----");
+                    log.info(JSONUtil.toJsonPrettyStr(appInfoApiResponse));
+                    List<AppItemInfo> items = appInfoApiResponse.getItems();
+                    // 更新总数量到 SyncInfo
+                    SyncInfo syncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_APP);
+                    if (syncInfo != null) {
+                        syncInfo.setTotalCount((long) appInfoApiResponse.getTotal());
+                        syncService.saveSyncInfo(syncInfo);
+                    }
+                    for (AppItemInfo item : items) {
+                        App app = AppConvert.convert(item);
+                        appRepository.save(app);
+                        // 同步得分
+                        appScoreSyncService.syncAppScore(item);
+                        // 同步评论
+                        appCommentSyncService.syncAppComments(item.getPackageName());
+                        // 更新同步数量
 
-                if (execute.getStatus() != 200) {
-                    return;
+                    }
+                    totalProcessed += appInfoApiResponse.getItems().size();
+                    page++;
+
+                    // 检查是否还有更多数据
+                    hasMore = totalProcessed < appInfoApiResponse.getTotal();
+
+                    // 添加延迟，避免请求过于频繁
+                    Thread.sleep(2000);
+
                 }
-
-                log.info("----execute-----");
-                log.info(JSONUtil.toJsonPrettyStr(execute.body()));
-                AppInfoApiResponse appInfoApiResponse = objectMapper.readValue(execute.body(), AppInfoApiResponse.class);
-                log.info("----appInfoApiResponse-----");
-                log.info(JSONUtil.toJsonPrettyStr(appInfoApiResponse));
-                List<AppItemInfo> items = appInfoApiResponse.getItems();
-                for (AppItemInfo item : items) {
-                    App app = AppConvert.convert(item);
-                    appRepository.save(app);
-                    // 同步得分
-                    appScoreSyncService.syncAppScore(item);
-                    // 同步评论
-                    appCommentSyncService.syncAppComments(item.getPackageName());
-                    // 更新同步数量
-
-                }
-                totalProcessed += appInfoApiResponse.getItems().size();
-                page++;
-
-                // 检查是否还有更多数据
-                hasMore = totalProcessed < appInfoApiResponse.getTotal();
-
-                // 添加延迟，避免请求过于频繁
-                Thread.sleep(2000);
-
+                // 更改同步状态- 完成
+                log.info("分类信息同步完成");
+                syncService.updateSyncInfo(SyncService.SYNC_TYPE_APP, true, null);
+            } catch (Exception e) {
+                String error = "更新应用信息时发生错误: " + e.getMessage();
+                log.error(error, e);
+                // 更改同步状态- 失败
+                syncService.updateSyncInfo(SyncService.SYNC_TYPE_APP, false, e.getMessage());
             }
-            log.info("分类信息同步完成");
-            syncService.updateSyncInfo(SyncService.SYNC_TYPE_APP, true, null);
-            log.info("应用信息更新完成，共处理 {} 个应用", totalProcessed);
-            syncService.updateTotalCount(SyncService.SYNC_TYPE_APP, totalProcessed);
-        } catch (Exception e) {
-            String error = "更新应用信息时发生错误: " + e.getMessage();
-            log.error(error, e);
         }
-
     }
 
     /**
@@ -114,16 +114,7 @@ public class AppSyncService {
         // 使用新的v3接口，分页获取所有应用
         int page = 0;
         int size = 1;
-        Map<String, Object> queryParams = new HashMap<>();
-        queryParams.put("category_ids", "0");
-        queryParams.put("sort", "version_updated_at.desc");
-        queryParams.put("page", page);
-        queryParams.put("size", size);
-        HttpResponse execute = HttpRequest.get(LazyCatInterfaceInfo.APP_LIST_URL)
-                .header("Accept-language", "zh-CN,zh")//头信息，多个头信息多次调用此方法即可
-                .form(queryParams)//表单内容
-                .timeout(20000)//超时，毫秒
-                .execute();
+        HttpResponse execute = queryAppInfo(page, size);
 
         if (execute.getStatus() != 200) {
             return 0;
@@ -137,6 +128,26 @@ public class AppSyncService {
         }
 
         return total;
+    }
+
+    /**
+     * 查询应用信息
+     *
+     * @param page 第几页
+     * @param size 每页多少个
+     * @return 查询结果
+     */
+    private HttpResponse queryAppInfo(int page, int size) {
+        Map<String, Object> queryParams = new HashMap<>();
+        queryParams.put("category_ids", "0");
+        queryParams.put("sort", "version_updated_at.desc");
+        queryParams.put("page", page);
+        queryParams.put("size", size);
+        return HttpRequest.get(LazyCatInterfaceInfo.APP_LIST_URL)
+                .header("Accept-language", "zh-CN,zh")//头信息，多个头信息多次调用此方法即可
+                .form(queryParams)//表单内容
+                .timeout(20000)//超时，毫秒
+                .execute();
     }
 
 }

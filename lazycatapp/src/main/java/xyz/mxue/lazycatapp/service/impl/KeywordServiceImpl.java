@@ -24,10 +24,6 @@ public class KeywordServiceImpl implements KeywordService {
                     List<String> keywords = new ArrayList<>();
                     // 添加应用名称作为关键词
                     keywords.add(app.getName());
-                    // 添加应用分类作为关键词
-//                    if (app.getCategory() != null) {
-//                        keywords.addAll(app.getCategory());
-//                    }
                     // 添加应用标签作为关键词
                     if (app.getTags() != null) {
                         keywords.addAll(Arrays.asList(app.getTags().split(",")));

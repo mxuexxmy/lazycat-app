@@ -23,6 +23,9 @@ public class SyncInfo {
     @Column(name = "initial_sync_completed")
     private boolean initialSyncCompleted;
 
+    @Column(name = "sync_status")
+    private Integer syncStatus;
+
     @Column(name = "sync_strategy")
     private String syncStrategy;  // FULL, INCREMENTAL
 
@@ -43,18 +46,4 @@ public class SyncInfo {
 
     @Column(name = "total_count")
     private Long totalCount;
-
-    @PrePersist
-    public void prePersist() {
-        if (this.lastSyncTime == null) {
-            this.lastSyncTime = LocalDateTime.now();
-        }
-        if (this.totalCount == null) {
-            this.totalCount = 0L;
-        }
-        if (retryCount == null) {
-            retryCount = 0;
-        }
-        enabled = true;
-    }
 } 

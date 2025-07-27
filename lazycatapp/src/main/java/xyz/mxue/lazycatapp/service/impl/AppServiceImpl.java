@@ -160,15 +160,6 @@ public class AppServiceImpl implements AppService {
         List<App> apps = appRepository.findAll();
         Map<String, Long> categoryCount = new HashMap<>();
 
-        // 遍历所有应用，统计每个类别的数量
-//        for (App app : apps) {
-//            if (app.getCategory() != null) {
-//                for (String category : app.getCategory()) {
-//                    categoryCount.merge(category, 1L, Long::sum);
-//                }
-//            }
-//        }
-
         return categoryCount.entrySet().stream().map(entry -> {
             Map<String, Object> result = new HashMap<>();
             result.put("category", entry.getKey());
@@ -182,11 +173,6 @@ public class AppServiceImpl implements AppService {
     public List<Map<String, Object>> getDeveloperActivity() {
         List<App> apps = appRepository.findAll();
         Map<String, Long> developerAppCounts = new HashMap<>();
-
-//        for (App app : apps) {
-//            String creator = app.getCreator();
-//            developerAppCounts.merge(creator, 1L, Long::sum);
-//        }
 
         return developerAppCounts.entrySet().stream().sorted(Map.Entry.<String, Long>comparingByValue().reversed()).map(entry -> {
             Map<String, Object> result = new HashMap<>();
@@ -226,7 +212,7 @@ public class AppServiceImpl implements AppService {
             int aCount = a.getDownloadCount() != null ? a.getDownloadCount() : 0;
             int bCount = b.getDownloadCount() != null ? b.getDownloadCount() : 0;
             return Integer.compare(bCount, aCount);
-        }).limit(limit).collect(Collectors.toList());
+        }).limit(limit).toList();
 
         return apps.stream().map(app -> {
             Map<String, Object> appMap = new HashMap<>();

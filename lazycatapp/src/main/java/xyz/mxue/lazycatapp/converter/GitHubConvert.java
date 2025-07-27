@@ -16,6 +16,7 @@ public class GitHubConvert {
         // 获取或创建 GitHub 信息
         GitHubInfo githubInfo = new GitHubInfo();
 
+        githubInfo.setId(githubResponse.getId());
         // 设置基本信息
         githubInfo.setUserId(userId);
         githubInfo.setUid(githubResponse.getUid());

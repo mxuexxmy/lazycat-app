@@ -119,8 +119,8 @@ public class UserController {
         List<Long> creatorIds = appService.getDistinctCreatorIds();
 
         // 更新每个开发者的信息
-        creatorIds.forEach( creatorId -> {
-                communitySyncUserService.syncAllCommunityUsers(creatorId, true);
+        creatorIds.forEach(creatorId -> {
+            communitySyncUserService.syncAllCommunityUsers(creatorId, true);
         });
 
         return ResponseEntity.ok(Map.of(
