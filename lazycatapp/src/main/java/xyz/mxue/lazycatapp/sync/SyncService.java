@@ -105,12 +105,17 @@ public class SyncService {
         }
 
         LocalDateTime now = LocalDateTime.now();
+
+        // 如果最新同步时间是null，则进行同步
+        if (syncInfo.getLastSyncTime() == null) {
+            return true;
+        }
+
         // 如果状态是没有完成的，则不同步
         if (!Objects.equals(syncInfo.getSyncStatus(), SyncStatusEnum.COMPLETE.getCode())) {
             return false;
         }
-
-
+        
         // 如果设置了下次同步时间，检查是否到达
         if (syncInfo.getNextSyncTime() != null) {
             return now.isAfter(syncInfo.getNextSyncTime());

@@ -38,15 +38,6 @@ public class AppSyncService {
 
     private final AppCommentSyncService appCommentSyncService;
 
-    @PostConstruct
-    public void init() {
-        // 检查是否需要首次同步
-        if (appRepository.count() == 0) {
-            log.info("No apps found, performing initial sync");
-            syncApps(false);
-        }
-    }
-
     /**
      * 同步 APP 列表
      */

@@ -39,15 +39,6 @@ public class UserSyncService {
 
     private final SyncService syncService;
 
-    @PostConstruct
-    public void init() {
-        // 检查是否需要首次同步
-        if (userRepository.count() == 0) {
-            log.info("No users found, performing initial sync");
-            syncDevelopers(false);
-        }
-    }
-
     @Async("taskExecutor")
     public void syncDevelopers(boolean forceSync) {
         log.info("开始同步用户信息-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));

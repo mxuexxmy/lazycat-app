@@ -28,17 +28,10 @@ import java.util.Map;
 public class CategorySyncService {
 
     private final CategoryRepository categoryRepository;
-    private final ObjectMapper objectMapper;
-    private final SyncService syncService;
 
-    @PostConstruct
-    public void init() {
-        // 检查是否需要首次同步
-        if (categoryRepository.count() == 0) {
-            log.info("No categories found, performing initial sync");
-            syncCategories(false);
-        }
-    }
+    private final ObjectMapper objectMapper;
+
+    private final SyncService syncService;
 
     @Async("taskExecutor")
     public void syncCategories(boolean forceSync) {
