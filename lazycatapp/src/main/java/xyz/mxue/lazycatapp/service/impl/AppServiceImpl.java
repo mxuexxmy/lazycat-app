@@ -1,6 +1,7 @@
 package xyz.mxue.lazycatapp.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.StrUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Example;
@@ -162,6 +163,22 @@ public class AppServiceImpl implements AppService {
     public List<Map<String, Object>> getCategoryDistribution() {
         List<App> apps = appRepository.findAll();
         Map<String, Long> categoryCount = new HashMap<>();
+        categoryCount.put("原创应用", 0L);
+        categoryCount.put("移植应用", 0L);
+        categoryCount.put("官方应用", 0L);
+        categoryCount.put("其他", 0L);
+        // 原创应用、移植应用、官方应用
+        for (App app : apps) {
+            if (StrUtil.isBlank(app.getKindIds())) {
+                categoryCount.put("移植应用", categoryCount.get("移植应用") + 1);
+            } else if ("2" .equals(app.getKindIds())) {
+                categoryCount.put("官方应用", categoryCount.get("官方应用") + 1);
+            } else if ("1" .equals(app.getKindIds())) {
+                categoryCount.put("原创应用", categoryCount.get("原创应用") + 1);
+            } else {
+                categoryCount.put("其他", categoryCount.get("其他") + 1);
+            }
+        }
 
         return categoryCount.entrySet().stream().map(entry -> {
             Map<String, Object> result = new HashMap<>();
@@ -222,7 +239,16 @@ public class AppServiceImpl implements AppService {
             appMap.put("name", app.getName());
             appMap.put("pkgId", app.getPackageName());
             appMap.put("downloads", app.getDownloadCount() != null ? app.getDownloadCount() : 0);
-//            appMap.put("category", app.getCategory());
+            if (StrUtil.isBlank(app.getKindIds())) {
+                appMap.put("category", "移植应用");
+            } else if ("1" .equals(app.getKindIds())) {
+                appMap.put("category", "原创应用");
+            } else if ("2" .equals(app.getKindIds())) {
+                appMap.put("category", "官方应用");
+            } else {
+                appMap.put("category", "其他");
+            }
+
             return appMap;
         }).collect(Collectors.toList());
     }
