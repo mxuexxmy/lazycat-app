@@ -34,7 +34,7 @@ public class SyncService {
             case APP:
                 syncInfo.setSyncInterval(21600000L); // 6小时
             case CATEGORY:
-                syncInfo.setSyncInterval(3600000L); // 1小时
+                syncInfo.setSyncInterval(7200000L); // 2小时
                 break;
             case USER:
                 syncInfo.setSyncInterval(21600000L); // 默认 30 分钟
