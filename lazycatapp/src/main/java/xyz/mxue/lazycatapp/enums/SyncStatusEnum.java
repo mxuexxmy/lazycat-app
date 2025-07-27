@@ -22,4 +22,13 @@ public enum SyncStatusEnum {
     private final int code;
 
     private final String name;
+
+    public static String getNameByCode(int code) {
+        for (SyncStatusEnum value : values()) {
+            if (value.code == code) {
+                return value.name;
+            }
+        }
+        return null;
+    }
 }

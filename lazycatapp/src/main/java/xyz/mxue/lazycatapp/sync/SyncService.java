@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.entity.SyncInfo;
 import xyz.mxue.lazycatapp.enums.SyncStatusEnum;
+import xyz.mxue.lazycatapp.enums.SyncStrategyEnum;
+import xyz.mxue.lazycatapp.enums.SyncTypeEnum;
 import xyz.mxue.lazycatapp.repository.SyncInfoRepository;
 
 import java.time.LocalDateTime;
@@ -16,34 +18,25 @@ import java.util.Objects;
 public class SyncService {
     private final SyncInfoRepository syncInfoRepository;
 
-    // 同步类型
-    public static final String SYNC_TYPE_APP = "APP";
-    public static final String SYNC_TYPE_CATEGORY = "CATEGORY";
-    public static final String SYNC_TYPE_USER = "USER";
-
-    // 执行策略
-    public static final String SYNC_STRATEGY_FULL = "FULL";
-    public static final String SYNC_STRATEGY_INCREMENTAL = "INCREMENTAL";
-
-    public SyncInfo getSyncInfo(String syncType) {
-        return syncInfoRepository.findBySyncType(syncType).orElseGet(() -> createDefaultSyncInfo(syncType));
+    public SyncInfo getSyncInfo(SyncTypeEnum syncType) {
+        return syncInfoRepository.findBySyncType(syncType.getCode()).orElseGet(() -> createDefaultSyncInfo(syncType));
     }
 
-    private SyncInfo createDefaultSyncInfo(String syncType) {
+    private SyncInfo createDefaultSyncInfo(SyncTypeEnum syncType) {
         SyncInfo syncInfo = new SyncInfo();
-        syncInfo.setSyncType(syncType);
+        syncInfo.setSyncType(syncType.getCode());
         syncInfo.setInitialSyncCompleted(false);
-        syncInfo.setSyncStrategy(SYNC_STRATEGY_FULL);
+        syncInfo.setSyncStrategy(SyncStrategyEnum.FULL.getCode());
         syncInfo.setSyncStatus(SyncStatusEnum.START.getCode());
 
         // 设置默认同步间隔
         switch (syncType) {
-            case SYNC_TYPE_APP:
+            case APP:
                 syncInfo.setSyncInterval(21600000L); // 6小时
-            case SYNC_TYPE_CATEGORY:
+            case CATEGORY:
                 syncInfo.setSyncInterval(3600000L); // 1小时
                 break;
-            case SYNC_TYPE_USER:
+            case USER:
                 syncInfo.setSyncInterval(21600000L); // 默认 30 分钟
                 break;
             default:
@@ -57,7 +50,7 @@ public class SyncService {
         return syncInfoRepository.save(syncInfo);
     }
 
-    public void updateSyncInfo(String syncType, boolean success, String error) {
+    public void updateSyncInfo(SyncTypeEnum syncType, boolean success, String error) {
         SyncInfo syncInfo = getSyncInfo(syncType);
 
         if (success) {
@@ -69,9 +62,9 @@ public class SyncService {
             syncInfo.setSyncStatus(SyncStatusEnum.COMPLETE.getCode());
 
             // 如果是全量同步且成功，则标记为已完成初始同步
-            if (SYNC_STRATEGY_FULL.equals(syncInfo.getSyncStrategy())) {
+            if (SyncStrategyEnum.FULL.getCode().equals(syncInfo.getSyncStrategy())) {
                 syncInfo.setInitialSyncCompleted(true);
-                syncInfo.setSyncStrategy(SYNC_STRATEGY_INCREMENTAL);
+                syncInfo.setSyncStrategy(SyncStrategyEnum.INCREMENTAL.getCode());
             }
         } else {
             syncInfo.setLastError(error);
@@ -94,7 +87,7 @@ public class SyncService {
      * @param syncType 同步类型
      * @return 是否需要同步
      */
-    public boolean isSync(String syncType, boolean forceSync) {
+    public boolean isSync(SyncTypeEnum syncType, boolean forceSync) {
         if (forceSync) {
             return true;
         }
@@ -115,7 +108,7 @@ public class SyncService {
         if (!Objects.equals(syncInfo.getSyncStatus(), SyncStatusEnum.COMPLETE.getCode())) {
             return false;
         }
-        
+
         // 如果设置了下次同步时间，检查是否到达
         if (syncInfo.getNextSyncTime() != null) {
             return now.isAfter(syncInfo.getNextSyncTime());
@@ -124,19 +117,19 @@ public class SyncService {
         return now.isAfter(syncInfo.getLastSyncTime().plusNanos(syncInfo.getSyncInterval() * 1000000));
     }
 
-    public void enableSync(String syncType, boolean enabled) {
+    public void enableSync(SyncTypeEnum syncType, boolean enabled) {
         SyncInfo syncInfo = getSyncInfo(syncType);
         syncInfo.setEnabled(enabled);
         syncInfoRepository.save(syncInfo);
     }
 
-    public void updateSyncStatus(String syncType, SyncStatusEnum syncStatusEnum) {
+    public void updateSyncStatus(SyncTypeEnum syncType, SyncStatusEnum syncStatusEnum) {
         SyncInfo syncInfo = getSyncInfo(syncType);
         syncInfo.setSyncStatus(syncStatusEnum.getCode());
         syncInfoRepository.save(syncInfo);
     }
 
-    public void setSyncInterval(String syncType, long interval) {
+    public void setSyncInterval(SyncTypeEnum syncType, long interval) {
         SyncInfo syncInfo = getSyncInfo(syncType);
         syncInfo.setSyncInterval(interval);
         syncInfoRepository.save(syncInfo);

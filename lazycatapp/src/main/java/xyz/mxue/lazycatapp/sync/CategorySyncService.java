@@ -4,7 +4,6 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -12,6 +11,7 @@ import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.converter.CategoryConvert;
 import xyz.mxue.lazycatapp.entity.Category;
 import xyz.mxue.lazycatapp.entity.SyncInfo;
+import xyz.mxue.lazycatapp.enums.SyncTypeEnum;
 import xyz.mxue.lazycatapp.repository.CategoryRepository;
 import xyz.mxue.lazycatapp.sync.api.LazyCatInterfaceInfo;
 
@@ -36,7 +36,7 @@ public class CategorySyncService {
     @Async("taskExecutor")
     public void syncCategories(boolean forceSync) {
         log.info("开始同步分类信息-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        if (syncService.isSync(SyncService.SYNC_TYPE_CATEGORY, forceSync)) {
+        if (syncService.isSync(SyncTypeEnum.CATEGORY, forceSync)) {
             log.info("进行同步分类信息-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             try {
                 // 更改同步状态- 同步中
@@ -45,12 +45,12 @@ public class CategorySyncService {
                 List<Category> chineseCategories = getCategoriesFromUrl(LazyCatInterfaceInfo.CATEGORY_URL_ZH);
                 if (CollectionUtil.isEmpty(chineseCategories)) {
                     log.info("没有需要更新的分类");
-                    syncService.updateSyncInfo(SyncService.SYNC_TYPE_CATEGORY, true, null);
+                    syncService.updateSyncInfo(SyncTypeEnum.CATEGORY, true, null);
                     return;
                 }
 
                 // 更新总数量到 SyncInfo
-                SyncInfo syncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_CATEGORY);
+                SyncInfo syncInfo = syncService.getSyncInfo(SyncTypeEnum.CATEGORY);
                 if (syncInfo != null) {
                     syncInfo.setTotalCount((long) chineseCategories.size());
                     syncService.saveSyncInfo(syncInfo);
@@ -73,12 +73,12 @@ public class CategorySyncService {
                 }
                 categoryRepository.saveAll(mergedCategories);
                 log.info("分类信息同步完成");
-                syncService.updateSyncInfo(SyncService.SYNC_TYPE_CATEGORY, true, null);
+                syncService.updateSyncInfo(SyncTypeEnum.CATEGORY, true, null);
                 // 更改同步状态- 完成
             } catch (Exception e) {
                 String error = "同步分类信息时发生错误: " + e.getMessage();
                 log.error(error, e);
-                syncService.updateSyncInfo(SyncService.SYNC_TYPE_CATEGORY, false, error);
+                syncService.updateSyncInfo(SyncTypeEnum.CATEGORY, false, error);
                 // 更改同步状态- 失败
             }
         }
@@ -107,7 +107,7 @@ public class CategorySyncService {
      *
      * @return 应用数量
      */
-    public long getTotalAppsCount() {
+    public long getTotalCategoryCount() {
         long total = 0;
         List<Category> chineseCategories = getCategoriesFromUrl(LazyCatInterfaceInfo.CATEGORY_URL_ZH);
         if (chineseCategories != null) {

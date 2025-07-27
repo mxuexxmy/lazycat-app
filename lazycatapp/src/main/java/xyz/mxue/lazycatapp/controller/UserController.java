@@ -132,7 +132,7 @@ public class UserController {
 
     @Operation(summary = "获取开发者社区信息", description = "获取开发者社区信息")
     @GetMapping("/developers")
-    public R getDeveloperCommunityInfo() {
+    public R<List<Map<String, Object>>> getDeveloperCommunityInfo() {
         try {
             List<User> userInfos = userService.getAllUserInfos();
             List<CommunityUser> communityUsers = userService.getAllCommunityUsers();

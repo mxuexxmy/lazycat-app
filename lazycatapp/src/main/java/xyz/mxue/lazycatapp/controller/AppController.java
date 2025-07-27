@@ -9,6 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import xyz.mxue.lazycatapp.entity.App;
+import xyz.mxue.lazycatapp.enums.SyncTypeEnum;
 import xyz.mxue.lazycatapp.service.AppService;
 import xyz.mxue.lazycatapp.service.CategoryService;
 import xyz.mxue.lazycatapp.service.UserService;
@@ -191,8 +192,8 @@ public class AppController {
         Map<String, Object> status = new HashMap<>();
 
         // 获取应用和分类的同步信息
-        SyncInfo appSyncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_APP);
-        SyncInfo categorySyncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_CATEGORY);
+        SyncInfo appSyncInfo = syncService.getSyncInfo(SyncTypeEnum.APP);
+        SyncInfo categorySyncInfo = syncService.getSyncInfo(SyncTypeEnum.CATEGORY);
 
         // 计算是否初始同步已完成
         boolean isInitialSyncComplete = (appSyncInfo != null && appSyncInfo.isInitialSyncCompleted()) &&
@@ -206,7 +207,7 @@ public class AppController {
 
         // 安全地获取 totalCount，如果为 null 则使用 0
         Long totalApps = appSyncService.getTotalAppsCount();
-        Long totalCategories = categorySyncService.getTotalAppsCount();
+        Long totalCategories = categorySyncService.getTotalCategoryCount();
 
         status.put("appCount", appCount);
         status.put("categoryCount", categoryCount);

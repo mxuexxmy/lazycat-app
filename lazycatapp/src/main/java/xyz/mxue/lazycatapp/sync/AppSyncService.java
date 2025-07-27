@@ -12,6 +12,7 @@ import xyz.mxue.lazycatapp.converter.AppConvert;
 import xyz.mxue.lazycatapp.entity.App;
 import xyz.mxue.lazycatapp.entity.SyncInfo;
 import xyz.mxue.lazycatapp.enums.SyncStatusEnum;
+import xyz.mxue.lazycatapp.enums.SyncTypeEnum;
 import xyz.mxue.lazycatapp.model.response.app.AppInfoApiResponse;
 import xyz.mxue.lazycatapp.model.response.app.AppItemInfo;
 import xyz.mxue.lazycatapp.repository.AppRepository;
@@ -44,11 +45,11 @@ public class AppSyncService {
     @Async("taskExecutor")
     public void syncApps(boolean forceSync) {
         log.info("开始同步 APP 列表-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        if (syncService.isSync(SyncService.SYNC_TYPE_APP, forceSync)) {
+        if (syncService.isSync(SyncTypeEnum.APP, forceSync)) {
             log.info("进行同步 APP 列表-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             try {
                 // 更改同步状态- 同步中
-                syncService.updateSyncStatus(SyncService.SYNC_TYPE_APP, SyncStatusEnum.SYNCING);
+                syncService.updateSyncStatus(SyncTypeEnum.APP, SyncStatusEnum.SYNCING);
                 int page = 0;
                 int size = 100;
                 boolean hasMore = true;
@@ -64,7 +65,7 @@ public class AppSyncService {
                     AppInfoApiResponse appInfoApiResponse = objectMapper.readValue(execute.body(), AppInfoApiResponse.class);
                     List<AppItemInfo> items = appInfoApiResponse.getItems();
                     // 更新总数量到 SyncInfo
-                    SyncInfo syncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_APP);
+                    SyncInfo syncInfo = syncService.getSyncInfo(SyncTypeEnum.APP);
                     if (syncInfo != null) {
                         syncInfo.setTotalCount((long) appInfoApiResponse.getTotal());
                         syncService.saveSyncInfo(syncInfo);
@@ -91,12 +92,12 @@ public class AppSyncService {
                 }
                 // 更改同步状态- 完成
                 log.info("分类信息同步完成");
-                syncService.updateSyncInfo(SyncService.SYNC_TYPE_APP, true, null);
+                syncService.updateSyncInfo(SyncTypeEnum.APP, true, null);
             } catch (Exception e) {
                 String error = "更新应用信息时发生错误: " + e.getMessage();
                 log.error(error, e);
                 // 更改同步状态- 失败
-                syncService.updateSyncInfo(SyncService.SYNC_TYPE_APP, false, e.getMessage());
+                syncService.updateSyncInfo(SyncTypeEnum.APP, false, e.getMessage());
             }
         }
     }

@@ -20,6 +20,7 @@ import java.io.IOException;
 public class GitHubSyncService {
 
     private final GitHubInfoRepository githubInfoRepository;
+
     private final ObjectMapper objectMapper;
 
     public void syncGitHubInfoForUser(Long userId) {
