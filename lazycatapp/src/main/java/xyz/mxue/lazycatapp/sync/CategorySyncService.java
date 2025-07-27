@@ -42,9 +42,9 @@ public class CategorySyncService {
 
     @Async("taskExecutor")
     public void syncCategories(boolean forceSync) {
-        log.error("开始同步分类信息-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        log.info("开始同步分类信息-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         if (syncService.isSync(SyncService.SYNC_TYPE_CATEGORY, forceSync)) {
-            log.error("进行同步分类信息-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            log.info("进行同步分类信息-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             try {
                 // 更改同步状态- 同步中
                 log.info("开始同步分类信息...");

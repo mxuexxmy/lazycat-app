@@ -2,8 +2,8 @@ package xyz.mxue.lazycatapp.sync;
 
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
-import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -38,14 +38,23 @@ public class AppSyncService {
 
     private final AppCommentSyncService appCommentSyncService;
 
+    @PostConstruct
+    public void init() {
+        // 检查是否需要首次同步
+        if (appRepository.count() == 0) {
+            log.info("No apps found, performing initial sync");
+            syncApps(false);
+        }
+    }
+
     /**
      * 同步 APP 列表
      */
     @Async("taskExecutor")
     public void syncApps(boolean forceSync) {
-        log.error("开始同步 APP 列表-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        log.info("开始同步 APP 列表-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         if (syncService.isSync(SyncService.SYNC_TYPE_APP, forceSync)) {
-            log.error("进行同步 APP 列表-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            log.info("进行同步 APP 列表-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             try {
                 // 更改同步状态- 同步中
                 syncService.updateSyncStatus(SyncService.SYNC_TYPE_APP, SyncStatusEnum.SYNCING);
@@ -61,11 +70,7 @@ public class AppSyncService {
                         return;
                     }
 
-                    log.info("----execute-----");
-                    log.info(JSONUtil.toJsonPrettyStr(execute.body()));
                     AppInfoApiResponse appInfoApiResponse = objectMapper.readValue(execute.body(), AppInfoApiResponse.class);
-                    log.info("----appInfoApiResponse-----");
-                    log.info(JSONUtil.toJsonPrettyStr(appInfoApiResponse));
                     List<AppItemInfo> items = appInfoApiResponse.getItems();
                     // 更新总数量到 SyncInfo
                     SyncInfo syncInfo = syncService.getSyncInfo(SyncService.SYNC_TYPE_APP);
@@ -124,7 +129,7 @@ public class AppSyncService {
             AppInfoApiResponse appInfoApiResponse = objectMapper.readValue(execute.body(), AppInfoApiResponse.class);
             total = appInfoApiResponse.getTotal();
         } catch (Exception e) {
-            log.info("获取分类时发生错误: {}", e.getMessage());
+            log.error("获取分类时发生错误: {}", e.getMessage());
         }
 
         return total;

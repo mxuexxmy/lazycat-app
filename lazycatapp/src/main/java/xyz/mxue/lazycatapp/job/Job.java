@@ -29,16 +29,16 @@ public class Job {
     /**
      * 每 5 分钟执行一次
      */
-    @Scheduled(cron = "0 0/1 * * * ?")
+    @Scheduled(cron = "0 0/5 * * * ?")
     public void syncApps() {
         log.info("jobEnable: {}", jobEnable);
         log.info("定时任务执行...");
         if (jobEnable) {
-            log.error("执行同步分类-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            log.info("执行同步分类-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             categorySyncService.syncCategories(false);
-            log.error("执行同步应用-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            log.info("执行同步应用-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             appSyncService.syncApps(false);
-            log.error("执行同步用户-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            log.info("执行同步用户-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             userSyncService.syncDevelopers(false);
         }
     }

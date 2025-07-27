@@ -3,8 +3,8 @@ package xyz.mxue.lazycatapp.sync;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
-import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -39,11 +39,20 @@ public class UserSyncService {
 
     private final SyncService syncService;
 
+    @PostConstruct
+    public void init() {
+        // 检查是否需要首次同步
+        if (userRepository.count() == 0) {
+            log.info("No users found, performing initial sync");
+            syncDevelopers(false);
+        }
+    }
+
     @Async("taskExecutor")
     public void syncDevelopers(boolean forceSync) {
-        log.error("开始同步用户信息-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        log.info("开始同步用户信息-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         if (syncService.isSync(SyncService.SYNC_TYPE_USER, forceSync)) {
-            log.error("进行同步用户信息-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            log.info("进行同步用户信息-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             try {
                 // 更改同步状态- 同步中
                 syncService.updateSyncStatus(SyncService.SYNC_TYPE_USER, SyncStatusEnum.SYNCING);
@@ -73,8 +82,6 @@ public class UserSyncService {
                         }
 
                         userInfoApiResponse.getItems().forEach(entity -> {
-                            log.info("----用户信息------");
-                            log.info(JSONUtil.toJsonPrettyStr(entity));
                             User user = UserConvert.convert(entity);
                             userRepository.save(user);
                             // 更新 GitHub 用户信息
@@ -114,7 +121,7 @@ public class UserSyncService {
                 // 更改同步状态为完成
                 syncService.updateSyncInfo(SyncService.SYNC_TYPE_USER, true, null);
             } catch (Exception e) {
-                log.info("获取开发者列表时发生错误: {}", e.getMessage());
+                log.error("获取开发者列表时发生错误: {}", e.getMessage());
                 // 更改同步状态为失败
                 syncService.updateSyncInfo(SyncService.SYNC_TYPE_USER, false, e.getMessage());
             }

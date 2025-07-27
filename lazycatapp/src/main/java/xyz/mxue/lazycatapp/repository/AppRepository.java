@@ -21,7 +21,7 @@ public interface AppRepository extends JpaRepository<App, String> {
     @Query(value = "SELECT * FROM t_app WHERE kind_ids LIKE %:category%", nativeQuery = true)
     Page<App> findByCategoryContaining(@Param("category") String category, Pageable pageable);
 
-    @Query(value = "SELECT * FROM t_app ORDER BY update_time DESC LIMIT ?1", nativeQuery = true)
+    @Query(value = "SELECT * FROM t_app ORDER BY app_update_time DESC LIMIT ?1", nativeQuery = true)
     List<App> findTopNByOrderByLastUpdatedDesc(int limit);
 
     @Query(value = "SELECT * FROM t_app ORDER BY update_id DESC LIMIT ?1", nativeQuery = true)
