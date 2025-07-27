@@ -25,4 +25,14 @@ public class AppCommentController {
         return appCommentService.getAllComments();
     }
 
+    /**
+     * 最新的5个评论
+     */
+    @Operation(summary = "获取最新的5个评论", description = "获取最新的5个评论")
+    @GetMapping("/latest")
+    public List<Map<String, Object>> getLatestComments() {
+        return appCommentService.getLatestComments();
+    }
+
+
 }

@@ -3,6 +3,7 @@ package xyz.mxue.lazycatapp.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.entity.App;
 import xyz.mxue.lazycatapp.entity.AppComment;
@@ -28,6 +29,17 @@ public class AppCommentServiceImpl implements AppCommentService {
     @Override
     public List<Map<String, Object>> getAllComments() {
         List<AppComment> comments = appCommentRepository.findAll();
+        return getMaps(comments);
+    }
+
+    @Override
+    public List<Map<String, Object>> getLatestComments() {
+        // 查询最新的5个评论
+        List<AppComment> comments = appCommentRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream().limit(5).toList();
+        return getMaps(comments);
+    }
+
+    private List<Map<String, Object>> getMaps(List<AppComment> comments) {
         return comments.stream().map(comment -> {
             Map<String, Object> commentMap = new HashMap<>();
             commentMap.put("commentId", comment.getCommentId());

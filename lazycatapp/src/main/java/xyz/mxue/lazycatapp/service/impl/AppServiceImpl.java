@@ -40,7 +40,10 @@ public class AppServiceImpl implements AppService {
 
     @Override
     public Optional<App> findByPkgId(String pkgId) {
-        return appRepository.findById(pkgId);
+        App queryApp = new App();
+        queryApp.setPackageName(pkgId);
+        Example<App> example = Example.of(queryApp);
+        return appRepository.findOne(example);
     }
 
     @Override
