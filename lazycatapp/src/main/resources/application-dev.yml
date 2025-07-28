@@ -40,4 +40,4 @@ knife4j:
   enable: true
 
 custom:
-  job: false
+  job: true

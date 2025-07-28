@@ -34,12 +34,58 @@ public class Job {
         log.info("jobEnable: {}", jobEnable);
         log.info("定时任务执行...");
         if (jobEnable) {
-            log.info("执行同步分类-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-            categorySyncService.syncCategories(false);
-            log.info("执行同步应用-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-            appSyncService.syncApps(false);
-            log.info("执行同步用户-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-            userSyncService.syncDevelopers(false);
+            // 睡眠 2 秒
+            try {
+                Thread.sleep(2000);
+                log.info("执行全量同步分类-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                categorySyncService.syncCategories(false);
+            } catch (InterruptedException e) {
+                log.error("执行全量同步分类定时任务执行异常", e);
+            }
+
+            // 睡眠 2 秒
+            try {
+                Thread.sleep(2000);
+                log.info("执行增量同步分类-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                categorySyncService.syncCategoriesIncremental(false);
+            } catch (InterruptedException e) {
+                log.error("执行增量同步分类定时任务执行异常", e);
+            }
+
+            // 睡眠 2 秒
+            try {
+                Thread.sleep(2000);
+                log.info("执行全量同步应用-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                appSyncService.syncApps(false);
+            } catch (InterruptedException e) {
+                log.error("执行全量同步应用定时任务执行异常", e);
+            }
+
+            // 睡眠 2 秒
+            try {
+                Thread.sleep(2000);
+                log.info("执行增量同步应用-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                appSyncService.syncAppsIncremental(false);
+            } catch (InterruptedException e) {
+                log.error("执行增量同步应用定时任务执行异常", e);
+            }
+
+            // 睡眠 2 秒
+            try {
+                Thread.sleep(2000);
+                log.info("执行全量同步用户-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                userSyncService.syncDevelopers(false);
+            } catch (InterruptedException e) {
+                log.error("执行全量同步用户定时任务执行异常", e);
+            }
+
+            try {
+                Thread.sleep(2000);
+                log.info("执行增量同步用户-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                userSyncService.syncUsersIncremental(false);
+            } catch (InterruptedException e) {
+                log.error("执行增量同步用户定时任务执行异常", e);
+            }
         }
     }
 
