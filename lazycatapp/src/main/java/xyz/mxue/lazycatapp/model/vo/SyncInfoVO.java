@@ -31,17 +31,24 @@ public class SyncInfoVO {
 
     private String syncStrategyName;
 
-    private Long syncInterval;  // 同步间隔（毫秒）
+    private Long fullSyncInterval;  // 同步间隔（毫秒）
+
+    private Long incrementalSyncInterval;
 
     private String lastError;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime nextSyncTime;
+    private LocalDateTime fullNextSyncTime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime incrementalNextSyncTime;
 
     private Integer retryCount;
 
     private boolean enabled;
 
     private Long totalCount;
+
+    private String description;
 
 }

@@ -34,6 +34,8 @@ public class AppConvert {
         app.setAppCreateTime(OffsetDateTime.parse(appItemInfo.getCreatedAt()).toLocalDateTime());
         // 应用更新时间
         app.setAppUpdateTime(OffsetDateTime.parse(appItemInfo.getUpdatedAt()).toLocalDateTime());
+        app.setSupportMobile(appItemInfo.getInformation().getSupportMobile());
+        app.setSupportPC(appItemInfo.getInformation().getSupportPc());
 
         return app;
     }

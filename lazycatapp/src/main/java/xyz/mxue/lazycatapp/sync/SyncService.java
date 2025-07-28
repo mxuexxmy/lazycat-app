@@ -32,40 +32,62 @@ public class SyncService {
         // 设置默认同步间隔
         switch (syncType) {
             case APP:
-                syncInfo.setSyncInterval(21600000L); // 6小时
+                syncInfo.setDescription(syncType.getDesc());
+                syncInfo.setFullSyncInterval(43200000L); // 12小时
+                syncInfo.setIncrementalSyncInterval(3600000L); // 30 分钟
             case CATEGORY:
-                syncInfo.setSyncInterval(7200000L); // 2小时
+                syncInfo.setDescription(syncType.getDesc());
+                syncInfo.setFullSyncInterval(43200000L); // 12小时
+                syncInfo.setIncrementalSyncInterval(14400000L); // 2 小时
                 break;
             case USER:
-                syncInfo.setSyncInterval(21600000L); // 默认 30 分钟
+                syncInfo.setDescription(syncType.getDesc());
+                syncInfo.setFullSyncInterval(43200000L); // 12小时
+                syncInfo.setIncrementalSyncInterval(3600000L); // 30 分钟
                 break;
             default:
-                syncInfo.setSyncInterval(3600000L); // 默认1小时
+                syncInfo.setDescription(syncType.getDesc());
+                syncInfo.setFullSyncInterval(86400000L); // 24小时
+                syncInfo.setIncrementalSyncInterval(28800000L); // 4 小时
                 break;
         }
         // 转换为纳秒
-        syncInfo.setNextSyncTime(LocalDateTime.now().plusNanos(syncInfo.getSyncInterval() * 1000000));
+        syncInfo.setFullNextSyncTime(LocalDateTime.now().plusNanos(syncInfo.getFullSyncInterval() * 1000000));
+        // 增量下一次同步时间
+        syncInfo.setIncrementalNextSyncTime(LocalDateTime.now().plusNanos(syncInfo.getIncrementalSyncInterval() * 1000000));
         syncInfo.setEnabled(true);
         syncInfo.setRetryCount(0);
         return syncInfoRepository.save(syncInfo);
     }
 
-    public void updateSyncInfo(SyncTypeEnum syncType, boolean success, String error) {
+    public void updateSyncInfo(SyncTypeEnum syncType, SyncStrategyEnum syncStrategyEnum, boolean success, String error) {
         SyncInfo syncInfo = getSyncInfo(syncType);
 
         if (success) {
-            syncInfo.setLastSyncTime(LocalDateTime.now());
-            // 转换为纳秒
-            syncInfo.setNextSyncTime(LocalDateTime.now().plusNanos(syncInfo.getSyncInterval() * 1000000));
             syncInfo.setRetryCount(0);
             syncInfo.setLastError(null);
             syncInfo.setSyncStatus(SyncStatusEnum.COMPLETE.getCode());
 
             // 如果是全量同步且成功，则标记为已完成初始同步
-            if (SyncStrategyEnum.FULL.getCode().equals(syncInfo.getSyncStrategy())) {
+            if (syncStrategyEnum.getCode().equals(SyncStrategyEnum.FULL.getCode())) {
                 syncInfo.setInitialSyncCompleted(true);
+                syncInfo.setIncrementalNextSyncTime(LocalDateTime.now().plusNanos(syncInfo.getIncrementalSyncInterval() * 1000000));
+                // 全量同步成功后，切换为增量同步
                 syncInfo.setSyncStrategy(SyncStrategyEnum.INCREMENTAL.getCode());
             }
+            // 如果是增量同步且成功，则更新下次同步时间
+            else if (syncStrategyEnum.getCode().equals(SyncStrategyEnum.INCREMENTAL.getCode())) {
+                // 如果是增量同步，更新下次同步时间
+                syncInfo.setIncrementalNextSyncTime(LocalDateTime.now().plusNanos(syncInfo.getIncrementalSyncInterval() * 1000000));
+                // 如果增量下一次同步时间大于全量下一次同步时间，则切换为全量同步
+                if (syncInfo.getIncrementalNextSyncTime().isAfter(syncInfo.getFullNextSyncTime())) {
+                    syncInfo.setSyncStrategy(SyncStrategyEnum.FULL.getCode());
+                } else {
+                    syncInfo.setSyncStrategy(SyncStrategyEnum.INCREMENTAL.getCode());
+                }
+
+            }
+
         } else {
             syncInfo.setLastError(error);
             syncInfo.setRetryCount(syncInfo.getRetryCount() + 1);
@@ -73,8 +95,14 @@ public class SyncService {
 
             // 如果重试次数过多，可以选择禁用同步或增加同步间隔
             if (syncInfo.getRetryCount() >= 3) {
-                syncInfo.setSyncInterval(syncInfo.getSyncInterval() * 2); // 加倍同步间隔
-                log.warn("同步 {} 失败次数过多，增加同步间隔至 {} 毫秒", syncType, syncInfo.getSyncInterval());
+                if (SyncStrategyEnum.FULL.getCode().equals(syncInfo.getSyncStrategy())) {
+                    syncInfo.setFullSyncInterval(syncInfo.getFullSyncInterval() * 2);
+                    syncInfo.setSyncStrategy(SyncStrategyEnum.FULL.getCode());
+                } else {
+                    syncInfo.setIncrementalSyncInterval(syncInfo.getIncrementalSyncInterval() * 2);
+                    syncInfo.setSyncStrategy(SyncStrategyEnum.INCREMENTAL.getCode());
+                }
+                log.warn("同步 {} 失败次数过多，增加同步间隔至 {} 毫秒", syncType, syncInfo.getFullSyncInterval());
             }
         }
 
@@ -87,7 +115,7 @@ public class SyncService {
      * @param syncType 同步类型
      * @return 是否需要同步
      */
-    public boolean isSync(SyncTypeEnum syncType, boolean forceSync) {
+    public boolean isSync(SyncTypeEnum syncType, SyncStrategyEnum syncStrategyEnum, boolean forceSync) {
         if (forceSync) {
             return true;
         }
@@ -109,12 +137,13 @@ public class SyncService {
             return false;
         }
 
-        // 如果设置了下次同步时间，检查是否到达
-        if (syncInfo.getNextSyncTime() != null) {
-            return now.isAfter(syncInfo.getNextSyncTime());
+        if (syncInfo.getSyncStrategy().equals(SyncStrategyEnum.INCREMENTAL.getCode())) {
+            // 增量同步
+            return now.isAfter(syncInfo.getIncrementalNextSyncTime());
+        } else {
+            // 全量同步
+            return now.isAfter(syncInfo.getFullNextSyncTime());
         }
-
-        return now.isAfter(syncInfo.getLastSyncTime().plusNanos(syncInfo.getSyncInterval() * 1000000));
     }
 
     public void enableSync(SyncTypeEnum syncType, boolean enabled) {
@@ -126,12 +155,16 @@ public class SyncService {
     public void updateSyncStatus(SyncTypeEnum syncType, SyncStatusEnum syncStatusEnum) {
         SyncInfo syncInfo = getSyncInfo(syncType);
         syncInfo.setSyncStatus(syncStatusEnum.getCode());
+        // 如果状态是同步中，更改最近的同步时间
+        if (syncStatusEnum == SyncStatusEnum.SYNCING) {
+            syncInfo.setLastSyncTime(LocalDateTime.now());
+        }
         syncInfoRepository.save(syncInfo);
     }
 
     public void setSyncInterval(SyncTypeEnum syncType, long interval) {
         SyncInfo syncInfo = getSyncInfo(syncType);
-        syncInfo.setSyncInterval(interval);
+        syncInfo.setFullSyncInterval(interval);
         syncInfoRepository.save(syncInfo);
     }
 

@@ -13,6 +13,7 @@ import xyz.mxue.lazycatapp.repository.*;
 import xyz.mxue.lazycatapp.service.AppService;
 
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,6 +29,8 @@ public class AppServiceImpl implements AppService {
     private final AppScoreRepository appScoreRepository;
 
     private final AppCommentRepository appCommentRepository;
+
+    private final CommunityUserRepository communityUserRepository;
 
     @Override
     public Page<App> findAll(Pageable pageable) {
@@ -91,20 +94,29 @@ public class AppServiceImpl implements AppService {
 
     @Override
     public List<App> findByCreatorId(Long creatorId) {
-        return appRepository.findByCreatorId(creatorId);
+        App app = new App();
+        app.setCreatorId(creatorId);
+        Example<App> queryParam = Example.of(app);
+        return appRepository.findAll(queryParam);
     }
 
     @Override
     public List<Map<String, Object>> getDeveloperRanking() {
         List<User> userList = userRepository.findAll();
+        List<CommunityUser> communityUserList = communityUserRepository.findAll();
+        Map<Long, Integer> userGuidelineCountsNap = new HashMap<>();
+        for (CommunityUser communityUser : communityUserList) {
+            userGuidelineCountsNap.put(communityUser.getUid(), communityUser.getGuidelineCounts());
+        }
 
         return userList.stream().map(user -> {
-            List<App> apps = appRepository.findByCreatorId(user.getId());
+            List<App> apps = findByCreatorId(user.getId());
+            log.error(user.getId() + "-的-"  + apps);
             Map<String, Object> result = new HashMap<>();
             int totalDownloads = 0;
             String lastUpdateDate = "";
             List<Map<String, Object>> topApps = new ArrayList<>();
-            if (CollectionUtil.isEmpty(apps)) {
+            if (CollectionUtil.isNotEmpty(apps)) {
                 // 按下载量排序并取前三
                 topApps = apps.stream().sorted((a, b) -> {
                     int aCount = a.getDownloadCount() != null ? a.getDownloadCount() : 0;
@@ -114,13 +126,15 @@ public class AppServiceImpl implements AppService {
                     Map<String, Object> appMap = new HashMap<>();
                     appMap.put("pkgId", app.getPackageName());
                     appMap.put("name", app.getName());
-                    appMap.put("updateDate", app.getUpdateDate() != null ? app.getUpdateDate() : "");
+                    appMap.put("updateDate", app.getAppUpdateTime() != null ?
+                            app.getAppUpdateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : "");
                     return appMap;
                 }).collect(Collectors.toList());
 
                 totalDownloads = apps.stream().mapToInt(app -> app.getDownloadCount() != null ? app.getDownloadCount() : 0).sum();
 
-                lastUpdateDate = apps.stream().map(App::getUpdateDate).max(String::compareTo).orElse("");
+                lastUpdateDate = apps.stream().map(App::getAppUpdateTime).filter(Objects::nonNull)
+                        .map(getAppUpdateTime -> getAppUpdateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).max(String::compareTo).orElse("");
             }
 
             result.put("id", user.getId());
@@ -130,6 +144,10 @@ public class AppServiceImpl implements AppService {
             result.put("totalDownloads", totalDownloads);
             result.put("apps", topApps);
             result.put("lastUpdateDate", lastUpdateDate);
+            result.put("guidelineCounts", 0);
+            if (userGuidelineCountsNap.containsKey(user.getId())) {
+                result.put("guidelineCounts", userGuidelineCountsNap.get(user.getId()));
+            }
             return result;
         }).collect(Collectors.toList());
     }

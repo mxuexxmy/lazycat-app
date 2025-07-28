@@ -1,5 +1,6 @@
 package xyz.mxue.lazycatapp.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Data;
 import xyz.mxue.lazycatapp.converter.StringListConverter;
@@ -103,11 +104,13 @@ public class App {
     /**
      * 应用创建时间
      */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime appCreateTime;
 
     /**
      * 应用更新时间
      */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime appUpdateTime;
 
     @Column(name = "last_updated")
@@ -117,9 +120,11 @@ public class App {
     private Integer downloadCount;
 
     @Column(name = "create_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
 
     @Column(name = "update_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updateTime;
 
     @Column(name = "tags")

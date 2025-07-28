@@ -10,6 +10,7 @@ import xyz.mxue.lazycatapp.entity.User;
 import xyz.mxue.lazycatapp.repository.AppRepository;
 import xyz.mxue.lazycatapp.repository.CommunityUserRepository;
 import xyz.mxue.lazycatapp.repository.UserRepository;
+import xyz.mxue.lazycatapp.service.AppService;
 import xyz.mxue.lazycatapp.service.UserService;
 
 import java.util.HashMap;
@@ -23,8 +24,10 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+
     private final CommunityUserRepository communityUserRepository;
-    private final AppRepository appRepository;
+
+    private final AppService appService;
 
     @Override
     public User getUserInfo(Long userId) {
@@ -73,7 +76,7 @@ public class UserServiceImpl implements UserService {
             // userMap.put("lastActive", user.getUpdatedAt());
 
             // 获取该用户的所有应用并计算总下载量
-            List<App> userApps = appRepository.findByCreatorId(user.getId());
+            List<App> userApps = appService.findByCreatorId(user.getId());
             int totalDownloads = userApps.stream().mapToInt(app -> app.getDownloadCount() != null ? app.getDownloadCount() : 0).sum();
 
             userMap.put("downloads", totalDownloads);

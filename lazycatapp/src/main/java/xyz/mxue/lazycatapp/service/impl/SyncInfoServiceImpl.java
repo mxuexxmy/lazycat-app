@@ -64,15 +64,18 @@ public class SyncInfoServiceImpl implements SyncInfoService {
                 vo.setSyncStatus(entity.getSyncStatus());
                 vo.setSyncStatusName(SyncStatusEnum.getNameByCode(entity.getSyncStatus()));
                 vo.setSyncStrategy(entity.getSyncStrategy());
-                vo.setSyncInterval(entity.getSyncInterval());
                 vo.setLastError(entity.getLastError());
-                vo.setNextSyncTime(entity.getNextSyncTime());
+                vo.setFullSyncInterval(entity.getFullSyncInterval());
+                vo.setIncrementalSyncInterval(entity.getIncrementalSyncInterval());
+                vo.setFullNextSyncTime(entity.getFullNextSyncTime());
+                vo.setIncrementalNextSyncTime(entity.getIncrementalNextSyncTime());
                 vo.setRetryCount(entity.getRetryCount());
                 vo.setEnabled(entity.isEnabled());
                 vo.setTotalCount(entity.getTotalCount());
                 vo.setSyncTypeName(SyncTypeEnum.getNameByCode(entity.getSyncType()));
                 vo.setInitialSyncCompletedName(SyncStatusEnum.getNameByCode(entity.isInitialSyncCompleted() ? 1 : 0));
                 vo.setSyncStrategyName(SyncStrategyEnum.getNameByCode(entity.getSyncStrategy()));
+                vo.setDescription(entity.getDescription());
                 res.add(vo);
             });
         }

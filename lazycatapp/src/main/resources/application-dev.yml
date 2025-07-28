@@ -4,11 +4,9 @@ server:
 spring:
   application:
     name: lazycatapp
-  main:
-    allow-bean-definition-overriding: true
   datasource:
     driver-class-name: org.sqlite.JDBC
-    url: jdbc:sqlite:data/lazycatapp.db
+    url: jdbc:sqlite:data/lazycatapp.db?busy_timeout=5000&journal_mode=WAL&synchronous=NORMAL
   jpa:
     database-platform: org.hibernate.community.dialect.SQLiteDialect
     hibernate:

@@ -23,25 +23,47 @@ public class JobController {
 
     private final UserSyncService userSyncService;
 
-    @Operation(summary = "同步应用", description = "同步应用")
+    @Operation(summary = "全量同步应用", description = "全量同步应用")
     @GetMapping("/syncApps")
     public R<String> syncApps() {
         appSyncService.syncApps(true);
         return R.success("在后台进行同步，请 30 分钟后进行查看");
     }
 
-    @Operation(summary = "同步分类", description = "同步分类")
+    @Operation(summary = "全量同步分类", description = "全量同步分类")
     @GetMapping("/syncCategories")
     public R<String> syncCategories() {
         categorySyncService.syncCategories(true);
         return R.success("在后台进行同步，请 1 分钟后进行查看");
     }
 
-    @Operation(summary = "同步用户", description = "同步用户")
+    @Operation(summary = "全量同步用户", description = "全量同步用户")
     @GetMapping("/syncUsers")
     public R<String> syncUsers() {
         userSyncService.syncDevelopers(true);
         return R.success("在后台进行同步，请 10 分钟后进行查看");
     }
+
+    @Operation(summary = "增量同步应用", description = "增量全量同步应用")
+    @GetMapping("/incrementalSyncApps")
+    public R<String> incrementalSyncApps() {
+        appSyncService.syncAppsIncremental(true);
+        return R.success("在后台进行同步，请 10 分钟后进行查看");
+    }
+
+    @Operation(summary = "增量同步分类", description = "增量同步分类")
+    @GetMapping("/incrementalSyncCategories")
+    public R<String> incrementalSyncCategories() {
+        categorySyncService.syncCategoriesIncremental(true);
+        return R.success("在后台进行同步，请 1 分钟后进行查看");
+    }
+
+    @Operation(summary = "增量同步用户", description = "增量同步用户")
+    @GetMapping("/incrementalSyncUsers")
+    public R<String> incrementalSyncUsers() {
+        userSyncService.syncUsersIncremental(true);
+        return R.success("在后台进行同步，请 1 分钟后进行查看");
+    }
+
 
 }

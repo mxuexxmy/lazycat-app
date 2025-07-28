@@ -8,8 +8,7 @@ import lombok.Getter;
 public enum SyncStrategyEnum {
 
     FULL("FULL", "全量"),
-    INCREMENTAL("INCREMENTAL", "增量");
-    ;
+    INCREMENTAL("INCREMENTAL", "增量");;
 
     private final String code;
     private final String name;
