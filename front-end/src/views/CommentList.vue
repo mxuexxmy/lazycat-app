@@ -81,7 +81,7 @@ const loading = ref(true)
 
 const fetchComments = async () => {
   try {
-    const response = await request.get<Comment[]>('/apps/comments/all')
+    const response = await request.get<Comment[]>('/comment/all')
     // 按创建时间倒序排序
     comments.value = response.sort((a, b) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -99,7 +99,8 @@ const formatDate = (date: string) => {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    second: '2-digit'
   })
 }
 
@@ -162,7 +163,7 @@ onMounted(() => {
 }
 
 .app-info {
-  background-color: var(--n-color-embedded);
+  //background-color: var(--n-color-embedded);
   margin-bottom: 8px;
 }
 

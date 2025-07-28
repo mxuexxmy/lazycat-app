@@ -29,11 +29,11 @@
                   />
                   <span class="app-name">{{ app.name }}</span>
                   <n-tag
-                    :type="getUpdateTagType(app.updateDate)"
+                    :type="getUpdateTagType(app.appUpdateTime)"
                     size="small"
                     round
                   >
-                    {{ formatUpdateTime(app.updateDate) }}
+                    {{ formatUpdateTime(app.appUpdateTime) }}
                   </n-tag>
                 </n-space>
               </template>
@@ -108,13 +108,10 @@ import {
 } from "naive-ui";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import type { App } from "@/types";
-
-const __name = "RecentUpdates";
 
 interface AppInfo {
   name: string;
-  pkgId: string;
+  packageName: string;
   description: string;
   brief: string;
   category: string[];
@@ -132,11 +129,10 @@ const defaultIcon =
 const router = useRouter();
 
 const getAppIcon = (app: AppInfo) => {
-  if (!app.iconPath) return defaultIcon;
-  const iconPath = app.iconPath.startsWith("/")
-    ? app.iconPath.slice(1)
-    : app.iconPath;
-  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`;
+  if (!app.iconPath) {
+    return `https://dl.lazycatmicroserver.com` + app.iconPath;
+  }
+  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.packageName}/icon.png`;
 };
 
 const formatUpdateTime = (time: string) => {
@@ -156,18 +152,18 @@ const getUpdateTagType = (time: string) => {
 const fetchRecentUpdates = async () => {
   loading.value = true;
   try {
-    const response = await fetch("/api/apps/latest");
+    const response = await fetch("/api/app/latest");
     const result = await response.json();
     if (Array.isArray(result)) {
       apps.value = result.map((app) => ({
-        pkgId: app.pkgId,
+        packageName: app.packageName,
         name: app.name,
         description: app.description,
         brief: app.brief,
         category: app.category || [],
         iconPath: app.iconPath,
         version: app.version,
-        updateDate: app.updateDate,
+        appUpdateTime: app.appUpdateTime,
         supportPC: app.supportPC,
         supportMobile: app.supportMobile,
       }));
@@ -182,7 +178,7 @@ const fetchRecentUpdates = async () => {
 const handleAppClick = (app: AppInfo) => {
   router.push({
     name: "AppDetail",
-    params: { pkgId: app.pkgId },
+    params: { pkgId: app.packageName },
   });
 };
 

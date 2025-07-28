@@ -30,11 +30,6 @@
                       >总下载:
                       {{ formatDownloads(developer.totalDownloads) }}</span
                     >
-                    <n-divider vertical />
-                    <span
-                      >最近更新:
-                      {{ formatDate(developer.lastUpdateDate) }}</span
-                    >
                   </div>
                 </div>
               </div>
@@ -117,7 +112,7 @@ import {
 import { Search } from "@vicons/ionicons5";
 
 interface App {
-  pkgId: string;
+  packageName: string;
   name: string;
   description?: string;
   icon: string;
@@ -201,7 +196,7 @@ const filteredApps = computed(() => {
 const handleAppClick = (app: App) => {
   router.push({
     name: "AppDetail",
-    params: { pkgId: app.pkgId },
+    params: { pkgId: app.packageName },
   });
 };
 
@@ -210,8 +205,10 @@ const handleBackClick = () => {
 };
 
 const getAppIcon = (app: App) => {
-  if (!app.icon) return defaultIcon;
-  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`;
+  if (!app.icon)  {
+    return `https://dl.lazycatmicroserver.com` + app.icon;
+  }
+  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.packageName}/icon.png`;
 };
 
 const fetchDeveloperInfo = async () => {
@@ -220,7 +217,7 @@ const fetchDeveloperInfo = async () => {
     const creatorId = route.params.creatorId;
     const [userResponse, appsResponse] = await Promise.all([
       fetch(`/api/users/${creatorId}/info`),
-      fetch(`/api/apps/developers/${creatorId}/apps`),
+      fetch(`/api/app/developers/${creatorId}/apps`),
     ]);
 
     const userResult = await userResponse.json();
@@ -239,7 +236,7 @@ const fetchDeveloperInfo = async () => {
 
     if (Array.isArray(appsResult)) {
       apps.value = appsResult.map((app) => ({
-        pkgId: app.pkgId,
+        packageName: app.packageName,
         name: app.name || "",
         description: app.description || app.brief || "",
         icon: app.iconPath ? `/api${app.iconPath}` : "",

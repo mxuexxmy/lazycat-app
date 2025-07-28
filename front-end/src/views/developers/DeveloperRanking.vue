@@ -1,6 +1,36 @@
 <template>
   <div class="rankings-container">
     <n-card title="开发者排行榜" class="developer-ranking">
+      <!-- 排序选项 -->
+      <div class="sort-options">
+        <n-radio-group v-model:value="currentSort" @update:value="handleSortChange">
+          <n-radio-button value="appCount">
+            <template #icon>
+              <n-icon><AppsOutline /></n-icon>
+            </template>
+            应用数
+          </n-radio-button>
+          <n-radio-button value="guidelineCounts">
+            <template #icon>
+              <n-icon><DocumentTextOutline /></n-icon>
+            </template>
+            攻略数
+          </n-radio-button>
+          <n-radio-button value="totalDownloads">
+            <template #icon>
+              <n-icon><TrendingUpOutline /></n-icon>
+            </template>
+            下载数
+          </n-radio-button>
+          <n-radio-button value="appGuidelineCount">
+            <template #icon>
+              <n-icon><CodeSlashOutline /></n-icon>
+            </template>
+            应用和攻略数
+          </n-radio-button>
+        </n-radio-group>
+      </div>
+
       <n-spin :show="loading">
         <n-empty
           v-if="!loading && (!developers || developers.length === 0)"
@@ -39,14 +69,16 @@
                   <div class="developer-stats">
                     <span>应用数: {{ developer.appCount }}</span>
                     <n-divider vertical />
-                    <span
-                      >总下载:
+                    <span>攻略数: {{ developer.guidelineCounts }}</span>
+                    <n-divider vertical />
+                    <span>应用和攻略数: {{ developer.appCount + developer.guidelineCounts }}</span>
+                    <n-divider vertical />
+                    <span>总下载:
                       {{ formatDownloads(developer.totalDownloads) }}</span
                     >
                     <n-divider vertical />
-                    <span
-                      >最近更新:
-                      {{ formatDate(developer.lastUpdateDate) }}</span
+                    <span v-if="developer.lastUpdateDate">更新时间:
+                      {{ developer.lastUpdateDate }}</span
                     >
                   </div>
                   <div class="app-list">
@@ -88,7 +120,16 @@ import {
   NListItem,
   NDivider,
   NTag,
+  NRadioGroup,
+  NRadioButton,
+  NIcon,
 } from "naive-ui";
+import {
+  AppsOutline,
+  DocumentTextOutline,
+  TrendingUpOutline,
+  CodeSlashOutline,
+} from "@vicons/ionicons5";
 
 interface App {
   pkgId: string;
@@ -103,6 +144,7 @@ interface Developer {
   avatar?: string;
   apps: App[];
   appCount: number;
+  guidelineCounts: number,
   totalDownloads: number;
   lastUpdateDate: string;
 }
@@ -119,14 +161,18 @@ interface DeveloperRankingResponse {
       updateDate: string;
     }>;
     appCount: number;
+    guidelineCounts: number;
     totalDownloads: number;
     lastUpdateDate: string;
   }>;
 }
 
+type SortType = 'appCount' | 'guidelineCounts' | 'totalDownloads' | 'appGuidelineCount';
+
 const router = useRouter();
 const loading = ref(true);
 const developers = ref<Developer[]>([]);
+const currentSort = ref<SortType>('appCount');
 
 // 头像背景色列表
 const avatarColors = [
@@ -158,15 +204,48 @@ const getFirstChar = (name: string | undefined) => {
 
 const sortedDevelopers = computed(() => {
   if (!developers.value) return [];
+  
   return [...developers.value].sort((a, b) => {
-    // 首先按应用数量排序
-    if (b.appCount !== a.appCount) {
-      return b.appCount - a.appCount;
+    let aValue: number;
+    let bValue: number;
+    
+    switch (currentSort.value) {
+      case 'appCount':
+        aValue = a.appCount;
+        bValue = b.appCount;
+        break;
+      case 'guidelineCounts':
+        aValue = a.guidelineCounts;
+        bValue = b.guidelineCounts;
+        break;
+      case 'totalDownloads':
+        aValue = a.totalDownloads;
+        bValue = b.totalDownloads;
+        break;
+      case 'appGuidelineCount':
+        // 应用攻略数 = 应用数 + 攻略数
+        aValue = a.appCount + a.guidelineCounts;
+        bValue = b.appCount + b.guidelineCounts;
+        break;
+      default:
+        aValue = a.appCount;
+        bValue = b.appCount;
     }
-    // 其次按下载量排序
-    return b.totalDownloads - a.totalDownloads;
+    
+    // 降序排列
+    if (bValue !== aValue) {
+      return bValue - aValue;
+    }
+    
+    // 如果主要排序值相同，按应用数作为次要排序
+    return b.appCount - a.appCount;
   });
 });
+
+const handleSortChange = (value: SortType) => {
+  currentSort.value = value;
+  console.log('排序方式已更改为:', value);
+};
 
 const getRankClass = (rank: number) => {
   if (rank === 1) return "rank-gold";
@@ -208,7 +287,7 @@ const handleDeveloperClick = (developer: Developer) => {
 const fetchAllApps = async () => {
   try {
     loading.value = true;
-    const response = await fetch("/api/apps/developers/ranking");
+    const response = await fetch("/api/app/developers/ranking");
     const result = (await response.json()) as DeveloperRankingResponse;
 
     if (result.success && result.data) {
@@ -218,6 +297,7 @@ const fetchAllApps = async () => {
         avatar: developer.avatar,
         apps: developer.apps || [],
         appCount: developer.appCount || 0,
+        guidelineCounts: developer.guidelineCounts || 0,
         totalDownloads: developer.totalDownloads || 0,
         lastUpdateDate: developer.lastUpdateDate || "",
       }));
@@ -246,6 +326,27 @@ onMounted(() => {
   width: 100%;
 }
 
+.sort-options {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.sort-options .n-radio-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.sort-options .n-radio-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 80px;
+  justify-content: center;
+}
+
 .ranking-list {
   margin-top: 16px;
 }
@@ -261,8 +362,8 @@ onMounted(() => {
 .rank {
   font-weight: bold;
   color: #666;
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -343,6 +444,19 @@ onMounted(() => {
 
 /* 移动端适配 */
 @media screen and (max-width: 768px) {
+  .sort-options {
+    margin-bottom: 16px;
+  }
+  
+  .sort-options .n-radio-group {
+    gap: 4px;
+  }
+  
+  .sort-options .n-radio-button {
+    min-width: 70px;
+    font-size: 12px;
+  }
+
   .developer-item {
     padding: 8px;
   }
@@ -362,6 +476,15 @@ onMounted(() => {
 }
 
 @media screen and (max-width: 480px) {
+  .sort-options .n-radio-group {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .sort-options .n-radio-button {
+    min-width: 120px;
+  }
+
   .developer-item {
     padding: 6px;
   }

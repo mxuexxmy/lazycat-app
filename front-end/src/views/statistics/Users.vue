@@ -97,7 +97,7 @@ const columns: DataTableColumns<User> = [
 const fetchActiveUsers = async () => {
   loading.value = true
   try {
-    const response = await fetch('/api/apps/statistics/users/active')
+    const response = await fetch('/api/app/statistics/users/active')
     const data = await response.json()
     activeUsers.value = data
   } catch (error) {
@@ -109,7 +109,7 @@ const fetchActiveUsers = async () => {
 
 const fetchGrowthStats = async () => {
   try {
-    const response = await fetch('/api/apps/statistics/users/growth')
+    const response = await fetch('/api/app/statistics/users/growth')
     const data = await response.json()
     growthStats.value[0].value = data.daily
     growthStats.value[1].value = data.weekly

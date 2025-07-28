@@ -65,7 +65,7 @@
             </template>
             <!-- 应用列表 -->
             <n-grid :cols="3" :x-gap="16" :y-gap="16" responsive="screen" v-if="categoryApps.length">
-              <n-grid-item v-for="app in categoryApps" :key="app.pkgId">
+              <n-grid-item v-for="app in categoryApps" :key="app.packageName">
                 <n-card class="app-card" hoverable @click="handleAppClick(app)">
                   <template #cover>
                     <div class="app-icon">
@@ -136,7 +136,7 @@
               </n-space>
             </template>
             <n-grid :cols="1" :y-gap="16">
-              <n-grid-item v-for="app in categoryApps" :key="app.pkgId">
+              <n-grid-item v-for="app in categoryApps" :key="app.packageName">
                 <n-card class="app-card" hoverable @click="handleAppClick(app)">
                   <n-space align="center">
                     <div class="app-icon small">
@@ -198,7 +198,7 @@ import { h } from 'vue'
 
 interface AppInfo {
   name: string;
-  pkgId: string;
+  packageName: string;
   description: string;
   brief: string;
   category: string[];
@@ -334,22 +334,7 @@ const handleMenuSelect = async (key: string) => {
 // 获取应用图标URL
 const getAppIcon = (app: AppInfo) => {
   if (!app.iconPath) return defaultIcon
-  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/${app.iconPath}`
-}
-
-// 获取分类应用列表
-const fetchCategoryApps = async (categoryKey: string) => {
-  try {
-    const url = `https://appstore.api.lazycat.cloud/api/app/list?category=${categoryKey}`
-    const response = await fetch(url)
-    const result = await response.json()
-    if (result.success && Array.isArray(result.data)) {
-      categoryApps.value = result.data
-    }
-  } catch (error) {
-    console.error('Failed to fetch category apps:', error)
-    categoryApps.value = []
-  }
+  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.packageName}/${app.iconPath}`
 }
 
 // 处理应用点击

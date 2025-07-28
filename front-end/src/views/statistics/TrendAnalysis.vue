@@ -40,7 +40,7 @@ const categoryChartRef = ref<HTMLElement | null>(null)
 // 获取类别分布数据
 const fetchCategoryData = async () => {
   try {
-    const response = await fetch('/api/apps/statistics/category-distribution')
+    const response = await fetch('/api/app/statistics/category-distribution')
     const result = await response.json()
     
     if (Array.isArray(result)) {

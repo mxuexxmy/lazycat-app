@@ -24,7 +24,6 @@ import { ref, onMounted } from 'vue'
 import { NCard, NGrid, NGridItem, NIcon } from 'naive-ui'
 import { 
   AppsOutline,
-  PeopleOutline,
   TrendingUpOutline,
   CodeSlashOutline
 } from '@vicons/ionicons5'
@@ -48,17 +47,11 @@ const statistics = ref([
     description: '移植开发者总数',
     icon: CodeSlashOutline
   },
-  {
-    title: '总用户数',
-    value: '未知',
-    description: '注册用户总数',
-    icon: PeopleOutline
-  }
 ])
 
 const fetchStatistics = async () => {
   try {
-    const response = await fetch('/api/apps/statistics/overview')
+    const response = await fetch('/api/app/statistics/overview')
     const data = await response.json()
     statistics.value[0].value = data.totalApps
     statistics.value[1].value = data.totalDownloads

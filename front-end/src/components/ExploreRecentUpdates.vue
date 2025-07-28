@@ -93,7 +93,6 @@ interface AppInfo {
   supportMobile: boolean;
 }
 
-const appStore = useAppStore()
 const loading = ref(false)
 const selectedCategory = ref<number | null>(null)
 const recentUpdates = ref<AppInfo[]>([])

@@ -67,7 +67,7 @@ const columns: DataTableColumns<App> = [
     title: '分类',
     key: 'category',
     render(row) {
-      return row.category.join(', ')
+      return row.category
     }
   }
 ]
@@ -75,7 +75,7 @@ const columns: DataTableColumns<App> = [
 const fetchPopularApps = async () => {
   loading.value = true
   try {
-    const response = await fetch('/api/apps/statistics/apps/popular')
+    const response = await fetch('/api/app/statistics/apps/popular')
     const data = await response.json()
     popularApps.value = data
   } catch (error) {
@@ -87,7 +87,7 @@ const fetchPopularApps = async () => {
 
 const fetchCategories = async () => {
   try {
-    const response = await fetch('/api/apps/statistics/apps/categories')
+    const response = await fetch('/api/app/statistics/apps/categories')
     const data = await response.json()
     categories.value = data
   } catch (error) {

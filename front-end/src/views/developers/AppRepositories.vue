@@ -93,7 +93,7 @@ import {
 import { DownloadOutline, LogoGithub } from "@vicons/ionicons5";
 
 interface AppData {
-  pkgId: string;
+  packageName: string;
   name: string;
   description: string;
   iconPath: string;
@@ -112,8 +112,10 @@ const formatDownloads = (count: number | null) => {
 
 // Get app icon URL
 const getAppIcon = (app: AppData) => {
-  if (!app.iconPath) return defaultIcon;
-  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`;
+  if (!app.iconPath) {
+    return `https://dl.lazycatmicroserver.com` + app.iconPath;
+  }
+  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.packageName}/icon.png`;
 };
 
 const defaultIcon = "/app-icon.png";
@@ -123,7 +125,7 @@ const apps = ref<AppData[]>([]);
 
 const fetchApps = async () => {
   try {
-    const response = await fetch("/api/apps/repositories");
+    const response = await fetch("/api/app/repositories");
     const data = await response.json();
     apps.value = data;
   } catch (error) {
@@ -136,7 +138,7 @@ const fetchApps = async () => {
 const handleAppClick = (app: AppData) => {
   router.push({
     name: "AppDetail",
-    params: { pkgId: app.pkgId },
+    params: { pkgId: app.packageName },
   });
 };
 

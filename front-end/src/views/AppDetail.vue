@@ -6,28 +6,29 @@
           <!-- 头部信息 -->
           <n-space align="center" :size="24">
             <n-image
-              :src="getAppIcon(app)"
-              :alt="app.name"
-              class="app-icon"
-              :fallback-src="defaultIcon"
-              preview-disabled
+                :src="getAppIcon(app)"
+                :alt="app.name"
+                class="app-icon"
+                :fallback-src="defaultIcon"
+                preview-disabled
             />
             <n-space vertical :size="12">
               <n-h2 class="app-title">{{ app.name }}</n-h2>
               <n-space>
-                <n-tag 
-                  v-for="cat in app.category" 
-                  :key="cat"
-                  size="medium"
-                  round
-                  :bordered="false"
-                  type="success"
-                >{{ cat }}</n-tag>
+                <n-tag
+                    v-for="cat in app.category"
+                    :key="cat"
+                    size="medium"
+                    round
+                    :bordered="false"
+                    type="success"
+                >{{ cat }}
+                </n-tag>
               </n-space>
             </n-space>
           </n-space>
 
-          <n-divider />
+          <n-divider/>
 
           <!-- 应用简介 -->
           <n-space vertical :size="12">
@@ -50,13 +51,13 @@
                   <n-grid-item v-for="(screenshot, index) in app.pcScreenshotPaths" :key="index">
                     <n-card class="screenshot-card">
                       <n-image
-                        :src="getScreenshotUrl(app.pkgId, screenshot)"
-                        :alt="`PC Screenshot ${index + 1}`"
-                        object-fit="cover"
-                        class="screenshot-image"
-                        :preview-src="getScreenshotUrl(app.pkgId, screenshot)"
-                        :preview-disabled="false"
-                        show-toolbar-tooltip
+                          :src="getScreenshotUrl(app.pkgId, screenshot)"
+                          :alt="`PC Screenshot ${index + 1}`"
+                          object-fit="cover"
+                          class="screenshot-image"
+                          :preview-src="getScreenshotUrl(app.pkgId, screenshot)"
+                          :preview-disabled="false"
+                          show-toolbar-tooltip
                       />
                     </n-card>
                   </n-grid-item>
@@ -67,19 +68,20 @@
                   <n-grid-item v-for="(screenshot, index) in app.mobileScreenshotPaths" :key="index">
                     <n-card class="screenshot-card">
                       <n-image
-                        :src="getScreenshotUrl(app.pkgId, screenshot)"
-                        :alt="`Mobile Screenshot ${index + 1}`"
-                        object-fit="cover"
-                        class="screenshot-image"
-                        :preview-src="getScreenshotUrl(app.pkgId, screenshot)"
-                        :preview-disabled="false"
-                        show-toolbar-tooltip
+                          :src="getScreenshotUrl(app.pkgId, screenshot)"
+                          :alt="`Mobile Screenshot ${index + 1}`"
+                          object-fit="cover"
+                          class="screenshot-image"
+                          :preview-src="getScreenshotUrl(app.pkgId, screenshot)"
+                          :preview-disabled="false"
+                          show-toolbar-tooltip
                       />
                     </n-card>
                   </n-grid-item>
                 </n-grid>
               </n-tab-pane>
-              <n-empty v-if="!app.pcScreenshotPaths?.length && !app.mobileScreenshotPaths?.length" description="暂无截图" />
+              <n-empty v-if="!app.pcScreenshotPaths?.length && !app.mobileScreenshotPaths?.length"
+                       description="暂无截图"/>
             </n-tabs>
           </n-space>
 
@@ -90,7 +92,7 @@
               <n-descriptions-item label="版本">{{ app.version }}</n-descriptions-item>
               <n-descriptions-item label="作者">{{ app.author }}</n-descriptions-item>
               <n-descriptions-item label="贡献者">{{ app.creator }}</n-descriptions-item>
-              <n-descriptions-item label="更新时间">{{ formatDate(app.updateDate) }}</n-descriptions-item>
+              <n-descriptions-item label="更新时间">{{ formatDate(app.appUpdateTime) }}</n-descriptions-item>
               <n-descriptions-item label="支持平台">
                 <n-space>
                   <n-tag v-if="app.supportPC" type="success">PC</n-tag>
@@ -106,16 +108,31 @@
       </n-card>
     </n-space>
   </div>
-  <n-spin v-else size="large" />
+  <n-spin v-else size="large"/>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { NTabs, NTabPane, NEmpty, NImage, NSpace, NCard, NDivider, NH2, NH3, NP, NGrid, NGridItem, NDescriptions, NDescriptionsItem } from 'naive-ui'
+import {ref, onMounted} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
+import {
+  NTabs,
+  NTabPane,
+  NEmpty,
+  NImage,
+  NSpace,
+  NCard,
+  NDivider,
+  NH2,
+  NH3,
+  NP,
+  NGrid,
+  NGridItem,
+  NDescriptions,
+  NDescriptionsItem
+} from 'naive-ui'
 
 interface AppDetail {
-  pkgId: string
+  packageName: string
   name: string
   description: string
   brief: string
@@ -137,8 +154,10 @@ const app = ref<AppDetail | null>(null)
 const defaultIcon = 'https://dl.lazycatmicroserver.com/appstore/metarepo/default-icon.png'
 
 const getAppIcon = (app: AppDetail) => {
-  if (!app.iconPath) return defaultIcon
-  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`
+  if (!app.iconPath) {
+    return `https://dl.lazycatmicroserver.com` + app.iconPath
+  }
+  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.packageName}/icon.png`
 }
 
 const getScreenshotUrl = (pkgId: string, screenshot: string) => {
@@ -152,7 +171,7 @@ const formatDate = (date: string) => {
 
 const fetchAppDetail = async (pkgId: string) => {
   try {
-    const response = await fetch(`/api/apps/${pkgId}`)
+    const response = await fetch(`/api/app/${pkgId}`)
     const data = await response.json()
     app.value = data
   } catch (error) {

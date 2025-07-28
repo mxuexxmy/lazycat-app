@@ -12,7 +12,6 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { NCard, NEmpty } from 'naive-ui'
 import * as echarts from 'echarts'
-import type { EChartsType } from 'echarts'
 
 interface CategoryData {
   name: string
@@ -27,7 +26,7 @@ const categoryChartRef = ref<HTMLElement | null>(null)
 // 获取类别分布数据
 const fetchCategoryData = async () => {
   try {
-    const response = await fetch('/api/apps/api/apps/statistics/category-distribution')
+    const response = await fetch('api/app/statistics/category-distribution')
     const result = await response.json()
     
     if (Array.isArray(result)) {

@@ -35,7 +35,7 @@ const totalDevelopers = ref(0)
 
 const fetchStatistics = async () => {
   try {
-    const response = await fetch('/api/apps/statistics')
+    const response = await fetch('/api/app/statistics')
     const data = await response.json()
     totalApps.value = data.totalApps
     totalDevelopers.value = data.totalDevelopers

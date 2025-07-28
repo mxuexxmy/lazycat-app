@@ -131,7 +131,6 @@
 import { ref, onMounted } from "vue";
 import {
   NCard,
-  NButton,
   NIcon,
   NSpin,
   NAvatar,
@@ -143,7 +142,6 @@ import {
   NEmpty,
 } from "naive-ui";
 import {
-  RefreshOutline,
   LogoGithub,
   GitBranchOutline,
   GitPullRequestOutline,

@@ -2,18 +2,18 @@
   <div class="category-view">
     <n-space vertical size="large">
       <div class="category-header">
-        <h1>{{ categoryName }}</h1>
+        <h1>{{categoryName}}</h1>
         <div class="search-section">
           <n-input-group>
             <n-input
-              v-model:value="searchQuery"
-              placeholder="搜索应用"
-              class="search-input"
-              clearable
-              @input="debouncedSearch"
+                v-model:value="searchQuery"
+                placeholder="搜索应用"
+                class="search-input"
+                clearable
+                @input="debouncedSearch"
             >
               <template #prefix>
-                <n-icon :component="SearchOutline" />
+                <n-icon :component="SearchOutline"/>
               </template>
             </n-input>
             <n-button type="primary" @click="handleSearch">
@@ -25,17 +25,17 @@
 
       <div class="app-grid">
         <n-spin :show="loading">
-          <n-empty v-if="displayedApps.length === 0" description="暂无应用" />
+          <n-empty v-if="displayedApps.length === 0" description="暂无应用"/>
           <n-grid v-else :cols="4" :x-gap="16" :y-gap="16" responsive="screen">
-            <n-grid-item v-for="app in displayedApps" :key="app.pkgId">
+            <n-grid-item v-for="app in displayedApps" :key="app.packageName">
               <n-card class="app-card" hoverable @click="handleAppClick(app)">
                 <div class="app-content">
                   <div class="app-icon">
                     <n-image
-                      :src="getAppIcon(app)"
-                      :fallback-src="defaultIcon"
-                      preview-disabled
-                      object-fit="contain"
+                        :src="getAppIcon(app)"
+                        :fallback-src="defaultIcon"
+                        preview-disabled
+                        object-fit="contain"
                     />
                   </div>
                   <div class="app-info">
@@ -66,8 +66,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import {ref, computed, onMounted} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
 import {
   NSpace,
   NGrid,
@@ -80,16 +80,12 @@ import {
   NButton,
   NIcon,
   NEmpty,
-  NSpin
+  NSpin,
 } from 'naive-ui'
-import { SearchOutline } from '@vicons/ionicons5'
-import type { App } from '@/types'
-
-const __name = 'Category'
+import {SearchOutline} from '@vicons/ionicons5'
 
 interface AppInfo {
   name: string;
-  pkgId: string;
   description: string;
   brief: string;
   category: string[];
@@ -123,12 +119,12 @@ const loading = ref(true)
 const filteredApps = computed(() => {
   if (!searchQuery.value) return apps.value
   const query = searchQuery.value.toLowerCase()
-  return apps.value.filter(app => 
-    app.name?.toLowerCase().includes(query) || 
-    app.brief?.toLowerCase().includes(query) ||
-    app.keywords?.toLowerCase().includes(query) ||
-    app.packageName?.toLowerCase().includes(query) ||
-    app.source?.toLowerCase().includes(query)
+  return apps.value.filter(app =>
+      app.name?.toLowerCase().includes(query) ||
+      app.brief?.toLowerCase().includes(query) ||
+      app.keywords?.toLowerCase().includes(query) ||
+      app.packageName?.toLowerCase().includes(query) ||
+      app.source?.toLowerCase().includes(query)
   )
 })
 
@@ -149,50 +145,48 @@ const handleSearch = () => {
     displayedApps.value = apps.value
     return
   }
-  
-  displayedApps.value = apps.value.filter(app => 
-    app.name?.toLowerCase().includes(query) || 
-    app.brief?.toLowerCase().includes(query) ||
-    app.keywords?.toLowerCase().includes(query) ||
-    app.packageName?.toLowerCase().includes(query) ||
-    app.source?.toLowerCase().includes(query)
+
+  displayedApps.value = apps.value.filter(app =>
+      app.name?.toLowerCase().includes(query) ||
+      app.brief?.toLowerCase().includes(query) ||
+      app.keywords?.toLowerCase().includes(query) ||
+      app.packageName?.toLowerCase().includes(query) ||
+      app.source?.toLowerCase().includes(query)
   )
 }
 
 // Get app icon URL
 const getAppIcon = (app: AppInfo) => {
-  if (!app.iconPath) return defaultIcon
-  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`
+  if (!app.iconPath) {
+    return `https://dl.lazycatmicroserver.com` + app.iconPath
+  }
+  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.packageName}/icon.png`
 }
 
 // Handle app card click
 const handleAppClick = (app: AppInfo) => {
   router.push({
     name: 'AppDetail',
-    params: { pkgId: app.pkgId }
+    params: {pkgId: app.packageName}
   })
 }
 
-// Fetch category name
-const fetchCategoryName = async () => {
-  try {
-    const response = await fetch('/api/categories')
-    const result = await response.json()
-    if (result.success) {
-      const category = result.data.find((cat: Category) => cat.id === Number(route.params.id))
-      if (category) {
-        categoryName.value = category.name
-      }
-    }
-  } catch (error) {
-    console.error('Failed to fetch category name:', error)
+const getCategoryName = () => {
+  if (route.params.id === "0") {
+    categoryName.value = "全部";
+  } else if (route.params.id === "1") {
+    categoryName.value = "原创应用"
+  } else if (route.params.id === "2") {
+    categoryName.value = "官方应用"
+  } else {
+    categoryName.value = "其它"
   }
 }
 
 // Fetch apps in category
 const fetchApps = async () => {
   try {
-    const url = `/api/apps/category/${route.params.id}`
+    const url = `/api/app/category/${route.params.id}`
     const response = await fetch(url)
     const result = await response.json()
     if (Array.isArray(result)) {
@@ -206,7 +200,8 @@ const fetchApps = async () => {
 
 onMounted(async () => {
   try {
-    await Promise.all([fetchCategoryName(), fetchApps()])
+    getCategoryName();
+    await Promise.all([fetchApps()])
   } finally {
     loading.value = false
   }
@@ -215,7 +210,7 @@ onMounted(async () => {
 
 <style scoped>
 .category-view {
-  max-width: 1440px;
+  width: 74%;
   margin: 0 auto;
   padding: 24px;
   min-height: 100vh;
@@ -226,8 +221,8 @@ onMounted(async () => {
 .category-header {
   position: fixed;
   top: 64px; /* 为顶部导航栏留出空间 */
-  left: 0;
-  right: 0;
+  left: 13%;
+  right: 13%;
   z-index: 100;
   text-align: center;
   background: rgba(255, 255, 255, 0.95);

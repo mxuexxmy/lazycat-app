@@ -1,6 +1,6 @@
 export interface App {
   name: string
-  pkgId: string
+  packageName: string
   description: string
   brief: string
   category: string[]

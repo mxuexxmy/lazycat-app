@@ -1,7 +1,6 @@
 <template>
   <n-config-provider :locale="zhCN" :date-locale="dateZhCN">
     <n-message-provider>
-      <LoadingOverlay v-if="isLoading" :progress="syncProgress" />
       <n-layout>
         <n-layout-header bordered class="header">
           <div class="header-content">
@@ -98,8 +97,6 @@ const route = useRoute()
 const router = useRouter()
 const activeKey = ref<string | null>(null)
 const shouldRefresh = ref(false)
-const isLoading = ref(true)
-const syncProgress = ref(0)
 
 // Fetch categories on component mount
 appStore.fetchCategories()
@@ -110,57 +107,6 @@ const menuOptions = [
     label: '首页',
     key: 'Home',
     icon: () => h(NIcon, null, { default: () => h(HomeOutline) })
-  },
-  {
-    label: '排行榜',
-    key: 'Rankings',
-    icon: () => h(NIcon, null, { default: () => h(TrophyOutline) }),
-    children: [
-      {
-        label: '最受欢迎',
-        key: 'MostPopular'
-      },
-      {
-        label: '本月新品',
-        key: 'MonthlyNew'
-      },
-      {
-        label: '最新发布',
-        key: 'LatestRelease'
-      },
-      {
-        label: '最近更新',
-        key: 'RecentUpdates'
-      }
-    ]
-  },
-  {
-    label: '开发者',
-    key: 'Developers',
-    icon: () => h(NIcon, null, { default: () => h(CodeSlashOutline) }),
-    children: [
-      {
-        label: '开发者排行',
-        key: 'DeveloperRanking'
-      },
-      {
-        label: 'GitHub 成就',
-        key: 'GitHubAchievements'
-      },
-      {
-        label: '开发者社区',
-        key: 'DeveloperCommunity'
-      },
-      {
-        label: '应用代码仓库',
-        key: 'AppRepositories'
-      }
-    ]
-  },
-  {
-    label: '开始探索',
-    key: 'Explore',
-    icon: () => h(NIcon, null, { default: () => h(RocketOutline) })
   },
   {
     label: '开发者手册',
@@ -276,7 +222,7 @@ const showBackButton = computed(() => {
     'Search',
     'AppDetail',
     'Comments',
-    'MyApps'
+    'SyncStatus'
   ]
   return routesWithBack.includes(route.name as string)
 })

@@ -73,12 +73,31 @@ import {
   NSpace, 
   NText, 
   NEllipsis, 
-  NTag, 
-  NButton, 
+  NTag,
   NIcon 
 } from 'naive-ui'
-import { ArrowBack, Star, Download, Chatbubble } from '@vicons/ionicons5'
-import { getFiveStarApps, FiveStarApp } from '@/api/app'
+import { Star, Download, Chatbubble } from '@vicons/ionicons5'
+interface FiveStarApp {
+  pkgId: string
+  name: string
+  iconPath: string
+  description: string
+  downloadCount: number
+  score: number
+  totalReviews: number
+  category: string[]
+  creator: string
+}
+
+const getFiveStarApps = async (num) => {
+  try {
+    const response = await fetch('/api/app/statistics/app/five-star?limit=' + num )
+    const data = await response.json()
+    apps.value = data
+  } catch (error) {
+    console.error('获取分类统计失败:', error)
+  }
+}
 
 const router = useRouter()
 const apps = ref<FiveStarApp[]>([])
@@ -86,7 +105,7 @@ const defaultIcon = '/path/to/default-icon.png'
 
 const fetchFiveStarApps = async () => {
   try {
-    apps.value = await getFiveStarApps(20) // 获取前20个五星应用
+    await getFiveStarApps(20) // 获取前20个五星应用
   } catch (error) {
     console.error('获取五星应用失败:', error)
   }
@@ -119,9 +138,6 @@ const goToApp = (pkgId: string) => {
   router.push(`/app/${pkgId}`)
 }
 
-const goBack = () => {
-  router.back()
-}
 
 onMounted(() => {
   fetchFiveStarApps()

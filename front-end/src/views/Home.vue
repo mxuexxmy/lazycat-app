@@ -121,11 +121,6 @@ import {
   CompassOutline,
   GameControllerOutline,
   CodeSlashOutline,
-  BookOutline,
-  BrushOutline,
-  FilmOutline,
-  HeartOutline,
-  BulbOutline,
   StarOutline,
   SearchOutline,
   AppsOutline,
@@ -133,20 +128,13 @@ import {
   PeopleOutline,
   LogoGithub,
   TrendingUpOutline,
-  CloudOutline
 } from '@vicons/ionicons5'
 import StatisticsCard from '@/components/StatisticsCard.vue'
 import AppWordCloud from '@/components/AppWordCloud.vue'
 import request from '@/utils/request'
 import { 
-  NCard, NSpace, NText, NAvatar, NRate, NButton, NIcon, NEmpty, NSpin, 
-  NGrid, NGridItem, NInput 
+  NCard, NSpace, NText, NAvatar, NRate, NButton, NIcon, NEmpty, NSpin, NInput 
 } from 'naive-ui'
-import { 
-  Search, TrendingUp, Time, Download, Star, BarChart, 
-  PieChart, Trophy, GitBranch, Apps,
-  Analytics, People 
-} from '@vicons/ionicons5'
 
 interface Function {
   id: string;
@@ -185,38 +173,6 @@ const loading = ref(true)
 
 const functions: Function[] = [
   {
-    id: 'my-apps',
-    title: '我的应用',
-    icon: CloudOutline,
-    iconColor: '#1890ff',
-    children: [
-      {
-        id: 'installed-apps',
-        title: '已安装应用',
-        description: '查看和管理已安装的应用',
-        icon: AppsOutline,
-        iconColor: '#1890ff',
-        route: { name: 'MyApps' }
-      },
-      {
-        id: 'app-updates',
-        title: '应用更新',
-        description: '检查和管理应用更新',
-        icon: RefreshOutline,
-        iconColor: '#13c2c2',
-        route: { name: 'AppUpdates' }
-      },
-      {
-        id: 'app-backups',
-        title: '应用备份',
-        description: '备份和恢复应用数据',
-        icon: ShieldCheckmarkOutline,
-        iconColor: '#52c41a',
-        route: { name: 'AppBackups' }
-      }
-    ]
-  },
-  {
     id: 'rankings',
     title: '排行榜',
     icon: TrophyOutline,
@@ -230,22 +186,22 @@ const functions: Function[] = [
         iconColor: '#ffb800',
         route: { name: 'MostPopular' }
       },
-      {
-        id: 'monthly-new',
-        title: '月度新品推荐',
-        description: '本月新上架的优质应用',
-        icon: RocketOutline,
-        iconColor: '#13c2c2',
-        route: { name: 'MonthlyNew' }
-      },
-      {
-        id: 'latest-release',
-        title: '最新上架',
-        description: '最新发布的应用',
-        icon: TimeOutline,
-        iconColor: '#722ed1',
-        route: { name: 'LatestRelease' }
-      },
+      // {
+      //   id: 'monthly-new',
+      //   title: '月度新品推荐',
+      //   description: '本月新上架的优质应用',
+      //   icon: RocketOutline,
+      //   iconColor: '#13c2c2',
+      //   route: { name: 'MonthlyNew' }
+      // },
+      // {
+      //   id: 'latest-release',
+      //   title: '最新上架',
+      //   description: '最新发布的应用',
+      //   icon: TimeOutline,
+      //   iconColor: '#722ed1',
+      //   route: { name: 'LatestRelease' }
+      // },
       {
         id: 'recent-updates',
         title: '最近更新',
@@ -360,84 +316,20 @@ const functions: Function[] = [
       },
       {
         id: 'official',
-        title: '官方应用',
-        description: '官方出品的应用',
+        title: '开发者原创',
+        description: '开发者原创应用',
         icon: ShieldCheckmarkOutline,
         iconColor: '#52c41a',
-        route: { name: 'Category', params: { id: 26 } }
+        route: { name: 'Category', params: { id: 1 } }
       },
       {
         id: 'games',
-        title: '游戏',
-        description: '精选游戏应用',
+        title: '官方应用',
+        description: '官方出品的应用',
         icon: GameControllerOutline,
         iconColor: '#ff4d4f',
         route: { name: 'Category', params: { id: 2 } }
       },
-      {
-        id: 'dev-tools',
-        title: '开发工具',
-        description: '提升开发效率的工具',
-        icon: CodeSlashOutline,
-        iconColor: '#1890ff',
-        route: { name: 'Category', params: { id: 4 } }
-      },
-      {
-        id: 'reading',
-        title: '阅读学习',
-        description: '知识获取与学习工具',
-        icon: BookOutline,
-        iconColor: '#722ed1',
-        route: { name: 'Category', params: { id: 5 } }
-      },
-      {
-        id: 'design',
-        title: '图形设计',
-        description: '设计创作工具',
-        icon: BrushOutline,
-        iconColor: '#13c2c2',
-        route: { name: 'Category', params: { id: 7 } }
-      },
-      {
-        id: 'entertainment',
-        title: '影音娱乐',
-        description: '视频音乐播放工具',
-        icon: FilmOutline,
-        iconColor: '#eb2f96',
-        route: { name: 'Category', params: { id: 14 } }
-      },
-      {
-        id: 'other',
-        title: '其他',
-        description: '其他',
-        icon: FilmOutline,
-        iconColor: '#eb2f96',
-        route: { name: 'Category', params: { id: 22 } }
-      },
-      {
-        id: 'life',
-        title: '生活',
-        description: '提升生活品质的应用',
-        icon: HeartOutline,
-        iconColor: '#f5222d',
-        route: { name: 'Category', params: { id: 23 } }
-      },
-      {
-        id: 'productivity',
-        title: '效率工具',
-        description: '提升工作效率的应用',
-        icon: BulbOutline,
-        iconColor: '#faad14',
-        route: { name: 'Category', params: { id: 24 } }
-      },
-      {
-        id: 'ai-podcast',
-        title: 'AI 算力舱',
-        description: 'AI 算力舱，微服算力加强',
-        icon: CloudOutline,
-        iconColor: '#faad14',
-        route: { name: 'Category', params: { id: 27 } }
-      }
     ]
   }
 ]
@@ -478,7 +370,7 @@ const handleFunctionClick = (func: Function) => {
 
 const fetchComments = async () => {
   try {
-    const response = await request.get<Comment[]>('/apps/comments/all')
+    const response = await request.get<Comment[]>('/comment/latest')
     // 按创建时间倒序排序，只取前5条
     comments.value = response
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -496,7 +388,8 @@ const formatDate = (date: string) => {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    second: '2-digit',
   })
 }
 
@@ -742,7 +635,7 @@ onMounted(() => {
 }
 
 .app-info {
-  background-color: var(--n-color-embedded);
+  //background-color: var(--n-color-embedded);
   margin-bottom: 12px;
 }
 

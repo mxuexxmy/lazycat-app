@@ -119,11 +119,10 @@ import {
 } from "naive-ui";
 import { DownloadOutline } from "@vicons/ionicons5";
 
-const __name = "MostPopular";
 
 interface AppInfo {
   name: string;
-  pkgId: string;
+  packageName: string;
   description: string;
   brief: string;
   category: string[];
@@ -177,8 +176,10 @@ onBeforeUnmount(() => {
 });
 
 const getAppIcon = (app: AppInfo) => {
-  if (!app.iconPath) return defaultIcon;
-  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`;
+  if (!app.iconPath) {
+    return `https://dl.lazycatmicroserver.com` + app.iconPath;
+  }
+  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.packageName}/icon.png`;
 };
 
 const formatDownloads = (downloads: number) => {
@@ -191,11 +192,11 @@ const formatDownloads = (downloads: number) => {
 const fetchMostPopularApps = async () => {
   loading.value = true;
   try {
-    const response = await fetch(`/api/apps/popular?limit=${selectedLimit.value}`);
+    const response = await fetch(`/api/app/popular?limit=${selectedLimit.value}`);
     const result = await response.json();
     if (Array.isArray(result)) {
       apps.value = result.map((app) => ({
-        pkgId: app.pkgId,
+        packageName: app.packageName,
         name: app.name,
         description: app.description,
         brief: app.brief,
@@ -217,7 +218,7 @@ const fetchMostPopularApps = async () => {
 const handleAppClick = (app: AppInfo) => {
   router.push({
     name: "AppDetail",
-    params: { pkgId: app.pkgId },
+    params: { pkgId: app.packageName },
   });
 };
 

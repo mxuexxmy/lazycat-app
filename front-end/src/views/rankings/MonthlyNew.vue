@@ -101,13 +101,10 @@ import {
   NSpace,
   NAvatar,
 } from "naive-ui";
-import type { App } from "@/types";
-
-const __name = "MonthlyNew";
 
 interface AppInfo {
   name: string;
-  pkgId: string;
+  packageName: string;
   description: string;
   brief: string;
   category: string[];
@@ -123,18 +120,20 @@ const defaultIcon = "/path/to/default-icon.png";
 const router = useRouter();
 
 const getAppIcon = (app: AppInfo) => {
-  if (!app.iconPath) return defaultIcon;
-  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`;
+  if (!app.iconPath) {
+    return `https://dl.lazycatmicroserver.com` + app.iconPath;
+  }
+  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.packageName}/icon.png`;
 };
 
 const fetchMonthlyNewApps = async () => {
   loading.value = true;
   try {
-    const response = await fetch("/api/apps/latest");
+    const response = await fetch("/api/app/latest");
     const result = await response.json();
     if (Array.isArray(result)) {
       apps.value = result.map((app) => ({
-        pkgId: app.pkgId,
+        packageName: app.packageName,
         name: app.name,
         description: app.description,
         brief: app.brief,
@@ -155,7 +154,7 @@ const fetchMonthlyNewApps = async () => {
 const handleAppClick = (app: AppInfo) => {
   router.push({
     name: "AppDetail",
-    params: { pkgId: app.pkgId },
+    params: { pkgId: app.packageName },
   });
 };
 

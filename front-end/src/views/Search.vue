@@ -15,7 +15,7 @@
           </template>
         </n-input>
         <div class="search-tips">
-          支持搜索：应用名称、包名、关键词、源码地址、应用描述、简介、分类
+          支持搜索：应用名称、包名、关键词、源码地址、应用描述、简介
         </div>
       </div>
 
@@ -34,8 +34,8 @@
           :cols-l="4"
           v-if="searchResults.length > 0"
         >
-          <n-grid-item v-for="app in searchResults" :key="app.pkgId">
-            <n-card hoverable @click="goToAppDetail(app.pkgId)" class="app-card">
+          <n-grid-item v-for="app in searchResults" :key="app.packageName">
+            <n-card hoverable @click="goToAppDetail(app.packageName)" class="app-card">
               <div class="app-content">
                 <div class="app-icon">
                   <n-image
@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, defineComponent } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Search } from '@vicons/ionicons5'
 import type { App } from '../types'
@@ -109,7 +109,7 @@ const searchResults = ref<App[]>([])
 
 const getAppIcon = (app: App) => {
   if (!app.iconPath) return 'https://dl.lazycatmicroserver.com/appstore/metarepo/default-icon.png'
-  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.pkgId}/icon.png`
+  return `https://dl.lazycatmicroserver.com/appstore/metarepo/apps/${app.packageName}/icon.png`
 }
 
 const handleSearch = async () => {
@@ -120,7 +120,7 @@ const handleSearch = async () => {
   
   loading.value = true
   try {
-    const response = await fetch(`/api/apps/search/all?keyword=${encodeURIComponent(searchQuery.value)}`)
+    const response = await fetch(`/api/app/search/all?keyword=${encodeURIComponent(searchQuery.value)}`)
     const data = await response.json()
     searchResults.value = data
   } catch (error) {

@@ -12,8 +12,12 @@ export interface FiveStarApp {
   creator: string
 }
 
-export const getFiveStarApps = (limit = 10) => {
-  return request.get<FiveStarApp[]>("/apps/statistics/apps/five-star", {
-    params: { limit }
-  })
-} 
+const getFiveStarApps = async () => {
+  try {
+    const response = await fetch('/api/app/statistics/app/five-star"')
+    const data = await response.json()
+    categories.value = data
+  } catch (error) {
+    console.error('获取分类统计失败:', error)
+  }
+}
