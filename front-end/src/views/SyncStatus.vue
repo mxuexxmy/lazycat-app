@@ -183,7 +183,6 @@
 
 <script setup lang="ts">
 import {ref, onMounted, onUnmounted} from 'vue'
-import {useRouter} from 'vue-router'
 import {useMessage} from 'naive-ui'
 import {
   Refresh,
@@ -237,7 +236,6 @@ interface SyncDataSourceVO {
 
 type SyncType = 'APP' | 'CATEGORY' | 'USER'
 
-const router = useRouter()
 const message = useMessage()
 const loading = ref(false)
 const syncInfo = ref<SyncInfoVO[]>([])
@@ -258,19 +256,13 @@ const showDescriptionModal = ref(false)
 const currentDescription = ref('')
 
 const showErrorDetail = (error: string) => {
-  console.log('错误详情:', error)
-  console.log('点击事件被触发')
   currentError.value = error
   showErrorModal.value = true
-  console.log('模态框状态:', showErrorModal.value)
 }
 
 const showDescriptionDetail = (description: string) => {
-  console.log('描述详情:', description)
-  console.log('点击事件被触发')
   currentDescription.value = description
   showDescriptionModal.value = true
-  console.log('模态框状态:', showDescriptionModal.value)
 }
 
 let timer: number | null = null
@@ -293,40 +285,34 @@ const getProgressIcon = (item: SyncDataSourceVO) => {
 // 获取同步信息
 const fetchSyncInfo = async () => {
   try {
-    console.log('开始获取同步信息...')
     const result = await request.get('/sync/info')
-    console.log('同步信息接口返回:', result)
 
     if (result.success === true) {
       syncInfo.value = result.data
-      console.log('同步信息数据:', syncInfo.value)
     } else {
-      console.error('同步信息接口返回错误:', result)
-      message.error(`获取同步信息失败: ${result.message || '未知错误'}`)
+      syncInfo.value = []
+      message.warning('同步任务状态信息获取失败，请稍等程序启动，长时间未获取到数据，请手动同步数据')
     }
   } catch (error) {
-    console.error('获取同步信息失败:', error)
-    message.error('获取同步信息失败')
+    syncInfo.value = []
+    message.error('网络连接异常，无法获取同步任务状态信息')
   }
 }
 
 // 获取数据源信息
 const fetchDataSourceInfo = async () => {
   try {
-    console.log('开始获取数据源信息...')
     const result = await request.get('/sync/source')
-    console.log('数据源信息接口返回:', result)
 
     if (result.success === true) {
       dataSourceInfo.value = result.data
-      console.log('数据源信息数据:', dataSourceInfo.value)
     } else {
-      console.error('数据源信息接口返回错误:', result)
-      message.error(`获取数据源信息失败: ${result.message || '未知错误'}`)
+      dataSourceInfo.value = []
+      message.warning('总体同步进度信息获取失败，请稍等程序启动，长时间未获取到数据，请手动同步数据')
     }
   } catch (error) {
-    console.error('获取数据源信息失败:', error)
-    message.error('获取数据源信息失败')
+    dataSourceInfo.value = []
+    message.error('网络连接异常，无法获取总体同步进度信息')
   }
 }
 
@@ -334,10 +320,22 @@ const fetchDataSourceInfo = async () => {
 const refreshData = async () => {
   loading.value = true
   try {
-    await Promise.all([fetchDataSourceInfo(), fetchSyncInfo()])
-    message.success('数据刷新成功')
+    await Promise.allSettled([fetchDataSourceInfo(), fetchSyncInfo()])
+    
+    // 检查数据是否成功获取
+    const hasData = syncInfo.value.length > 0 || dataSourceInfo.value.length > 0
+    
+    if (hasData) {
+      message.success('数据刷新成功')
+    } else if(syncInfo.value.length === 0 && dataSourceInfo.value.length === 0){
+      message.warning('数据获取失败，请稍等程序启动，长时间未获取到数据，请手动同步数据')
+    } else if(syncInfo.value.length === 0){
+      message.warning('同步任务状态数据获取失败，请稍等程序启动，长时间未获取到数据，请手动同步数据')
+    } else if(dataSourceInfo.value.length === 0){
+      message.warning('总体同步进度数据获取失败，请稍等程序启动')
+    }
   } catch (error) {
-    message.error('数据刷新失败')
+    message.error('数据刷新失败，请稍后重试')
   } finally {
     loading.value = false
   }
@@ -441,7 +439,7 @@ const startAutoRefresh = () => {
   timer = window.setInterval(() => {
     fetchSyncInfo()
     fetchDataSourceInfo()
-  }, 30000) // 每30秒刷新一次
+  }, 10000) // 每30秒刷新一次
 }
 
 onMounted(() => {

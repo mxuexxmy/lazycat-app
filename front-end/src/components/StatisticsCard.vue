@@ -29,7 +29,8 @@
 import { NCard, NIcon, NTooltip } from 'naive-ui'
 import { ref, onMounted } from 'vue'
 import { Apps, People } from '@vicons/ionicons5'
-
+import {useMessage} from 'naive-ui'
+const message = useMessage()
 const totalApps = ref(0)
 const totalDevelopers = ref(0)
 
@@ -40,7 +41,7 @@ const fetchStatistics = async () => {
     totalApps.value = data.totalApps
     totalDevelopers.value = data.totalDevelopers
   } catch (error) {
-    console.error('获取统计信息失败:', error)
+    message.warning('数据获取失败，请稍等程序启动，前往同步信息页面查看同步情况')
   }
 }
 

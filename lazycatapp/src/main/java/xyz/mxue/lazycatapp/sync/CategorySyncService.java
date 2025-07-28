@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import xyz.mxue.lazycatapp.converter.CategoryConvert;
 import xyz.mxue.lazycatapp.entity.Category;
 import xyz.mxue.lazycatapp.entity.SyncInfo;
+import xyz.mxue.lazycatapp.enums.SyncStatusEnum;
 import xyz.mxue.lazycatapp.enums.SyncStrategyEnum;
 import xyz.mxue.lazycatapp.enums.SyncTypeEnum;
 import xyz.mxue.lazycatapp.repository.CategoryRepository;
@@ -40,6 +41,7 @@ public class CategorySyncService {
         if (syncService.isSync(SyncTypeEnum.CATEGORY, SyncStrategyEnum.FULL, forceSync)) {
             log.info("进行同步分类信息-{}", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             try {
+                syncService.updateSyncStatus(SyncTypeEnum.CATEGORY, SyncStatusEnum.SYNCING);
                 // 更改同步状态- 同步中
                 log.info("开始同步分类信息...");
                 // 同步中文分类

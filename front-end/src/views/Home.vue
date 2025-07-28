@@ -113,8 +113,6 @@ import { useRouter, useRoute } from 'vue-router'
 import type { RouteLocationRaw, RouteRecordName } from 'vue-router'
 import {
   TrophyOutline,
-  TimeOutline,
-  RocketOutline,
   RefreshOutline,
   AnalyticsOutline,
   StatsChartOutline,
